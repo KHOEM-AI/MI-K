@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Eye, EyeOff, Lock, Unlock, Pencil } from "lucide-react";
 import { saveAsset } from "../lib/storage.mjs";
 import {
   listScenes,
@@ -29,6 +30,8 @@ type SceneObject = {
   position: Vector3;
   rotation: Vector3;
   scale: Vector3;
+  visible?: boolean;
+  locked?: boolean;
 };
 
 type StudioAsset = {
@@ -113,6 +116,8 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       position: zero(),
       rotation: zero(),
       scale: one(),
+      visible: true,
+      locked: false,
     },
   ]);
 
@@ -373,6 +378,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
 
         mesh.userData.objectId = item.id;
         mesh.name = item.name;
+        mesh.visible = item.visible !== false;
         scene.add(mesh);
         meshesRef.current.set(item.id, mesh);
       });
@@ -406,6 +412,8 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       },
       rotation: zero(),
       scale: one(),
+      visible: true,
+      locked: false,
     };
 
     commitObjects([...objects, next]);
@@ -426,6 +434,8 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       },
       rotation: { ...selectedObject.rotation },
       scale: { ...selectedObject.scale },
+      visible: selectedObject.visible !== false,
+      locked: false, // Duplicated objects are unlocked by default
     };
 
     commitObjects([...objects, copy]);
@@ -653,6 +663,32 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
     setMessage("បានបោះបង់ Auto Backup។");
   }
 
+  function toggleVisibility(id: string) {
+    commitObjects(
+      objects.map((item) =>
+        item.id === id ? { ...item, visible: item.visible === false } : item
+      )
+    );
+  }
+
+  function toggleLock(id: string) {
+    commitObjects(
+      objects.map((item) =>
+        item.id === id ? { ...item, locked: !item.locked } : item
+      )
+    );
+  }
+
+  function renameObject(id: string, newName: string) {
+    const trimmed = newName.trim();
+    if (!trimmed) return;
+    commitObjects(
+      objects.map((item) =>
+        item.id === id ? { ...item, name: trimmed } : item
+      )
+    );
+  }
+
   function updateSelected(
     key: "position" | "rotation" | "scale",
     axis: keyof Vector3,
@@ -695,7 +731,8 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
     title: string,
     key: "position" | "rotation" | "scale",
     values: Vector3,
-    step: number
+    step: number,
+    disabled?: boolean
   ) {
     return (
       <div className="studio-transform-group">
@@ -711,6 +748,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
                 onChange={(event) =>
                   updateSelected(key, axis, Number(event.target.value))
                 }
+                disabled={disabled}
               />
             </label>
           ))}
@@ -1032,16 +1070,48 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             ) : (
               <div className="studio-object-list">
                 {objects.map((item) => (
-                  <button
-                    type="button"
+                  <div
                     key={item.id}
                     className={selectedId === item.id ? "studio-object-item selected" : "studio-object-item"}
                     onClick={() => setSelectedId(item.id)}
+                    style={{ opacity: item.visible === false ? 0.5 : 1, cursor: "pointer" }}
                   >
                     <span className="studio-object-swatch" style={{ backgroundColor: item.color }} />
-                    <span>{item.name}</span>
-                    <small>{item.shape}</small>
-                  </button>
+                    <span style={{ flex: 1, textAlign: "left", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {item.name}
+                    </span>
+                    <small style={{ marginRight: "8px" }}>{item.shape}</small>
+                    <div style={{ display: "flex", gap: "2px" }}>
+                      <button
+                        type="button"
+                        title={item.visible === false ? "Show" : "Hide"}
+                        onClick={(e) => { e.stopPropagation(); toggleVisibility(item.id); }}
+                        style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", display: "flex", alignItems: "center", color: "inherit" }}
+                      >
+                        {item.visible === false ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                      <button
+                        type="button"
+                        title={item.locked ? "Unlock" : "Lock"}
+                        onClick={(e) => { e.stopPropagation(); toggleLock(item.id); }}
+                        style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", display: "flex", alignItems: "center", color: "inherit" }}
+                      >
+                        {item.locked ? <Lock size={16} /> : <Unlock size={16} />}
+                      </button>
+                      <button
+                        type="button"
+                        title="Rename"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const newName = window.prompt("បញ្ចូលឈ្មោះថ្មីសម្រាប់វត្ថុនេះ:", item.name);
+                          if (newName) renameObject(item.id, newName);
+                        }}
+                        style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", display: "flex", alignItems: "center", color: "inherit" }}
+                      >
+                        <Pencil size={16} />
+                      </button>
+                    </div>
+                  </div>
                 ))}
               </div>
             )}
@@ -1051,6 +1121,12 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             <div className="studio-transform-panel">
               <h3>Transform: {selectedObject.name}</h3>
 
+              {selectedObject.locked && (
+                <p className="studio-note" style={{ color: "#f0b849", marginBottom: "8px" }}>
+                  🔒 វត្ថុនេះកំពុងត្រូវបានចាក់សោ។ សូមដោះសោដើម្បីកែប្រែ។
+                </p>
+              )}
+
               <div className="studio-controls">
                 <label>
                   Material Color
@@ -1058,6 +1134,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
                     type="color"
                     value={selectedObject.color}
                     onChange={(event) => updateSelectedColor(event.target.value)}
+                    disabled={selectedObject.locked}
                   />
                 </label>
                 <label>
@@ -1096,9 +1173,9 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
                 </button>
               </div>
 
-              {renderVectorControls("Move Position", "position", selectedObject.position, 0.1)}
-              {renderVectorControls("Rotate (Radians)", "rotation", selectedObject.rotation, 0.1)}
-              {renderVectorControls("Scale", "scale", selectedObject.scale, 0.1)}
+              {renderVectorControls("Move Position", "position", selectedObject.position, 0.1, selectedObject.locked)}
+              {renderVectorControls("Rotate (Radians)", "rotation", selectedObject.rotation, 0.1, selectedObject.locked)}
+              {renderVectorControls("Scale", "scale", selectedObject.scale, 0.1, selectedObject.locked)}
             </div>
           )}
 
