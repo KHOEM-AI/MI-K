@@ -36,6 +36,7 @@ export default function App() {
   }, []);
   const [selected, setSelected] = useState<Asset | null>(null);
   const [filter, setFilter] = useState("all");
+  const [search, setSearch] = useState("");
 
   function upload(event: React.ChangeEvent<HTMLInputElement>) {
     const incoming = Array.from(event.target.files || []);
@@ -67,9 +68,14 @@ export default function App() {
     if (selected?.id === id) setSelected(null);
   }
 
-  const visibleAssets = assets.filter(
-    (asset) => filter === "all" || asset.kind === filter
-  );
+  const visibleAssets = assets.filter((asset) => {
+    const matchesFilter = filter === "all" || asset.kind === filter;
+    const matchesSearch = asset.file.name
+      .toLowerCase()
+      .includes(search.trim().toLowerCase());
+
+    return matchesFilter && matchesSearch;
+  });
 
   return (
     <main className="app">
@@ -130,6 +136,25 @@ export default function App() {
             <span>{visibleAssets.length}</span>
           </div>
 
+          <input
+            type="search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search images and 3D models..."
+            aria-label="Search assets"
+            style={{
+              width: "100%",
+              boxSizing: "border-box",
+              padding: "12px",
+              marginBottom: "12px",
+              borderRadius: "10px",
+              border: "1px solid #444",
+              background: "#151922",
+              color: "#fff",
+              fontSize: "14px"
+            }}
+          />
+
           <div className="filters">
             {["all", "image", "model"].map((value) => (
               <button
@@ -144,7 +169,11 @@ export default function App() {
 
           <div className="asset-list">
             {visibleAssets.length === 0 && (
-              <p className="empty-list">No assets added yet.</p>
+              <p className="empty-list">
+                {search.trim()
+                  ? "No matching assets found."
+                  : "No assets added yet."}
+              </p>
             )}
 
             {visibleAssets.map((asset) => (
@@ -210,7 +239,7 @@ export default function App() {
       </section>
 
       <footer>
-        MI-K VISION 3D <span>•</span> IMAGE & 3D LIBRARY
+        KHOEM-AI <span>•</span> IMAGE & 3D LIBRARY
       </footer>
     </main>
   );
