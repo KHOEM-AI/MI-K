@@ -185,6 +185,45 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
   }
 
   useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      const isInput =
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.tagName === "SELECT" ||
+        target.isContentEditable;
+
+      // Undo: Ctrl+Z or Cmd+Z
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z" && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+      }
+      // Redo: Ctrl+Shift+Z or Cmd+Shift+Z or Ctrl+Y
+      else if (
+        ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "z") ||
+        ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "y")
+      ) {
+        e.preventDefault();
+        redo();
+      }
+      // Delete: Delete or Backspace (Only if not typing in an input)
+      else if ((e.key === "Delete" || e.key === "Backspace") && !isInput) {
+        if (selectedId) {
+          e.preventDefault();
+          deleteObject();
+        }
+      }
+      // Deselect: Escape
+      else if (e.key === "Escape" && !isInput) {
+        setSelectedId(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [history, selectedId, objects]);
+
+  useEffect(() => {
     let renderer: import("three").WebGLRenderer | undefined;
     let frame = 0;
     let observer: ResizeObserver | undefined;
