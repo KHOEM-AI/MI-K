@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Eye, EyeOff, Lock, Unlock, Pencil, Sun, Moon, Lightbulb } from "lucide-react";
+import { Eye, EyeOff, Lock, Unlock, Pencil, Sun, Moon, Lightbulb, HelpCircle, X } from "lucide-react";
 import { saveAsset } from "../lib/storage.mjs";
 import {
   listScenes,
@@ -296,6 +296,8 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
   const [pendingAutobackup, setPendingAutobackup] = useState<AutobackupData | null>(null);
   const [snapToGrid, setSnapToGrid] = useState(false);
   const [bgColor, setBgColor] = useState("#080f1b");
+  const [showHelp, setShowHelp] = useState(false);
+  const [activeLighting, setActiveLighting] = useState<"day" | "night" | "studio" | null>("day");
   const baselineRef = useRef<string>("");
   const autosaveTimerRef = useRef<number | null>(null);
 
@@ -340,8 +342,13 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
         target.tagName === "SELECT" ||
         target.isContentEditable;
 
+      // Duplicate: Ctrl+D or Cmd+D
+      if (!isInput && !e.altKey && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "d") {
+        e.preventDefault();
+        duplicateObject();
+      }
       // Undo: Ctrl+Z or Cmd+Z
-      if (!isInput && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z" && !e.shiftKey) {
+      else if (!isInput && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z" && !e.shiftKey) {
         e.preventDefault();
         undo();
       }
@@ -362,13 +369,17 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       }
       // Deselect: Escape
       else if (e.key === "Escape" && !isInput) {
-        setSelectedId(null);
+        if (showHelp) {
+          setShowHelp(false);
+        } else {
+          setSelectedId(null);
+        }
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [history, selectedId, objects]);
+  }, [history, selectedId, objects, showHelp]);
 
   useEffect(() => {
     let renderer: import("three").WebGLRenderer | undefined;
@@ -1113,6 +1124,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
   }
 
   function setLightingPreset(preset: "day" | "night" | "studio") {
+    setActiveLighting(preset);
     if (preset === "day") {
       setAmbientIntensity(2.0);
       setDirectionalIntensity(3.0);
@@ -1337,6 +1349,14 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
         >
           3D UI Design
         </button>
+        <button
+          type="button"
+          className="upload-button"
+          onClick={() => setShowHelp(true)}
+          style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "6px" }}
+        >
+          <HelpCircle size={16} /> Help
+        </button>
       </div>
 
       {mode === "object" ? (
@@ -1360,7 +1380,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             </button>
             <button
               type="button"
-              className="filter"
+              className="upload-button"
               onClick={() => glbInputRef.current?.click()}
             >
               Import GLB
@@ -1374,20 +1394,20 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             />
             <button
               type="button"
-              className="filter"
+              className="upload-button"
               onClick={clearScene}
               disabled={objects.length === 0}
-              style={{ color: objects.length === 0 ? "inherit" : "#ff4d4f", borderColor: objects.length === 0 ? "inherit" : "#ff4d4f" }}
+              style={{ backgroundColor: objects.length === 0 ? "inherit" : "#ff4d4f", color: "white", borderColor: "transparent" }}
             >
               Clear Scene
             </button>
           </div>
 
           <div className="studio-history-controls">
-            <button type="button" className="filter" onClick={undo} disabled={!history.past.length}>
+            <button type="button" className="upload-button" onClick={undo} disabled={!history.past.length}>
               ↶ Undo
             </button>
-            <button type="button" className="filter" onClick={redo} disabled={!history.future.length}>
+            <button type="button" className="upload-button" onClick={redo} disabled={!history.future.length}>
               ↷ Redo
             </button>
           </div>
@@ -1417,7 +1437,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
                 </button>
                 <button
                   type="button"
-                  className="filter"
+                  className="upload-button"
                   onClick={handleDiscardAutobackup}
                 >
                   Discard
@@ -1447,7 +1467,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
               </button>
               <button
                 type="button"
-                className="filter"
+                className="upload-button"
                 onClick={handleExportJSON}
                 disabled={!objects.length}
               >
@@ -1455,7 +1475,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
               </button>
               <button
                 type="button"
-                className="filter"
+                className="upload-button"
                 onClick={() => fileInputRef.current?.click()}
               >
                 Import JSON
@@ -1522,7 +1542,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
           <div className="studio-controls" style={{ marginBottom: "8px", display: "flex", gap: "8px" }}>
             <button
               type="button"
-              className="filter"
+              className="upload-button"
               onClick={() => setCameraPreset("front")}
               style={{ flex: 1 }}
             >
@@ -1530,7 +1550,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             </button>
             <button
               type="button"
-              className="filter"
+              className="upload-button"
               onClick={() => setCameraPreset("top")}
               style={{ flex: 1 }}
             >
@@ -1538,7 +1558,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             </button>
             <button
               type="button"
-              className="filter"
+              className="upload-button"
               onClick={() => setCameraPreset("iso")}
               style={{ flex: 1 }}
             >
@@ -1555,7 +1575,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             <div className="studio-controls" style={{ marginBottom: "8px", display: "flex", gap: "8px" }}>
               <button
                 type="button"
-                className="filter"
+                className={activeLighting === "day" ? "upload-button" : "filter"}
                 onClick={() => setLightingPreset("day")}
                 style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
               >
@@ -1563,7 +1583,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
               </button>
               <button
                 type="button"
-                className="filter"
+                className={activeLighting === "night" ? "upload-button" : "filter"}
                 onClick={() => setLightingPreset("night")}
                 style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
               >
@@ -1571,7 +1591,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
               </button>
               <button
                 type="button"
-                className="filter"
+                className={activeLighting === "studio" ? "upload-button" : "filter"}
                 onClick={() => setLightingPreset("studio")}
                 style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
               >
@@ -1597,9 +1617,10 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
                   max={5}
                   step={0.1}
                   value={ambientIntensity}
-                  onChange={(event) =>
-                    setAmbientIntensity(Number(event.target.value))
-                  }
+                  onChange={(event) => {
+                    setAmbientIntensity(Number(event.target.value));
+                    setActiveLighting(null);
+                  }}
                 />
               </label>
               <label>
@@ -1610,9 +1631,10 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
                   max={5}
                   step={0.1}
                   value={directionalIntensity}
-                  onChange={(event) =>
-                    setDirectionalIntensity(Number(event.target.value))
-                  }
+                  onChange={(event) => {
+                    setDirectionalIntensity(Number(event.target.value));
+                    setActiveLighting(null);
+                  }}
                 />
               </label>
             </div>
@@ -1750,13 +1772,13 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
                   />
                   <small>{selectedObject.roughness.toFixed(2)}</small>
                 </label>
-                <button type="button" className="filter" onClick={centerAndFitObject}>
+                <button type="button" className="upload-button" onClick={centerAndFitObject}>
                   Fit to Center
                 </button>
-                <button type="button" className="filter" onClick={duplicateObject}>
+                <button type="button" className="upload-button" onClick={duplicateObject}>
                   Duplicate
                 </button>
-                <button type="button" className="filter" onClick={deleteObject}>
+                <button type="button" className="upload-button" onClick={deleteObject}>
                   Delete
                 </button>
               </div>
@@ -1786,6 +1808,73 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
         </>
       ) : (
         <UI3DPreview />
+      )}
+
+      {showHelp && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.7)",
+            zIndex: 9999,
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            padding: "20px",
+          }}
+          onClick={() => setShowHelp(false)}
+        >
+          <div
+            style={{
+              backgroundColor: "#111e31",
+              color: "#ffffff",
+              padding: "24px",
+              borderRadius: "12px",
+              maxWidth: "500px",
+              width: "100%",
+              border: "1px solid #168de2",
+              maxHeight: "80vh",
+              overflowY: "auto",
+              boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <h3 style={{ margin: 0, color: "#168de2" }}>ការណែនាំ និង Shortcuts</h3>
+              <button
+                type="button"
+                onClick={() => setShowHelp(false)}
+                style={{ background: "none", border: "none", color: "#ffffff", cursor: "pointer", display: "flex" }}
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div style={{ marginBottom: "16px", lineHeight: "1.6" }}>
+              <h4 style={{ marginBottom: "8px", fontSize: "1rem" }}>⌨️ Keyboard Shortcuts</h4>
+              <ul style={{ paddingLeft: "20px", margin: 0, fontSize: "0.9rem", color: "#a0aec0" }}>
+                <li><strong>Ctrl + D</strong> (ឬ Cmd + D): ចម្លងវត្ថុដែលបានជ្រើស (Duplicate)</li>
+                <li><strong>Ctrl + Z</strong> (ឬ Cmd + Z): Undo</li>
+                <li><strong>Ctrl + Shift + Z</strong> (ឬ Ctrl + Y): Redo</li>
+                <li><strong>Delete</strong> ឬ <strong>Backspace</strong>: លុបវត្ថុដែលបានជ្រើស</li>
+                <li><strong>Esc</strong>: ដោះជម្រើសវត្ថុ (Deselect)</li>
+              </ul>
+            </div>
+
+            <div style={{ lineHeight: "1.6" }}>
+              <h4 style={{ marginBottom: "8px", fontSize: "1rem" }}>💡 គន្លឹះបន្ថែម</h4>
+              <ul style={{ paddingLeft: "20px", margin: 0, fontSize: "0.9rem", color: "#a0aec0" }}>
+                <li>អ្នកអាច Import File <strong>.glb</strong> ពីខាងក្រៅបាន។</li>
+                <li>ចុច <strong>Fit to Center</strong> ដើម្បីដាក់ Model ឱ្យនៅកណ្តាល និងមានទំហំស្តង់ដារ។</li>
+                <li>ប្រើ <strong>Snap to Grid</strong> ដើម្បីកំណត់ទីតាំងឱ្យត្រង់បន្ទាត់។</li>
+                <li>ចុចលើ Icon <strong>👁️</strong> ដើម្បីលាក់/បង្ហាញ និង <strong>🔒</strong> ដើម្បីចាក់សោវត្ថុ។</li>
+              </ul>
+            </div>
+          </div>
+        </div>
       )}
     </section>
   );
