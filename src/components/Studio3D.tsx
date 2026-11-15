@@ -342,13 +342,9 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
         target.tagName === "SELECT" ||
         target.isContentEditable;
 
-      // Duplicate: Ctrl+D or Cmd+D
-      if (!isInput && !e.altKey && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "d") {
-        e.preventDefault();
-        duplicateObject();
-      }
+
       // Undo: Ctrl+Z or Cmd+Z
-      else if (!isInput && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z" && !e.shiftKey) {
+      if (!isInput && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z" && !e.shiftKey) {
         e.preventDefault();
         undo();
       }
@@ -359,6 +355,21 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       ) {
         e.preventDefault();
         redo();
+      }
+      // Duplicate: Ctrl+D or Cmd+D
+      else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "d" && !isInput) {
+        e.preventDefault();
+        duplicateObject();
+      }
+      // Save: Ctrl+S or Cmd+S
+      else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s" && !isInput) {
+        e.preventDefault();
+        handleSaveScene();
+      }
+      // Fit to Center: F
+      else if (e.key.toLowerCase() === "f" && !isInput) {
+        e.preventDefault();
+        centerAndFitObject();
       }
       // Delete: Delete or Backspace (Only if not typing in an input)
       else if ((e.key === "Delete" || e.key === "Backspace") && !isInput) {
@@ -379,7 +390,17 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [history, selectedId, objects, showHelp]);
+  }, [
+    history,
+    selectedId,
+    objects,
+    showHelp,
+    ambientIntensity,
+    directionalIntensity,
+    bgColor,
+    currentSceneId,
+    sceneName
+  ]);
 
   useEffect(() => {
     let renderer: import("three").WebGLRenderer | undefined;
