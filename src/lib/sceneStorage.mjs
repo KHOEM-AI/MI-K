@@ -90,6 +90,10 @@ function sanitizeObject(raw, index) {
       typeof raw.textureData === "string" && raw.textureData.startsWith("data:image")
         ? raw.textureData
         : null,
+    glbData:
+      typeof raw.glbData === "string" && raw.glbData.startsWith("data:")
+        ? raw.glbData
+        : null,
   };
 }
 

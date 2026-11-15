@@ -33,6 +33,7 @@ type SceneObject = {
   visible?: boolean;
   locked?: boolean;
   textureData?: string | null;
+  glbData?: string | null;
 };
 
 type StudioAsset = {
@@ -89,18 +90,23 @@ function createGeometry(THREE: typeof import("three"), shape: Shape) {
   }
 }
 
-function disposeMesh(mesh: import("three").Mesh) {
-  mesh.geometry.dispose();
-  const material = mesh.material;
-  if (Array.isArray(material)) {
-    material.forEach((item) => {
-      if ((item as any).map) (item as any).map.dispose();
-      item.dispose();
-    });
-  } else {
-    if ((material as any).map) (material as any).map.dispose();
-    material.dispose();
-  }
+function disposeMesh(obj: import("three").Object3D) {
+  obj.traverse((child) => {
+    if ((child as import("three").Mesh).isMesh) {
+      const mesh = child as import("three").Mesh;
+      mesh.geometry.dispose();
+      const material = mesh.material;
+      if (Array.isArray(material)) {
+        material.forEach((m) => {
+          if ((m as any).map) (m as any).map.dispose();
+          m.dispose();
+        });
+      } else {
+        if ((material as any).map) (material as any).map.dispose();
+        material.dispose();
+      }
+    }
+  });
 }
 
 function UI3DPreview() {
@@ -246,12 +252,13 @@ function UI3DPreview() {
 export default function Studio3D({ onAssetSaved }: Studio3DProps) {
   const canvasHost = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<import("three").Scene | null>(null);
-  const meshesRef = useRef(new Map<string, import("three").Mesh>());
+  const meshesRef = useRef(new Map<string, import("three").Object3D>());
   const controlsRef = useRef<import("three/examples/jsm/controls/OrbitControls.js").OrbitControls | null>(null);
   const cameraRef = useRef<import("three").PerspectiveCamera | null>(null);
   const hemiLightRef = useRef<import("three").HemisphereLight | null>(null);
   const dirLightRef = useRef<import("three").DirectionalLight | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const glbInputRef = useRef<HTMLInputElement | null>(null);
 
   const [objects, setObjects] = useState<SceneObject[]>([
     {
@@ -543,63 +550,82 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
 
     async function updateScene() {
       const THREE = await import("three");
+      const { GLTFLoader } = await import("three/examples/jsm/loaders/GLTFLoader.js");
       if (cancelled || !sceneReady || !sceneRef.current) return;
 
       const scene = sceneRef.current;
+      const gltfLoader = new GLTFLoader();
 
-      meshesRef.current.forEach((mesh) => {
-        scene.remove(mesh);
-        disposeMesh(mesh);
+      meshesRef.current.forEach((obj) => {
+        scene.remove(obj);
+        disposeMesh(obj);
       });
       meshesRef.current.clear();
 
-      objects.forEach((item) => {
-        const material = new THREE.MeshStandardMaterial({
-          color: item.color,
-          metalness: item.metalness,
-          roughness: item.roughness,
-          emissive: item.id === selectedId ? "#183b60" : "#000000",
-        });
+      await Promise.all(
+        objects.map(async (item) => {
+          let obj: import("three").Object3D;
 
-        if (item.textureData) {
-          new THREE.TextureLoader().load(item.textureData, (texture) => {
-            if (cancelled) {
-              texture.dispose();
-              return;
+          if (item.glbData) {
+            obj = await new Promise((resolve, reject) => {
+              gltfLoader.load(
+                item.glbData!,
+                (gltf) => {
+                  const root = gltf.scene;
+                  // Apply emissive to all meshes if selected
+                  if (item.id === selectedId) {
+                    root.traverse((child) => {
+                      if ((child as import("three").Mesh).isMesh) {
+                        const m = (child as import("three").Mesh).material as import("three").MeshStandardMaterial;
+                        if (m && m.emissive) {
+                          m.emissive.setHex(0x183b60);
+                          m.needsUpdate = true;
+                        }
+                      }
+                    });
+                  }
+                  resolve(root);
+                },
+                undefined,
+                (err) => reject(err)
+              );
+            });
+          } else {
+            const material = new THREE.MeshStandardMaterial({
+              color: item.color,
+              metalness: item.metalness,
+              roughness: item.roughness,
+              emissive: item.id === selectedId ? "#183b60" : "#000000",
+            });
+
+            if (item.textureData) {
+              new THREE.TextureLoader().load(item.textureData, (texture) => {
+                if (cancelled) {
+                  texture.dispose();
+                  return;
+                }
+                texture.colorSpace = THREE.SRGBColorSpace;
+                material.map = texture;
+                material.needsUpdate = true;
+              });
             }
-            texture.colorSpace = THREE.SRGBColorSpace;
-            material.map = texture;
-            material.needsUpdate = true;
-          });
-        }
 
-        const mesh = new THREE.Mesh(
-          createGeometry(THREE, item.shape),
-          material
-        );
+            obj = new THREE.Mesh(createGeometry(THREE, item.shape), material);
+          }
 
-        mesh.position.set(
-          item.position.x,
-          item.position.y,
-          item.position.z
-        );
-        mesh.rotation.set(
-          item.rotation.x,
-          item.rotation.y,
-          item.rotation.z
-        );
-        mesh.scale.set(
-          item.scale.x,
-          item.scale.y,
-          item.scale.z
-        );
+          if (cancelled) return;
 
-        mesh.userData.objectId = item.id;
-        mesh.name = item.name;
-        mesh.visible = item.visible !== false;
-        scene.add(mesh);
-        meshesRef.current.set(item.id, mesh);
-      });
+          obj.position.set(item.position.x, item.position.y, item.position.z);
+          obj.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+          obj.scale.set(item.scale.x, item.scale.y, item.scale.z);
+
+          obj.userData.objectId = item.id;
+          obj.name = item.name;
+          obj.visible = item.visible !== false;
+          scene.add(obj);
+          meshesRef.current.set(item.id, obj);
+        })
+      );
     }
 
     updateScene().catch((error) => {
@@ -669,6 +695,44 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
     commitObjects(remaining);
     setSelectedId(remaining[remaining.length - 1]?.id ?? null);
     setMessage("បានលុបវត្ថុដែលបានជ្រើស។");
+  }
+
+  function handleGLBImport(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      setMessage("ឯកសារធំពេក (អតិបរមា 5MB)។");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string;
+      if (!dataUrl) return;
+
+      const next: SceneObject = {
+        id: createId(),
+        name: file.name.replace(/\.glb$/i, ""),
+        shape: "box", // Fallback shape (unused when glbData is present)
+        color: "#ffffff",
+        metalness: 0.2,
+        roughness: 0.5,
+        position: { x: 0, y: 0, z: 0 },
+        rotation: { x: 0, y: 0, z: 0 },
+        scale: { x: 1, y: 1, z: 1 },
+        visible: true,
+        locked: false,
+        textureData: null,
+        glbData: dataUrl,
+      };
+
+      commitObjects([...objects, next]);
+      setSelectedId(next.id);
+      setMessage(`បាន Import Model: ${next.name}។`);
+    };
+    reader.readAsDataURL(file);
   }
 
   function clearScene() {
@@ -1166,7 +1230,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       if (exportScene) {
         exportScene.traverse((item) => {
           if ((item as import("three").Mesh).isMesh) {
-            disposeMesh(item as import("three").Mesh);
+            disposeMesh(item as import("three").Object3D);
           }
         });
       }
@@ -1221,6 +1285,20 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             <button type="button" className="upload-button" onClick={addObject}>
               + Add Object
             </button>
+            <button
+              type="button"
+              className="filter"
+              onClick={() => glbInputRef.current?.click()}
+            >
+              Import GLB
+            </button>
+            <input
+              ref={glbInputRef}
+              type="file"
+              accept=".glb,model/gltf-binary"
+              onChange={handleGLBImport}
+              style={{ display: "none" }}
+            />
             <button
               type="button"
               className="filter"
