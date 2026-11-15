@@ -33,3 +33,18 @@ test("Asset storage functions are available", () => {
 test("3D ModelViewer is loaded lazily", () => {
   assert.match(app, /lazy\(\(\) => import/);
 });
+
+test("Three.js and GLTFLoader are dynamically imported", () => {
+  const source = readFileSync(
+    new URL("../src/components/ModelViewer.tsx", import.meta.url),
+    "utf8"
+  );
+
+  assert.match(source, /import\("three"\)/);
+  assert.match(
+    source,
+    /import\("three\/examples\/jsm\/loaders\/GLTFLoader\.js"\)/
+  );
+
+  assert.doesNotMatch(source, /^import \* as THREE from ["']three["']/m);
+});
