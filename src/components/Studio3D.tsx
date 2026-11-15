@@ -32,6 +32,7 @@ type SceneObject = {
   scale: Vector3;
   visible?: boolean;
   locked?: boolean;
+  textureData?: string | null;
 };
 
 type StudioAsset = {
@@ -90,8 +91,12 @@ function disposeMesh(mesh: import("three").Mesh) {
   mesh.geometry.dispose();
   const material = mesh.material;
   if (Array.isArray(material)) {
-    material.forEach((item) => item.dispose());
+    material.forEach((item) => {
+      if ((item as any).map) (item as any).map.dispose();
+      item.dispose();
+    });
   } else {
+    if ((material as any).map) (material as any).map.dispose();
     material.dispose();
   }
 }
@@ -118,6 +123,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       scale: one(),
       visible: true,
       locked: false,
+      textureData: null,
     },
   ]);
 
@@ -355,6 +361,18 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
           emissive: item.id === selectedId ? "#183b60" : "#000000",
         });
 
+        if (item.textureData) {
+          new THREE.TextureLoader().load(item.textureData, (texture) => {
+            if (cancelled) {
+              texture.dispose();
+              return;
+            }
+            texture.colorSpace = THREE.SRGBColorSpace;
+            material.map = texture;
+            material.needsUpdate = true;
+          });
+        }
+
         const mesh = new THREE.Mesh(
           createGeometry(THREE, item.shape),
           material
@@ -414,6 +432,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       scale: one(),
       visible: true,
       locked: false,
+      textureData: null,
     };
 
     commitObjects([...objects, next]);
@@ -436,6 +455,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       scale: { ...selectedObject.scale },
       visible: selectedObject.visible !== false,
       locked: false, // Duplicated objects are unlocked by default
+      textureData: selectedObject.textureData,
     };
 
     commitObjects([...objects, copy]);
@@ -689,6 +709,38 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
     );
   }
 
+  function handleTextureUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file || !selectedId) return;
+    if (file.size > 1024 * 1024) {
+      setMessage("រូបភាពធំពេក (អតិបរមា 1MB)។");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string;
+      if (dataUrl) {
+        commitObjects(
+          objects.map((item) =>
+            item.id === selectedId ? { ...item, textureData: dataUrl } : item
+          )
+        );
+        setMessage("បានដាក់ Texture លើវត្ថុ។");
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function clearTexture(id: string) {
+    commitObjects(
+      objects.map((item) =>
+        item.id === id ? { ...item, textureData: null } : item
+      )
+    );
+    setMessage("បានលុប Texture ចេញពីវត្ថុ។");
+  }
+
   function updateSelected(
     key: "position" | "rotation" | "scale",
     axis: keyof Vector3,
@@ -776,22 +828,37 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
 
       exportScene = new THREE.Scene();
 
-      objects.forEach((item) => {
-        const mesh = new THREE.Mesh(
-          createGeometry(THREE, item.shape),
-          new THREE.MeshStandardMaterial({
+      const loader = new THREE.TextureLoader();
+      await Promise.all(
+        objects.map(async (item) => {
+          const material = new THREE.MeshStandardMaterial({
             color: item.color,
             metalness: item.metalness,
             roughness: item.roughness,
-          })
-        );
+          });
 
-        mesh.position.set(item.position.x, item.position.y, item.position.z);
-        mesh.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
-        mesh.scale.set(item.scale.x, item.scale.y, item.scale.z);
-        mesh.name = item.name;
-        exportScene!.add(mesh);
-      });
+          if (item.textureData) {
+            const texture = await new Promise<import("three").Texture>((resolve) => {
+              loader.load(item.textureData!, (tex) => {
+                tex.colorSpace = THREE.SRGBColorSpace;
+                resolve(tex);
+              });
+            });
+            material.map = texture;
+          }
+
+          const mesh = new THREE.Mesh(
+            createGeometry(THREE, item.shape),
+            material
+          );
+
+          mesh.position.set(item.position.x, item.position.y, item.position.z);
+          mesh.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+          mesh.scale.set(item.scale.x, item.scale.y, item.scale.z);
+          mesh.name = item.name;
+          exportScene!.add(mesh);
+        })
+      );
 
       exportScene.updateMatrixWorld(true);
 
@@ -1137,6 +1204,36 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
                     disabled={selectedObject.locked}
                   />
                 </label>
+                <label>
+                  Texture Image (Max 1MB)
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleTextureUpload}
+                    disabled={selectedObject.locked}
+                    style={{ display: "none" }}
+                    id={`texture-upload-${selectedObject.id}`}
+                  />
+                  <button
+                    type="button"
+                    className="filter"
+                    disabled={selectedObject.locked}
+                    onClick={() => document.getElementById(`texture-upload-${selectedObject.id}`)?.click()}
+                    style={{ marginTop: "4px" }}
+                  >
+                    {selectedObject.textureData ? "Change Texture" : "Upload Texture"}
+                  </button>
+                </label>
+                {selectedObject.textureData && (
+                  <button
+                    type="button"
+                    className="filter"
+                    disabled={selectedObject.locked}
+                    onClick={() => clearTexture(selectedObject.id)}
+                  >
+                    Clear Texture
+                  </button>
+                )}
                 <label>
                   Metalness
                   <input

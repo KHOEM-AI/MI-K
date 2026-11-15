@@ -86,6 +86,10 @@ function sanitizeObject(raw, index) {
     position: sanitizeVec3(raw.position, { x: 0, y: 0, z: 0 }),
     rotation: sanitizeVec3(raw.rotation, { x: 0, y: 0, z: 0 }),
     scale: sanitizeVec3(raw.scale, { x: 1, y: 1, z: 1 }),
+    textureData:
+      typeof raw.textureData === "string" && raw.textureData.startsWith("data:image")
+        ? raw.textureData
+        : null,
   };
 }
 
