@@ -11,6 +11,11 @@ type Asset = {
 const ModelViewer = lazy(() => import("./components/ModelViewer"));
 const Studio3D = lazy(() => import("./components/Studio3D"));
 
+// Prefetch Studio3D on hover to make opening instant
+const prefetchStudio3D = () => {
+  import("./components/Studio3D");
+};
+
 
 
 
@@ -360,6 +365,8 @@ export default function App() {
           type="button"
           className="upload-button"
           onClick={() => setStudioOpen((open) => !open)}
+          onMouseEnter={prefetchStudio3D}
+          onFocus={prefetchStudio3D}
         >
           {studioOpen ? "Close Studio" : "Open 3D Studio"}
         </button>
