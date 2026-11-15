@@ -194,14 +194,14 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
         target.isContentEditable;
 
       // Undo: Ctrl+Z or Cmd+Z
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z" && !e.shiftKey) {
+      if (!isInput && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z" && !e.shiftKey) {
         e.preventDefault();
         undo();
       }
       // Redo: Ctrl+Shift+Z or Cmd+Shift+Z or Ctrl+Y
       else if (
-        ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "z") ||
-        ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "y")
+        (!isInput && (e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "z") ||
+        (!isInput && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "y")
       ) {
         e.preventDefault();
         redo();
