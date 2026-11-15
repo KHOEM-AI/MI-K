@@ -9,6 +9,8 @@ type SceneObject = {
   name: string;
   shape: Shape;
   color: string;
+  metalness: number;
+  roughness: number;
   position: Vector3;
   rotation: Vector3;
   scale: Vector3;
@@ -75,6 +77,8 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       name: "Cube 1",
       shape: "box",
       color: "#168de2",
+      metalness: 0.25,
+      roughness: 0.35,
       position: zero(),
       rotation: zero(),
       scale: one(),
@@ -218,8 +222,8 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       objects.forEach((item) => {
         const material = new THREE.MeshStandardMaterial({
           color: item.color,
-          metalness: 0.25,
-          roughness: 0.35,
+          metalness: item.metalness,
+          roughness: item.roughness,
           emissive: item.id === selectedId ? "#183b60" : "#000000",
         });
 
@@ -270,6 +274,8 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       name: `${preset?.name ?? "Object"} ${count}`,
       shape: newShape,
       color: "#168de2",
+      metalness: 0.25,
+      roughness: 0.35,
       position: {
         x: ((objects.length % 3) - 1) * 2.5,
         y: 0,
@@ -337,6 +343,19 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
     );
   }
 
+  function updateSelectedMaterial(
+    key: "metalness" | "roughness",
+    value: number
+  ) {
+    if (!selectedId || !Number.isFinite(value)) return;
+    const safeValue = Math.max(0, Math.min(1, value));
+    commitObjects(
+      objects.map((item) =>
+        item.id === selectedId ? { ...item, [key]: safeValue } : item
+      )
+    );
+  }
+
   function renderVectorControls(
     title: string,
     key: "position" | "rotation" | "scale",
@@ -389,8 +408,8 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
           createGeometry(THREE, item.shape),
           new THREE.MeshStandardMaterial({
             color: item.color,
-            metalness: 0.25,
-            roughness: 0.35,
+            metalness: item.metalness,
+            roughness: item.roughness,
           })
         );
 
@@ -557,6 +576,34 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
                     value={selectedObject.color}
                     onChange={(event) => updateSelectedColor(event.target.value)}
                   />
+                </label>
+                <label>
+                  Metalness
+                  <input
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    value={selectedObject.metalness}
+                    onChange={(event) =>
+                      updateSelectedMaterial("metalness", Number(event.target.value))
+                    }
+                  />
+                  <small>{selectedObject.metalness.toFixed(2)}</small>
+                </label>
+                <label>
+                  Roughness
+                  <input
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    value={selectedObject.roughness}
+                    onChange={(event) =>
+                      updateSelectedMaterial("roughness", Number(event.target.value))
+                    }
+                  />
+                  <small>{selectedObject.roughness.toFixed(2)}</small>
                 </label>
                 <button type="button" className="filter" onClick={duplicateObject}>
                   Duplicate
