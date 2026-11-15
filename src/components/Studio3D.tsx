@@ -145,6 +145,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
   const [savedScenes, setSavedScenes] = useState<SceneSnapshot[]>([]);
   const [currentSceneId, setCurrentSceneId] = useState<string | null>(null);
   const [pendingAutobackup, setPendingAutobackup] = useState<AutobackupData | null>(null);
+  const [snapToGrid, setSnapToGrid] = useState(false);
   const baselineRef = useRef<string>("");
   const autosaveTimerRef = useRef<number | null>(null);
 
@@ -769,10 +770,16 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
   ) {
     if (!selectedId || !Number.isFinite(value)) return;
 
+    let finalValue = value;
+    if (snapToGrid) {
+      const gridStep = key === "position" ? 0.5 : 0.1;
+      finalValue = Math.round(value / gridStep) * gridStep;
+    }
+
     commitObjects(
       objects.map((item) =>
         item.id === selectedId
-          ? { ...item, [key]: { ...item[key], [axis]: value } }
+          ? { ...item, [key]: { ...item[key], [axis]: finalValue } }
           : item
       )
     );
@@ -1113,6 +1120,17 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
                 ))}
               </div>
             )}
+          </div>
+
+          <div className="studio-controls" style={{ marginBottom: "8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", fontSize: "0.9rem", color: "#a0aec0" }}>
+              <input
+                type="checkbox"
+                checked={snapToGrid}
+                onChange={(e) => setSnapToGrid(e.target.checked)}
+              />
+              Snap to Grid (0.5)
+            </label>
           </div>
 
           <div className="studio-controls" style={{ marginBottom: "8px", display: "flex", gap: "8px" }}>
