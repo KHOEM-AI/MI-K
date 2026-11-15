@@ -1,6 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { saveAsset } from "../lib/storage.mjs";
-import { listScenes, saveScene, deleteScene, loadScene } from "../lib/sceneStorage.mjs";
+import {
+  listScenes,
+  saveScene,
+  deleteScene,
+  loadScene,
+  serializeSceneSnapshot,
+  parseImportedScene,
+} from "../lib/sceneStorage.mjs";
 import type { SceneSnapshot } from "../lib/sceneStorage.mjs";
 
 type Shape = "box" | "sphere" | "cone" | "cylinder" | "torus";
@@ -75,6 +82,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
   const controlsRef = useRef<import("three/examples/jsm/controls/OrbitControls.js").OrbitControls | null>(null);
   const hemiLightRef = useRef<import("three").HemisphereLight | null>(null);
   const dirLightRef = useRef<import("three").DirectionalLight | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [objects, setObjects] = useState<SceneObject[]>([
     {
@@ -415,6 +423,106 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
     setMessage("បានលុប Scene។");
   }
 
+  function handleExportJSON() {
+    if (!objects.length) {
+      setMessage("សូមបន្ថែមវត្ថុ 3D មុនពេល Export JSON។");
+      return;
+    }
+    try {
+      const name = sceneName.trim() || "scene";
+      const snapshot: SceneSnapshot = {
+        id: currentSceneId ?? createId(),
+        name,
+        objects,
+        ambientIntensity,
+        directionalIntensity,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
+      const payload = serializeSceneSnapshot(snapshot);
+      const text = JSON.stringify(payload, null, 2);
+      const blob = new Blob([text], { type: "application/json" });
+      const safeName = name.replace(/[^\w\-]+/g, "_").slice(0, 40) || "scene";
+      const filename = `KHOEM-AI-${safeName}-${Date.now()}.json`;
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 3000);
+
+      setMessage(`បាន Export Scene ជា JSON: ${filename}`);
+    } catch (error) {
+      console.error("Scene JSON export failed:", error);
+      setMessage(
+        error instanceof Error
+          ? `Export JSON failed: ${error.message}`
+          : "មិនអាច Export JSON បានទេ។"
+      );
+    }
+  }
+
+  function handleImportJSONFile(file: File) {
+    if (!file) return;
+    const reader = new FileReader();
+
+    reader.onerror = () => {
+      setMessage("មិនអាចអានឯកសារបានទេ។");
+    };
+
+    reader.onload = () => {
+      const text = typeof reader.result === "string" ? reader.result : "";
+      if (!text.trim()) {
+        setMessage("ឯកសារ JSON ទទេ។");
+        return;
+      }
+
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(text);
+      } catch (error) {
+        console.error("JSON parse failed:", error);
+        setMessage("ឯកសារ JSON មិនត្រឹមត្រូវ (parse error)។");
+        return;
+      }
+
+      const result = parseImportedScene(parsed);
+      if (!result.ok) {
+        setMessage(`Import បរាជ័យ: ${result.error}`);
+        return;
+      }
+
+      const snapshot = result.data;
+      const importedObjects = snapshot.objects as SceneObject[];
+      setObjects(importedObjects);
+      setAmbientIntensity(snapshot.ambientIntensity);
+      setDirectionalIntensity(snapshot.directionalIntensity);
+      setSceneName(snapshot.name);
+      setCurrentSceneId(null);
+      setSelectedId(importedObjects[importedObjects.length - 1]?.id ?? null);
+      setHistory({ past: [], future: [] });
+      setMessage(
+        `បាន Import Scene "${snapshot.name}" (${importedObjects.length} វត្ថុ)។`
+      );
+    };
+
+    reader.readAsText(file);
+  }
+
+  function handleImportJSON(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      setMessage("ឯកសារធំពេក (max 2MB)។");
+      return;
+    }
+    handleImportJSONFile(file);
+  }
+
   function updateSelected(
     key: "position" | "rotation" | "scale",
     axis: keyof Vector3,
@@ -654,6 +762,28 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
               >
                 {currentSceneId ? "Update Scene" : "Save Scene"}
               </button>
+              <button
+                type="button"
+                className="filter"
+                onClick={handleExportJSON}
+                disabled={!objects.length}
+              >
+                Export JSON
+              </button>
+              <button
+                type="button"
+                className="filter"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                Import JSON
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="application/json,.json"
+                onChange={handleImportJSON}
+                style={{ display: "none" }}
+              />
             </div>
 
             {savedScenes.length === 0 ? (
