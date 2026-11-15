@@ -3,6 +3,13 @@ import { saveAsset } from "../lib/storage.mjs";
 
 type Shape = "box" | "sphere" | "cone" | "cylinder" | "torus";
 
+type SceneObject = {
+  id: string;
+  name: string;
+  shape: Shape;
+  color: string;
+};
+
 const presets: { name: string; shape: Shape }[] = [
   { name: "Cube", shape: "box" },
   { name: "Sphere", shape: "sphere" },
@@ -36,20 +43,43 @@ type Studio3DProps = {
   onAssetSaved?: (asset: StudioAsset) => void;
 };
 
+function createId() {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
 export default function Studio3D({ onAssetSaved }: Studio3DProps) {
   const canvasHost = useRef<HTMLDivElement>(null);
-  const [shape, setShape] = useState<Shape>("box");
-  const [color, setColor] = useState("#168de2");
+  const sceneRef = useRef<import("three").Scene | null>(null);
+  const rendererRef = useRef<import("three").WebGLRenderer | null>(null);
+  const meshesRef = useRef(
+    new Map<string, import("three").Mesh>()
+  );
+
+  const [objects, setObjects] = useState<SceneObject[]>([
+    {
+      id: createId(),
+      name: "Cube 1",
+      shape: "box",
+      color: "#168de2",
+    },
+  ]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [newShape, setNewShape] = useState<Shape>("box");
   const [mode, setMode] = useState<"object" | "ui">("object");
+  const [sceneReady, setSceneReady] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [message, setMessage] = useState("");
 
+  const selectedObject = objects.find(
+    (item) => item.id === selectedId
+  );
+
+  // Create the Three.js scene and renderer once.
   useEffect(() => {
     let renderer: import("three").WebGLRenderer | undefined;
     let frame = 0;
     let observer: ResizeObserver | undefined;
     let cleanup = false;
-    let mesh: import("three").Mesh | undefined;
     let scene: import("three").Scene | undefined;
     let camera: import("three").PerspectiveCamera | undefined;
 
@@ -61,7 +91,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       scene.background = new THREE.Color("#080f1b");
 
       camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
-      camera.position.set(3, 2.5, 5);
+      camera.position.set(4, 3, 7);
       camera.lookAt(0, 0, 0);
 
       renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -74,18 +104,18 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       light.position.set(4, 5, 4);
       scene.add(light);
 
-      const floor = new THREE.GridHelper(10, 10, 0x31516e, 0x1b2b40);
+      const floor = new THREE.GridHelper(
+        12,
+        12,
+        0x31516e,
+        0x1b2b40
+      );
       floor.position.y = -1.2;
       scene.add(floor);
 
-      const material = new THREE.MeshStandardMaterial({
-        color,
-        metalness: 0.25,
-        roughness: 0.35,
-      });
-
-      mesh = new THREE.Mesh(createGeometry(THREE, shape), material);
-      scene.add(mesh);
+      sceneRef.current = scene;
+      rendererRef.current = renderer;
+      setSceneReady(true);
 
       const resize = () => {
         if (!renderer || !camera || !canvasHost.current) return;
@@ -103,8 +133,12 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       resize();
 
       const animate = () => {
-        if (cleanup || !renderer || !scene || !camera || !mesh) return;
-        mesh.rotation.y += 0.006;
+        if (cleanup || !renderer || !scene || !camera) return;
+
+        meshesRef.current.forEach((mesh) => {
+          mesh.rotation.y += 0.003;
+        });
+
         renderer.render(scene, camera);
         frame = requestAnimationFrame(animate);
       };
@@ -122,7 +156,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       cancelAnimationFrame(frame);
       observer?.disconnect();
 
-      if (mesh) {
+      meshesRef.current.forEach((mesh) => {
         mesh.geometry.dispose();
         const material = mesh.material;
         if (Array.isArray(material)) {
@@ -130,18 +164,150 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
         } else {
           material.dispose();
         }
-      }
+      });
+      meshesRef.current.clear();
 
       renderer?.dispose();
       renderer?.domElement.remove();
+
+      sceneRef.current = null;
+      rendererRef.current = null;
     };
-  }, [shape, color]);
+  }, []);
+
+  // Rebuild scene objects when the object list or selection changes.
+  useEffect(() => {
+    let cancelled = false;
+
+    async function updateScene() {
+      const THREE = await import("three");
+      if (cancelled) return;
+
+      const scene = sceneRef.current;
+      if (!sceneReady || !scene) return;
+
+      meshesRef.current.forEach((mesh) => {
+        scene.remove(mesh);
+        mesh.geometry.dispose();
+
+        const material = mesh.material;
+        if (Array.isArray(material)) {
+          material.forEach((item) => item.dispose());
+        } else {
+          material.dispose();
+        }
+      });
+      meshesRef.current.clear();
+
+      objects.forEach((item, index) => {
+        const material = new THREE.MeshStandardMaterial({
+          color: item.color,
+          metalness: 0.25,
+          roughness: 0.35,
+          emissive:
+            item.id === selectedId
+              ? new THREE.Color("#183b60")
+              : new THREE.Color("#000000"),
+        });
+
+        const mesh = new THREE.Mesh(
+          createGeometry(THREE, item.shape),
+          material
+        );
+
+        const columns = 3;
+        const spacing = 2.5;
+        mesh.position.x =
+          ((index % columns) - 1) * spacing;
+        mesh.position.z =
+          Math.floor(index / columns) * spacing;
+
+        mesh.userData.objectId = item.id;
+        scene.add(mesh);
+        meshesRef.current.set(item.id, mesh);
+      });
+    }
+
+    updateScene().catch((error) => {
+      console.error("Scene update failed:", error);
+      setMessage("មិនអាចធ្វើបច្ចុប្បន្នភាព Scene បានទេ។");
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [objects, selectedId, sceneReady]);
+
+  function addObject() {
+    const preset = presets.find(
+      (item) => item.shape === newShape
+    );
+
+    const count =
+      objects.filter((item) => item.shape === newShape).length + 1;
+
+    const nextObject: SceneObject = {
+      id: createId(),
+      name: `${preset?.name ?? "Object"} ${count}`,
+      shape: newShape,
+      color: "#168de2",
+    };
+
+    setObjects((current) => [...current, nextObject]);
+    setSelectedId(nextObject.id);
+    setMessage(`បានបន្ថែម ${nextObject.name}។`);
+  }
+
+  function duplicateObject() {
+    if (!selectedObject) return;
+
+    const copy: SceneObject = {
+      ...selectedObject,
+      id: createId(),
+      name: `${selectedObject.name} Copy`,
+    };
+
+    setObjects((current) => [...current, copy]);
+    setSelectedId(copy.id);
+    setMessage(`បានចម្លង ${copy.name}។`);
+  }
+
+  function deleteObject() {
+    if (!selectedId) return;
+
+    const remaining = objects.filter(
+      (item) => item.id !== selectedId
+    );
+
+    setObjects(remaining);
+    setSelectedId(remaining[remaining.length - 1]?.id ?? null);
+    setMessage("បានលុបវត្ថុដែលបានជ្រើស។");
+  }
+
+  function updateSelectedColor(value: string) {
+    if (!selectedId) return;
+
+    setObjects((current) =>
+      current.map((item) =>
+        item.id === selectedId
+          ? { ...item, color: value }
+          : item
+      )
+    );
+  }
 
   async function exportGLB() {
     if (exporting) return;
 
+    if (objects.length === 0) {
+      setMessage("សូមបន្ថែមវត្ថុ 3D មុនពេល Export។");
+      return;
+    }
+
     setExporting(true);
     setMessage("កំពុងបង្កើតឯកសារ GLB...");
+
+    let exportScene: import("three").Scene | undefined;
 
     try {
       const THREE = await import("three");
@@ -149,46 +315,56 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
         "three/examples/jsm/exporters/GLTFExporter.js"
       );
 
-      const scene = new THREE.Scene();
+      exportScene = new THREE.Scene();
 
-      const material = new THREE.MeshStandardMaterial({
-        color,
-        metalness: 0.25,
-        roughness: 0.35,
+      objects.forEach((item, index) => {
+        const material = new THREE.MeshStandardMaterial({
+          color: item.color,
+          metalness: 0.25,
+          roughness: 0.35,
+        });
+
+        const mesh = new THREE.Mesh(
+          createGeometry(THREE, item.shape),
+          material
+        );
+
+        mesh.position.x = ((index % 3) - 1) * 2.5;
+        mesh.position.z = Math.floor(index / 3) * 2.5;
+        mesh.name = item.name;
+        exportScene?.add(mesh);
       });
 
-      const mesh = new THREE.Mesh(
-        createGeometry(THREE, shape),
-        material
-      );
-
-      scene.add(mesh);
-      scene.updateMatrixWorld(true);
+      exportScene.updateMatrixWorld(true);
 
       const exporter = new GLTFExporter();
 
-      const result = await new Promise<ArrayBuffer>((resolve, reject) => {
-        exporter.parse(
-          scene,
-          (output) => {
-            if (output instanceof ArrayBuffer) {
-              resolve(output);
-            } else {
-              reject(new Error("GLB binary output was not returned."));
-            }
-          },
-          (error) => reject(error),
-          { binary: true }
-        );
-      });
+      const result = await new Promise<ArrayBuffer>(
+        (resolve, reject) => {
+          exporter.parse(
+            exportScene!,
+            (output) => {
+              if (output instanceof ArrayBuffer) {
+                resolve(output);
+              } else {
+                reject(
+                  new Error("GLB binary output was not returned.")
+                );
+              }
+            },
+            (error) => reject(error),
+            { binary: true }
+          );
+        }
+      );
 
-      const filename = `KHOEM-AI-${shape}-${Date.now()}.glb`;
+      const filename = `KHOEM-AI-scene-${Date.now()}.glb`;
       const file = new File([result], filename, {
         type: "model/gltf-binary",
       });
 
       const savedAsset: StudioAsset = {
-        id: `${Date.now()}-${Math.random()}`,
+        id: createId(),
         file,
         kind: "model",
       };
@@ -205,10 +381,9 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       link.remove();
       window.setTimeout(() => URL.revokeObjectURL(url), 3000);
 
-      setMessage(`បានរក្សាទុក ${filename} ក្នុង Asset Library និងទាញយករួចរាល់។`);
-
-      mesh.geometry.dispose();
-      material.dispose();
+      setMessage(
+        `បាន Export វត្ថុ ${objects.length} ក្នុង GLB និងរក្សាទុកក្នុង Asset Library រួចរាល់។`
+      );
     } catch (error) {
       console.error("GLB export failed:", error);
       setMessage(
@@ -228,7 +403,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
           <p className="eyebrow">KHOEM-AI CREATION WORKSPACE</p>
           <h2>3D Studio</h2>
           <p className="description">
-            បង្កើត និងមើលវត្ថុ 3D ព្រមទាំងរចនា UI។
+            បង្កើត និងគ្រប់គ្រងវត្ថុ 3D ច្រើនក្នុង Scene តែមួយ។
           </p>
         </div>
         <span className="file-type">3D WORKSPACE</span>
@@ -253,11 +428,11 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
         <>
           <div className="studio-controls">
             <label>
-              Object Type
+              Add Object
               <select
-                value={shape}
+                value={newShape}
                 onChange={(event) =>
-                  setShape(event.target.value as Shape)
+                  setNewShape(event.target.value as Shape)
                 }
               >
                 {presets.map((item) => (
@@ -268,28 +443,97 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
               </select>
             </label>
 
-            <label>
-              Material Color
-              <input
-                type="color"
-                value={color}
-                onChange={(event) => setColor(event.target.value)}
-              />
-            </label>
+            <button
+              type="button"
+              className="upload-button"
+              onClick={addObject}
+            >
+              + Add Object
+            </button>
           </div>
 
           <div className="studio-canvas" ref={canvasHost}>
             <span className="studio-hint">3D LIVE PREVIEW</span>
           </div>
 
+          <div className="studio-object-manager">
+            <h3>Scene Objects ({objects.length})</h3>
+
+            {objects.length === 0 ? (
+              <p className="studio-note">
+                មិនទាន់មានវត្ថុទេ។ សូមចុច Add Object។
+              </p>
+            ) : (
+              <div className="studio-object-list">
+                {objects.map((item) => (
+                  <button
+                    type="button"
+                    key={item.id}
+                    className={
+                      selectedId === item.id
+                        ? "studio-object-item selected"
+                        : "studio-object-item"
+                    }
+                    onClick={() => setSelectedId(item.id)}
+                  >
+                    <span
+                      className="studio-object-swatch"
+                      style={{ backgroundColor: item.color }}
+                    />
+                    <span>{item.name}</span>
+                    <small>{item.shape}</small>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {selectedObject && (
+            <div className="studio-controls">
+              <label>
+                Selected Object
+                <input value={selectedObject.name} readOnly />
+              </label>
+
+              <label>
+                Material Color
+                <input
+                  type="color"
+                  value={selectedObject.color}
+                  onChange={(event) =>
+                    updateSelectedColor(event.target.value)
+                  }
+                />
+              </label>
+
+              <button
+                type="button"
+                className="filter"
+                onClick={duplicateObject}
+              >
+                Duplicate
+              </button>
+
+              <button
+                type="button"
+                className="filter"
+                onClick={deleteObject}
+              >
+                Delete
+              </button>
+            </div>
+          )}
+
           <div className="studio-export">
             <button
               type="button"
               className="upload-button"
               onClick={exportGLB}
-              disabled={exporting}
+              disabled={exporting || objects.length === 0}
             >
-              {exporting ? "Exporting..." : "Export GLB + Save Library"}
+              {exporting
+                ? "Exporting..."
+                : `Export ${objects.length} Object(s) as GLB`}
             </button>
           </div>
 
@@ -300,8 +544,8 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
           )}
 
           <p className="studio-note">
-            អាច Export រាង 3D មូលដ្ឋានទាំង ៥ ជាឯកសារ GLB។
-            ឯកសារនឹងត្រូវបានរក្សាទុកក្នុង Asset Library។
+            អាចបន្ថែម ជ្រើសរើស ប្ដូរពណ៌ ចម្លង និងលុបវត្ថុ 3D។
+            Export GLB នឹងរួមបញ្ចូលវត្ថុទាំងអស់ក្នុង Scene។
           </p>
         </>
       ) : (
