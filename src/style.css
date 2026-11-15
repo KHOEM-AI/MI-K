@@ -337,3 +337,29 @@ footer span {
     height: 330px;
   }
 }
+
+.backup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.backup-actions .upload-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.backup-actions button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.backup-message {
+  margin-top: 10px;
+  font-size: 13px;
+  color: #8fd9b5;
+  overflow-wrap: anywhere;
+}
