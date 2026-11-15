@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { saveAsset } from "../lib/storage.mjs";
+import { listScenes, saveScene, deleteScene, loadScene } from "../lib/sceneStorage.mjs";
+import type { SceneSnapshot } from "../lib/sceneStorage.mjs";
 
 type Shape = "box" | "sphere" | "cone" | "cylinder" | "torus";
 type Vector3 = { x: number; y: number; z: number };
@@ -101,6 +103,9 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
   const [message, setMessage] = useState("");
   const [ambientIntensity, setAmbientIntensity] = useState(2);
   const [directionalIntensity, setDirectionalIntensity] = useState(3);
+  const [sceneName, setSceneName] = useState("");
+  const [savedScenes, setSavedScenes] = useState<SceneSnapshot[]>([]);
+  const [currentSceneId, setCurrentSceneId] = useState<string | null>(null);
 
   const selectedObject = objects.find((item) => item.id === selectedId);
 
@@ -227,6 +232,10 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
   }, []);
 
   useEffect(() => {
+    refreshSavedScenes();
+  }, []);
+
+  useEffect(() => {
     if (!sceneReady) return;
     if (hemiLightRef.current) hemiLightRef.current.intensity = ambientIntensity;
     if (dirLightRef.current) dirLightRef.current.intensity = directionalIntensity;
@@ -344,6 +353,66 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
     commitObjects(remaining);
     setSelectedId(remaining[remaining.length - 1]?.id ?? null);
     setMessage("បានលុបវត្ថុដែលបានជ្រើស។");
+  }
+
+  function refreshSavedScenes() {
+    setSavedScenes(listScenes());
+  }
+
+  function handleSaveScene() {
+    const name = sceneName.trim() || `Scene ${new Date().toLocaleString()}`;
+    const now = Date.now();
+    const id = currentSceneId ?? createId();
+    const existing = savedScenes.find((item) => item.id === id);
+    const snapshot: SceneSnapshot = {
+      id,
+      name,
+      objects,
+      ambientIntensity,
+      directionalIntensity,
+      createdAt: existing?.createdAt ?? now,
+      updatedAt: now,
+    };
+    const ok = saveScene(snapshot);
+    if (ok) {
+      refreshSavedScenes();
+      setCurrentSceneId(id);
+      setMessage(`បានរក្សាទុក "${name}"។`);
+    } else {
+      setMessage("មិនអាចរក្សាទុក Scene បានទេ។");
+    }
+  }
+
+  function handleLoadScene(id: string) {
+    const snapshot = loadScene(id);
+    if (!snapshot) {
+      setMessage("រកមិនឃើញ Scene នេះទេ។");
+      return;
+    }
+    const parsed = snapshot.objects as SceneObject[];
+    setObjects(parsed);
+    setAmbientIntensity(snapshot.ambientIntensity);
+    setDirectionalIntensity(snapshot.directionalIntensity);
+    setSceneName(snapshot.name);
+    setCurrentSceneId(snapshot.id);
+    setSelectedId(parsed[parsed.length - 1]?.id ?? null);
+    setHistory({ past: [], future: [] });
+    setMessage(`បានបើក "${snapshot.name}"។`);
+  }
+
+  function handleDeleteScene(id: string) {
+    if (!window.confirm("លុប Scene នេះទេ?")) return;
+    const ok = deleteScene(id);
+    if (!ok) {
+      setMessage("មិនអាចលុប Scene បានទេ។");
+      return;
+    }
+    refreshSavedScenes();
+    if (currentSceneId === id) {
+      setCurrentSceneId(null);
+      setSceneName("");
+    }
+    setMessage("បានលុប Scene។");
   }
 
   function updateSelected(
@@ -564,6 +633,66 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             <button type="button" className="filter" onClick={redo} disabled={!history.future.length}>
               ↷ Redo
             </button>
+          </div>
+
+          <div className="studio-transform-panel">
+            <h3>Scene Manager</h3>
+            <div className="studio-controls">
+              <label>
+                Scene Name
+                <input
+                  type="text"
+                  placeholder="My Scene"
+                  value={sceneName}
+                  onChange={(event) => setSceneName(event.target.value)}
+                />
+              </label>
+              <button
+                type="button"
+                className="upload-button"
+                onClick={handleSaveScene}
+              >
+                {currentSceneId ? "Update Scene" : "Save Scene"}
+              </button>
+            </div>
+
+            {savedScenes.length === 0 ? (
+              <p className="studio-note">
+                មិនទាន់មាន Scene ដែលបានរក្សាទុកទេ។ សូមដាក់ឈ្មោះ ហើយចុច Save Scene។
+              </p>
+            ) : (
+              <div className="studio-object-list">
+                {savedScenes.map((scene) => (
+                  <div
+                    key={scene.id}
+                    className={
+                      currentSceneId === scene.id
+                        ? "studio-object-item selected"
+                        : "studio-object-item"
+                    }
+                  >
+                    <span>{scene.name}</span>
+                    <small>
+                      {(scene.objects as SceneObject[]).length} obj
+                    </small>
+                    <button
+                      type="button"
+                      className="filter"
+                      onClick={() => handleLoadScene(scene.id)}
+                    >
+                      Load
+                    </button>
+                    <button
+                      type="button"
+                      className="filter"
+                      onClick={() => handleDeleteScene(scene.id)}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="studio-canvas" ref={canvasHost}>
