@@ -169,7 +169,14 @@ export default function App() {
 
       {studioOpen && (
         <Suspense fallback={<div className="studio-panel">Loading 3D Studio...</div>}>
-          <Studio3D />
+          <Studio3D
+            onAssetSaved={(asset) => {
+              setAssets((old) => [...old, asset]);
+              setSelected(asset);
+              setFilter("all");
+              setSearch("");
+            }}
+          />
         </Suspense>
       )}
 

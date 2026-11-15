@@ -26,7 +26,17 @@ function createGeometry(THREE: typeof import("three"), shape: Shape) {
   }
 }
 
-export default function Studio3D() {
+type StudioAsset = {
+  id: string;
+  file: File;
+  kind: "model";
+};
+
+type Studio3DProps = {
+  onAssetSaved?: (asset: StudioAsset) => void;
+};
+
+export default function Studio3D({ onAssetSaved }: Studio3DProps) {
   const canvasHost = useRef<HTMLDivElement>(null);
   const [shape, setShape] = useState<Shape>("box");
   const [color, setColor] = useState("#168de2");
@@ -177,11 +187,14 @@ export default function Studio3D() {
         type: "model/gltf-binary",
       });
 
-      await saveAsset({
+      const savedAsset: StudioAsset = {
         id: `${Date.now()}-${Math.random()}`,
         file,
         kind: "model",
-      });
+      };
+
+      await saveAsset(savedAsset);
+      onAssetSaved?.(savedAsset);
 
       const url = URL.createObjectURL(file);
       const link = document.createElement("a");
