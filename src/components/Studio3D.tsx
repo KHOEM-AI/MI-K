@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Eye, EyeOff, Lock, Unlock, Pencil } from "lucide-react";
+import { Eye, EyeOff, Lock, Unlock, Pencil, Sun, Moon, Lightbulb } from "lucide-react";
 import { saveAsset } from "../lib/storage.mjs";
 import {
   listScenes,
@@ -763,6 +763,20 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
     setMessage(`បានប្តូរមុំមើលទៅ ${preset.toUpperCase()}។`);
   }
 
+  function setLightingPreset(preset: "day" | "night" | "studio") {
+    if (preset === "day") {
+      setAmbientIntensity(2.0);
+      setDirectionalIntensity(3.0);
+    } else if (preset === "night") {
+      setAmbientIntensity(0.3);
+      setDirectionalIntensity(1.0);
+    } else {
+      setAmbientIntensity(1.5);
+      setDirectionalIntensity(5.0);
+    }
+    setMessage(`បានប្តូរពន្លឺទៅ ${preset.toUpperCase()}។`);
+  }
+
   function updateSelected(
     key: "position" | "rotation" | "scale",
     axis: keyof Vector3,
@@ -1166,6 +1180,32 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
 
           <div className="studio-transform-panel">
             <h3>Scene Lighting</h3>
+            <div className="studio-controls" style={{ marginBottom: "8px", display: "flex", gap: "8px" }}>
+              <button
+                type="button"
+                className="filter"
+                onClick={() => setLightingPreset("day")}
+                style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
+              >
+                <Sun size={16} color="#fbbf24" /> Day
+              </button>
+              <button
+                type="button"
+                className="filter"
+                onClick={() => setLightingPreset("night")}
+                style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
+              >
+                <Moon size={16} color="#818cf8" /> Night
+              </button>
+              <button
+                type="button"
+                className="filter"
+                onClick={() => setLightingPreset("studio")}
+                style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
+              >
+                <Lightbulb size={16} color="#facc15" /> Studio
+              </button>
+            </div>
             <div className="studio-controls">
               <label>
                 Ambient Light: {ambientIntensity.toFixed(2)}
