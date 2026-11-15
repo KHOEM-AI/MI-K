@@ -522,3 +522,263 @@ footer span {
     height: 330px;
   }
 }
+
+/* KHOEM-AI original SVG icon controls */
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 13px;
+  border: 1px solid #398fc5;
+  border-radius: 10px;
+  background: #172d45;
+  color: #ffd166;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.theme-toggle:active {
+  transform: scale(.96);
+}
+
+.k-icon {
+  display: block;
+  flex: 0 0 auto;
+}
+
+.k-icon-sun {
+  color: #f5b942;
+}
+
+.k-icon-moon {
+  color: #829cff;
+}
+
+.k-icon-flashlight {
+  color: #f5b942;
+}
+
+.k-icon-car {
+  color: #43b9ff;
+}
+
+.k-icon-cube {
+  color: #55d6ad;
+}
+
+.brand-icons {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin-top: 14px;
+}
+
+.brand-icons span {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid #304c68;
+  border-radius: 11px;
+  background: #17283d;
+}
+
+/* DAY MODE */
+:root[data-theme="day"] body {
+  background: #eef3f9;
+  color: #17283d;
+}
+
+:root[data-theme="day"] .topbar,
+:root[data-theme="day"] .upload-panel,
+:root[data-theme="day"] .stat-card,
+:root[data-theme="day"] .library,
+:root[data-theme="day"] .preview-panel,
+:root[data-theme="day"] .studio-launch,
+:root[data-theme="day"] .studio-panel {
+  background: #ffffff;
+  border-color: #d3dfeb;
+}
+
+:root[data-theme="day"] .status {
+  background: #e2edf8;
+  color: #23638f;
+}
+
+:root[data-theme="day"] .description,
+:root[data-theme="day"] .upload-panel p,
+:root[data-theme="day"] .studio-launch p:not(.eyebrow),
+:root[data-theme="day"] .studio-note {
+  color: #536b83;
+}
+
+:root[data-theme="day"] .filter,
+:root[data-theme="day"] .studio-controls select {
+  background: #edf3f9;
+  border-color: #cbd9e8;
+  color: #243b53;
+}
+
+:root[data-theme="day"] .asset-row {
+  background: #edf3f9;
+}
+
+:root[data-theme="day"] .asset-name {
+  color: #17283d;
+}
+
+:root[data-theme="day"] .preview-stage,
+:root[data-theme="day"] .studio-canvas {
+  background: #e4edf7;
+  border-color: #cbd9e8;
+}
+
+:root[data-theme="day"] .empty-preview {
+  color: #526b84;
+}
+
+:root[data-theme="day"] .empty-preview h3 {
+  color: #17283d;
+}
+
+:root[data-theme="day"] .brand-icons span {
+  background: #edf3f9;
+  border-color: #d0dfed;
+}
+
+:root[data-theme="day"] .theme-toggle {
+  background: #fff4d8;
+  color: #a66b00;
+  border-color: #e9c36d;
+}
+
+:root[data-theme="day"] .ui-design-preview {
+  background: radial-gradient(circle, #d5e9fa, #f4f8fd 75%);
+}
+
+:root[data-theme="day"] .ui-card-preview {
+  background: linear-gradient(145deg, #e4f1fc, #ffffff);
+  border-color: #b8d0e6;
+}
+
+@media (max-width: 600px) {
+  .topbar-actions {
+    gap: 6px;
+  }
+
+  .topbar-actions .status {
+    display: none;
+  }
+
+  .theme-toggle {
+    padding: 8px;
+  }
+
+  .theme-toggle span {
+    font-size: 12px;
+  }
+}
+
+/* KHOEM-AI ORIGINAL SVG ANIMATIONS */
+
+.k-icon {
+  transform-box: fill-box;
+  transform-origin: center;
+  will-change: transform;
+}
+
+/* Sun: slow rotation */
+.k-icon-sun {
+  animation: khoemSunRotate 12s linear infinite;
+}
+
+@keyframes khoemSunRotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Moon: gentle floating */
+.k-icon-moon {
+  animation: khoemMoonFloat 3s ease-in-out infinite;
+}
+
+@keyframes khoemMoonFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+/* Flashlight: soft light pulse */
+.k-icon-flashlight {
+  animation: khoemFlashPulse 2.5s ease-in-out infinite;
+}
+
+@keyframes khoemFlashPulse {
+  0%, 100% {
+    opacity: .75;
+    filter: drop-shadow(0 0 0 transparent);
+  }
+  50% {
+    opacity: 1;
+    filter: drop-shadow(0 0 5px currentColor);
+  }
+}
+
+/* Car: gentle movement */
+.k-icon-car {
+  animation: khoemCarMove 1.8s ease-in-out infinite;
+}
+
+@keyframes khoemCarMove {
+  0%, 100% { transform: translateY(0); }
+  25% { transform: translateY(-1.5px); }
+  75% { transform: translateY(1px); }
+}
+
+/* 3D object: subtle rotation */
+.k-icon-cube {
+  animation: khoemCubeRotate 6s ease-in-out infinite;
+}
+
+@keyframes khoemCubeRotate {
+  0%, 100% { transform: rotateY(0deg) rotateZ(0deg); }
+  50% { transform: rotateY(18deg) rotateZ(8deg); }
+}
+
+/* Hover interaction */
+.brand-icons span {
+  transition:
+    transform .25s ease,
+    border-color .25s ease,
+    box-shadow .25s ease;
+}
+
+.brand-icons span:hover {
+  transform: translateY(-4px) scale(1.08);
+  border-color: #43b9ff;
+  box-shadow: 0 5px 18px #168de244;
+}
+
+.theme-toggle .k-icon {
+  transition: transform .4s ease;
+}
+
+.theme-toggle:active .k-icon {
+  transform: rotate(35deg) scale(1.12);
+}
+
+/* Accessibility: respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .k-icon,
+  .brand-icons span,
+  .theme-toggle .k-icon {
+    animation: none !important;
+    transition: none !important;
+  }
+}
