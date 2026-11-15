@@ -103,6 +103,7 @@ export function serializeSceneSnapshot(snapshot) {
       objects: snapshot.objects,
       ambientIntensity: snapshot.ambientIntensity,
       directionalIntensity: snapshot.directionalIntensity,
+      backgroundColor: snapshot.backgroundColor,
     },
   };
 }
@@ -162,6 +163,11 @@ export function parseImportedScene(raw) {
       directionalIntensity: isFiniteNumber(maybeScene.directionalIntensity)
         ? clamp(maybeScene.directionalIntensity, 0, 10)
         : 3,
+      backgroundColor:
+        typeof maybeScene.backgroundColor === "string" &&
+        /^#[0-9a-fA-F]{6}$/.test(maybeScene.backgroundColor)
+          ? maybeScene.backgroundColor
+          : "#080f1b",
       createdAt: now,
       updatedAt: now,
     },

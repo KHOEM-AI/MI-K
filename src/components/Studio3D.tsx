@@ -63,12 +63,14 @@ function createId() {
 function serializeForBaseline(
   objs: SceneObject[],
   ambient: number,
-  directional: number
+  directional: number,
+  bg: string
 ): string {
   return JSON.stringify({
     objects: objs,
     ambientIntensity: ambient,
     directionalIntensity: directional,
+    backgroundColor: bg,
   });
 }
 
@@ -146,6 +148,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
   const [currentSceneId, setCurrentSceneId] = useState<string | null>(null);
   const [pendingAutobackup, setPendingAutobackup] = useState<AutobackupData | null>(null);
   const [snapToGrid, setSnapToGrid] = useState(false);
+  const [bgColor, setBgColor] = useState("#080f1b");
   const baselineRef = useRef<string>("");
   const autosaveTimerRef = useRef<number | null>(null);
 
@@ -283,14 +286,16 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
     baselineRef.current = serializeForBaseline(
       objects,
       ambientIntensity,
-      directionalIntensity
+      directionalIntensity,
+      bgColor
     );
     const backup = readAutobackup();
     if (backup) {
       const backupBaseline = serializeForBaseline(
         backup.objects as SceneObject[],
         backup.ambientIntensity,
-        backup.directionalIntensity
+        backup.directionalIntensity,
+        backup.backgroundColor || "#080f1b"
       );
       if (backupBaseline !== baselineRef.current) {
         setPendingAutobackup(backup);
@@ -308,6 +313,15 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
   }, [ambientIntensity, directionalIntensity, sceneReady]);
 
   useEffect(() => {
+    if (!sceneReady || !sceneRef.current) return;
+    import("three").then((THREE) => {
+      if (sceneRef.current) {
+        sceneRef.current.background = new THREE.Color(bgColor);
+      }
+    });
+  }, [bgColor, sceneReady]);
+
+  useEffect(() => {
     if (!sceneReady) return;
     if (autosaveTimerRef.current) {
       window.clearTimeout(autosaveTimerRef.current);
@@ -316,7 +330,8 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       const current = serializeForBaseline(
         objects,
         ambientIntensity,
-        directionalIntensity
+        directionalIntensity,
+        bgColor
       );
       if (current === baselineRef.current) return;
       writeAutobackup({
@@ -325,6 +340,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
         directionalIntensity,
         sceneName,
         currentSceneId,
+        backgroundColor: bgColor,
         savedAt: Date.now(),
       });
     }, 2000);
@@ -339,6 +355,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
     directionalIntensity,
     sceneName,
     currentSceneId,
+    bgColor,
     sceneReady,
   ]);
 
@@ -490,6 +507,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       objects,
       ambientIntensity,
       directionalIntensity,
+      backgroundColor: bgColor,
       createdAt: existing?.createdAt ?? now,
       updatedAt: now,
     };
@@ -500,7 +518,8 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       baselineRef.current = serializeForBaseline(
         objects,
         ambientIntensity,
-        directionalIntensity
+        directionalIntensity,
+        bgColor
       );
       clearAutobackup();
       setPendingAutobackup(null);
@@ -520,6 +539,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
     setObjects(parsed);
     setAmbientIntensity(snapshot.ambientIntensity);
     setDirectionalIntensity(snapshot.directionalIntensity);
+    setBgColor(snapshot.backgroundColor || "#080f1b");
     setSceneName(snapshot.name);
     setCurrentSceneId(snapshot.id);
     setSelectedId(parsed[parsed.length - 1]?.id ?? null);
@@ -527,7 +547,8 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
     baselineRef.current = serializeForBaseline(
       parsed,
       snapshot.ambientIntensity,
-      snapshot.directionalIntensity
+      snapshot.directionalIntensity,
+      snapshot.backgroundColor || "#080f1b"
     );
     clearAutobackup();
     setPendingAutobackup(null);
@@ -626,6 +647,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       setObjects(importedObjects);
       setAmbientIntensity(snapshot.ambientIntensity);
       setDirectionalIntensity(snapshot.directionalIntensity);
+      setBgColor(snapshot.backgroundColor || "#080f1b");
       setSceneName(snapshot.name);
       setCurrentSceneId(null);
       setSelectedId(importedObjects[importedObjects.length - 1]?.id ?? null);
@@ -633,7 +655,8 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       baselineRef.current = serializeForBaseline(
         importedObjects,
         snapshot.ambientIntensity,
-        snapshot.directionalIntensity
+        snapshot.directionalIntensity,
+        snapshot.backgroundColor || "#080f1b"
       );
       clearAutobackup();
       setPendingAutobackup(null);
@@ -662,6 +685,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
     setObjects(restored);
     setAmbientIntensity(pendingAutobackup.ambientIntensity);
     setDirectionalIntensity(pendingAutobackup.directionalIntensity);
+    setBgColor(pendingAutobackup.backgroundColor || "#080f1b");
     setSceneName(pendingAutobackup.sceneName);
     setCurrentSceneId(pendingAutobackup.currentSceneId);
     setSelectedId(restored[restored.length - 1]?.id ?? null);
@@ -669,7 +693,8 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
     baselineRef.current = serializeForBaseline(
       restored,
       pendingAutobackup.ambientIntensity,
-      pendingAutobackup.directionalIntensity
+      pendingAutobackup.directionalIntensity,
+      pendingAutobackup.backgroundColor || "#080f1b"
     );
     clearAutobackup();
     setPendingAutobackup(null);
@@ -1205,6 +1230,16 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
               >
                 <Lightbulb size={16} color="#facc15" /> Studio
               </button>
+            </div>
+            <div className="studio-controls" style={{ marginBottom: "8px" }}>
+              <label>
+                Background Color
+                <input
+                  type="color"
+                  value={bgColor}
+                  onChange={(event) => setBgColor(event.target.value)}
+                />
+              </label>
             </div>
             <div className="studio-controls">
               <label>

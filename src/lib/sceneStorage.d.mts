@@ -4,6 +4,7 @@ export type SceneSnapshot = {
   objects: unknown[];
   ambientIntensity: number;
   directionalIntensity: number;
+  backgroundColor?: string;
   createdAt: number;
   updatedAt: number;
 };
@@ -17,6 +18,7 @@ export type SceneExport = {
     objects: unknown[];
     ambientIntensity: number;
     directionalIntensity: number;
+    backgroundColor?: string;
   };
 };
 
@@ -37,6 +39,7 @@ export type AutobackupData = {
   directionalIntensity: number;
   sceneName: string;
   currentSceneId: string | null;
+  backgroundColor?: string;
   savedAt: number;
 };
 
