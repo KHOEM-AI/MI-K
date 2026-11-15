@@ -7,8 +7,14 @@ import {
   loadScene,
   serializeSceneSnapshot,
   parseImportedScene,
+  writeAutobackup,
+  readAutobackup,
+  clearAutobackup,
 } from "../lib/sceneStorage.mjs";
-import type { SceneSnapshot } from "../lib/sceneStorage.mjs";
+import type {
+  SceneSnapshot,
+  AutobackupData,
+} from "../lib/sceneStorage.mjs";
 
 type Shape = "box" | "sphere" | "cone" | "cylinder" | "torus";
 type Vector3 = { x: number; y: number; z: number };
@@ -48,6 +54,18 @@ const one = (): Vector3 => ({ x: 1, y: 1, z: 1 });
 
 function createId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+function serializeForBaseline(
+  objs: SceneObject[],
+  ambient: number,
+  directional: number
+): string {
+  return JSON.stringify({
+    objects: objs,
+    ambientIntensity: ambient,
+    directionalIntensity: directional,
+  });
 }
 
 function createGeometry(THREE: typeof import("three"), shape: Shape) {
@@ -114,6 +132,9 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
   const [sceneName, setSceneName] = useState("");
   const [savedScenes, setSavedScenes] = useState<SceneSnapshot[]>([]);
   const [currentSceneId, setCurrentSceneId] = useState<string | null>(null);
+  const [pendingAutobackup, setPendingAutobackup] = useState<AutobackupData | null>(null);
+  const baselineRef = useRef<string>("");
+  const autosaveTimerRef = useRef<number | null>(null);
 
   const selectedObject = objects.find((item) => item.id === selectedId);
 
@@ -244,10 +265,67 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
   }, []);
 
   useEffect(() => {
+    baselineRef.current = serializeForBaseline(
+      objects,
+      ambientIntensity,
+      directionalIntensity
+    );
+    const backup = readAutobackup();
+    if (backup) {
+      const backupBaseline = serializeForBaseline(
+        backup.objects as SceneObject[],
+        backup.ambientIntensity,
+        backup.directionalIntensity
+      );
+      if (backupBaseline !== baselineRef.current) {
+        setPendingAutobackup(backup);
+      } else {
+        clearAutobackup();
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
     if (!sceneReady) return;
     if (hemiLightRef.current) hemiLightRef.current.intensity = ambientIntensity;
     if (dirLightRef.current) dirLightRef.current.intensity = directionalIntensity;
   }, [ambientIntensity, directionalIntensity, sceneReady]);
+
+  useEffect(() => {
+    if (!sceneReady) return;
+    if (autosaveTimerRef.current) {
+      window.clearTimeout(autosaveTimerRef.current);
+    }
+    autosaveTimerRef.current = window.setTimeout(() => {
+      const current = serializeForBaseline(
+        objects,
+        ambientIntensity,
+        directionalIntensity
+      );
+      if (current === baselineRef.current) return;
+      writeAutobackup({
+        objects,
+        ambientIntensity,
+        directionalIntensity,
+        sceneName,
+        currentSceneId,
+        savedAt: Date.now(),
+      });
+    }, 2000);
+    return () => {
+      if (autosaveTimerRef.current) {
+        window.clearTimeout(autosaveTimerRef.current);
+      }
+    };
+  }, [
+    objects,
+    ambientIntensity,
+    directionalIntensity,
+    sceneName,
+    currentSceneId,
+    sceneReady,
+  ]);
 
   useEffect(() => {
     let cancelled = false;
@@ -385,6 +463,13 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
     if (ok) {
       refreshSavedScenes();
       setCurrentSceneId(id);
+      baselineRef.current = serializeForBaseline(
+        objects,
+        ambientIntensity,
+        directionalIntensity
+      );
+      clearAutobackup();
+      setPendingAutobackup(null);
       setMessage(`បានរក្សាទុក "${name}"។`);
     } else {
       setMessage("មិនអាចរក្សាទុក Scene បានទេ។");
@@ -405,6 +490,13 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
     setCurrentSceneId(snapshot.id);
     setSelectedId(parsed[parsed.length - 1]?.id ?? null);
     setHistory({ past: [], future: [] });
+    baselineRef.current = serializeForBaseline(
+      parsed,
+      snapshot.ambientIntensity,
+      snapshot.directionalIntensity
+    );
+    clearAutobackup();
+    setPendingAutobackup(null);
     setMessage(`បានបើក "${snapshot.name}"។`);
   }
 
@@ -504,6 +596,13 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       setCurrentSceneId(null);
       setSelectedId(importedObjects[importedObjects.length - 1]?.id ?? null);
       setHistory({ past: [], future: [] });
+      baselineRef.current = serializeForBaseline(
+        importedObjects,
+        snapshot.ambientIntensity,
+        snapshot.directionalIntensity
+      );
+      clearAutobackup();
+      setPendingAutobackup(null);
       setMessage(
         `បាន Import Scene "${snapshot.name}" (${importedObjects.length} វត្ថុ)។`
       );
@@ -521,6 +620,37 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       return;
     }
     handleImportJSONFile(file);
+  }
+
+  function handleRestoreAutobackup() {
+    if (!pendingAutobackup) return;
+    const restored = pendingAutobackup.objects as SceneObject[];
+    setObjects(restored);
+    setAmbientIntensity(pendingAutobackup.ambientIntensity);
+    setDirectionalIntensity(pendingAutobackup.directionalIntensity);
+    setSceneName(pendingAutobackup.sceneName);
+    setCurrentSceneId(pendingAutobackup.currentSceneId);
+    setSelectedId(restored[restored.length - 1]?.id ?? null);
+    setHistory({ past: [], future: [] });
+    baselineRef.current = serializeForBaseline(
+      restored,
+      pendingAutobackup.ambientIntensity,
+      pendingAutobackup.directionalIntensity
+    );
+    clearAutobackup();
+    setPendingAutobackup(null);
+    setMessage(
+      `បាន Restore Scene ពី Auto Backup (${new Date(
+        pendingAutobackup.savedAt
+      ).toLocaleString()})។`
+    );
+  }
+
+  function handleDiscardAutobackup() {
+    if (!pendingAutobackup) return;
+    clearAutobackup();
+    setPendingAutobackup(null);
+    setMessage("បានបោះបង់ Auto Backup។");
   }
 
   function updateSelected(
@@ -742,6 +872,40 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
               ↷ Redo
             </button>
           </div>
+
+          {pendingAutobackup && (
+            <div
+              className="studio-transform-panel"
+              style={{
+                borderColor: "#f0b849",
+                borderWidth: 1,
+                borderStyle: "solid",
+              }}
+            >
+              <h3>🔄 Auto Backup មាន</h3>
+              <p className="studio-note">
+                មាន Auto Backup ពី{" "}
+                {new Date(pendingAutobackup.savedAt).toLocaleString()} (
+                {pendingAutobackup.objects.length} វត្ថុ)។ តើអ្នកចង់ Restore ឬបោះបង់?
+              </p>
+              <div className="studio-controls">
+                <button
+                  type="button"
+                  className="upload-button"
+                  onClick={handleRestoreAutobackup}
+                >
+                  Restore
+                </button>
+                <button
+                  type="button"
+                  className="filter"
+                  onClick={handleDiscardAutobackup}
+                >
+                  Discard
+                </button>
+              </div>
+            </div>
+          )}
 
           <div className="studio-transform-panel">
             <h3>Scene Manager</h3>

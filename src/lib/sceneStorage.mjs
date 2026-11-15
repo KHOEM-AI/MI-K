@@ -163,3 +163,47 @@ export function parseImportedScene(raw) {
     },
   };
 }
+
+// ─── Auto-backup helpers ────────────────────────────────────────────────
+
+const AUTOBACKUP_KEY = "khoem-ai.autobackup.v1";
+const AUTOBACKUP_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+
+export function writeAutobackup(payload) {
+  try {
+    localStorage.setItem(AUTOBACKUP_KEY, JSON.stringify(payload));
+    return true;
+  } catch (error) {
+    console.error("writeAutobackup failed:", error);
+    return false;
+  }
+}
+
+export function readAutobackup() {
+  try {
+    const raw = localStorage.getItem(AUTOBACKUP_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") return null;
+    if (typeof parsed.savedAt !== "number") return null;
+    if (Date.now() - parsed.savedAt > AUTOBACKUP_MAX_AGE_MS) {
+      localStorage.removeItem(AUTOBACKUP_KEY);
+      return null;
+    }
+    if (!Array.isArray(parsed.objects)) return null;
+    return parsed;
+  } catch (error) {
+    console.error("readAutobackup failed:", error);
+    return null;
+  }
+}
+
+export function clearAutobackup() {
+  try {
+    localStorage.removeItem(AUTOBACKUP_KEY);
+    return true;
+  } catch (error) {
+    console.error("clearAutobackup failed:", error);
+    return false;
+  }
+}
