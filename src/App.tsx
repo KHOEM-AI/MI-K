@@ -9,6 +9,7 @@ type Asset = {
 };
 
 const ModelViewer = lazy(() => import("./components/ModelViewer"));
+const Studio3D = lazy(() => import("./components/Studio3D"));
 
 
 
@@ -29,6 +30,7 @@ function ImageViewer({ file }: { file: File }) {
 export default function App() {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [storageReady, setStorageReady] = useState(false);
+  const [studioOpen, setStudioOpen] = useState(false);
 
   useEffect(() => {
     getAssets().then(saved => {
@@ -149,6 +151,27 @@ export default function App() {
           បណ្ណាល័យគ្រប់គ្រងរូបភាព និងម៉ូដែល 3D នៅកន្លែងតែមួយ។
         </p>
       </section>
+
+      <section className="studio-launch">
+        <div>
+          <p className="eyebrow">CREATE SOMETHING NEW</p>
+          <h3>3D Creation Studio</h3>
+          <p>រចនា UI និងបង្កើតវត្ថុ 3D នៅទីនេះ។</p>
+        </div>
+        <button
+          type="button"
+          className="upload-button"
+          onClick={() => setStudioOpen((open) => !open)}
+        >
+          {studioOpen ? "Close Studio" : "Open 3D Studio"}
+        </button>
+      </section>
+
+      {studioOpen && (
+        <Suspense fallback={<div className="studio-panel">Loading 3D Studio...</div>}>
+          <Studio3D />
+        </Suspense>
+      )}
 
       <section className="upload-panel">
         <div>

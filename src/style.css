@@ -363,3 +363,162 @@ footer span {
   color: #8fd9b5;
   overflow-wrap: anywhere;
 }
+
+/* KHOEM-AI 3D Studio */
+.studio-launch,
+.studio-panel {
+  margin: 16px 0;
+  padding: 20px;
+  background: #111e31;
+  border: 1px solid #263951;
+  border-radius: 14px;
+}
+
+.studio-launch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+}
+
+.studio-launch h3,
+.studio-heading h2 {
+  margin: 0 0 8px;
+}
+
+.studio-launch p:not(.eyebrow) {
+  color: #91a5bf;
+  margin-bottom: 0;
+}
+
+.studio-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.studio-tabs,
+.studio-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 18px 0;
+}
+
+.studio-controls label {
+  display: grid;
+  gap: 8px;
+  color: #b8c9dc;
+  font-size: 13px;
+}
+
+.studio-controls select {
+  min-width: 150px;
+  padding: 10px;
+  border: 1px solid #30445d;
+  border-radius: 8px;
+  background: #17283d;
+  color: white;
+}
+
+.studio-controls input[type="color"] {
+  width: 65px;
+  height: 40px;
+  border: 0;
+  background: transparent;
+}
+
+.studio-canvas {
+  position: relative;
+  width: 100%;
+  height: 420px;
+  overflow: hidden;
+  border: 1px solid #263951;
+  border-radius: 12px;
+  background: #080f1b;
+}
+
+.studio-canvas canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.studio-hint {
+  position: absolute;
+  z-index: 1;
+  top: 12px;
+  left: 14px;
+  color: #64bfff;
+  font-size: 10px;
+  letter-spacing: 2px;
+  pointer-events: none;
+}
+
+.studio-note {
+  color: #91a5bf;
+  line-height: 1.7;
+  font-size: 13px;
+}
+
+.ui-design-preview {
+  padding: 25px;
+  text-align: center;
+  border-radius: 12px;
+  background: radial-gradient(circle, #193d60, #080f1b 75%);
+}
+
+.ui-logo-preview {
+  display: grid;
+  place-items: center;
+  width: 100px;
+  height: 100px;
+  margin: 25px auto;
+  border: 1px solid #62c1ff;
+  border-radius: 25px;
+  background: linear-gradient(145deg, #159ce9, #064477);
+  box-shadow: 0 18px 35px #0009, inset 0 2px 8px #ffffff55;
+  color: white;
+  font-size: 35px;
+  font-weight: 900;
+  transform: perspective(400px) rotateY(-12deg) rotateX(8deg);
+}
+
+.ui-card-preview {
+  display: grid;
+  gap: 20px;
+  max-width: 340px;
+  margin: 25px auto;
+  padding: 25px;
+  border: 1px solid #42658a;
+  border-radius: 15px;
+  background: linear-gradient(145deg, #1c3654, #101c2e);
+  box-shadow: 0 18px 30px #0008;
+}
+
+.ui-card-preview span {
+  color: #9bd8ff;
+  font-size: 12px;
+}
+
+.ui-card-preview button {
+  padding: 12px;
+  border: 1px solid #5bbcff;
+  border-radius: 9px;
+  background: linear-gradient(145deg, #168de2, #07528c);
+  color: white;
+  box-shadow: 0 5px 0 #04385f;
+}
+
+@media (max-width: 600px) {
+  .studio-launch,
+  .studio-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .studio-canvas {
+    height: 330px;
+  }
+}
