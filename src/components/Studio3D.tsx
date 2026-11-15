@@ -70,6 +70,9 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
   const canvasHost = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<import("three").Scene | null>(null);
   const meshesRef = useRef(new Map<string, import("three").Mesh>());
+  const controlsRef = useRef<import("three/examples/jsm/controls/OrbitControls.js").OrbitControls | null>(null);
+  const hemiLightRef = useRef<import("three").HemisphereLight | null>(null);
+  const dirLightRef = useRef<import("three").DirectionalLight | null>(null);
 
   const [objects, setObjects] = useState<SceneObject[]>([
     {
@@ -96,6 +99,8 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
   const [sceneReady, setSceneReady] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [message, setMessage] = useState("");
+  const [ambientIntensity, setAmbientIntensity] = useState(2);
+  const [directionalIntensity, setDirectionalIntensity] = useState(3);
 
   const selectedObject = objects.find((item) => item.id === selectedId);
 
@@ -136,9 +141,11 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
     let cleanup = false;
     let scene: import("three").Scene | undefined;
     let camera: import("three").PerspectiveCamera | undefined;
+    let controls: import("three/examples/jsm/controls/OrbitControls.js").OrbitControls | undefined;
 
     async function start() {
       const THREE = await import("three");
+      const { OrbitControls } = await import("three/examples/jsm/controls/OrbitControls.js");
       if (cleanup || !canvasHost.current) return;
 
       scene = new THREE.Scene();
@@ -152,11 +159,21 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       canvasHost.current.appendChild(renderer.domElement);
 
-      scene.add(new THREE.HemisphereLight(0xffffff, 0x26344c, 2));
+      controls = new OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.08;
+      controls.target.set(0, 0, 0);
+      controls.update();
+      controlsRef.current = controls;
 
-      const light = new THREE.DirectionalLight(0xffffff, 3);
+      const hemi = new THREE.HemisphereLight(0xffffff, 0x26344c, ambientIntensity);
+      scene.add(hemi);
+      hemiLightRef.current = hemi;
+
+      const light = new THREE.DirectionalLight(0xffffff, directionalIntensity);
       light.position.set(4, 5, 4);
       scene.add(light);
+      dirLightRef.current = light;
 
       const floor = new THREE.GridHelper(12, 12, 0x31516e, 0x1b2b40);
       floor.position.y = -1.2;
@@ -181,6 +198,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
 
       const animate = () => {
         if (cleanup || !renderer || !scene || !camera) return;
+        controls?.update();
         renderer.render(scene, camera);
         frame = requestAnimationFrame(animate);
       };
@@ -196,13 +214,23 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       cleanup = true;
       cancelAnimationFrame(frame);
       observer?.disconnect();
+      controls?.dispose();
+      controlsRef.current = null;
       meshesRef.current.forEach(disposeMesh);
       meshesRef.current.clear();
       renderer?.dispose();
       renderer?.domElement.remove();
       sceneRef.current = null;
+      hemiLightRef.current = null;
+      dirLightRef.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    if (!sceneReady) return;
+    if (hemiLightRef.current) hemiLightRef.current.intensity = ambientIntensity;
+    if (dirLightRef.current) dirLightRef.current.intensity = directionalIntensity;
+  }, [ambientIntensity, directionalIntensity, sceneReady]);
 
   useEffect(() => {
     let cancelled = false;
@@ -540,6 +568,38 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
 
           <div className="studio-canvas" ref={canvasHost}>
             <span className="studio-hint">3D LIVE PREVIEW</span>
+          </div>
+
+          <div className="studio-transform-panel">
+            <h3>Scene Lighting</h3>
+            <div className="studio-controls">
+              <label>
+                Ambient Light: {ambientIntensity.toFixed(2)}
+                <input
+                  type="range"
+                  min={0}
+                  max={5}
+                  step={0.1}
+                  value={ambientIntensity}
+                  onChange={(event) =>
+                    setAmbientIntensity(Number(event.target.value))
+                  }
+                />
+              </label>
+              <label>
+                Directional Light: {directionalIntensity.toFixed(2)}
+                <input
+                  type="range"
+                  min={0}
+                  max={5}
+                  step={0.1}
+                  value={directionalIntensity}
+                  onChange={(event) =>
+                    setDirectionalIntensity(Number(event.target.value))
+                  }
+                />
+              </label>
+            </div>
           </div>
 
           <div className="studio-object-manager">
