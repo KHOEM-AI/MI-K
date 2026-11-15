@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { saveAsset, getAssets, deleteAsset } from "./lib/storage.mjs";
+import { createBackupJSON, restoreBackupJSON } from "./lib/backup.mjs";
 
 type Asset = {
   id: string;
@@ -24,127 +25,6 @@ function ImageViewer({ file }: { file: File }) {
   return url ? <img className="image-viewer" src={url} alt={file.name} /> : null;
 }
 
-
-type AssetBackup = {
-  format: "KHOEM-AI-ASSETS";
-  version: 1;
-  assets: {
-    name: string;
-    type: string;
-    lastModified: number;
-    kind: "image" | "model";
-    data: string;
-  }[];
-};
-
-function bytesToBase64(bytes: Uint8Array): string {
-  let binary = "";
-  const chunkSize = 0x8000;
-
-  for (let i = 0; i < bytes.length; i += chunkSize) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
-  }
-
-  return btoa(binary);
-}
-
-function base64ToBytes(data: string): Uint8Array {
-  const binary = atob(data);
-  const bytes = new Uint8Array(binary.length);
-
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-
-  return bytes;
-}
-
-async function exportAssets(assets: Asset[]) {
-  if (!assets.length) {
-    throw new Error("No assets to export.");
-  }
-
-  const backup: AssetBackup = {
-    format: "KHOEM-AI-ASSETS",
-    version: 1,
-    assets: await Promise.all(
-      assets.map(async (asset) => ({
-        name: asset.file.name,
-        type: asset.file.type,
-        lastModified: asset.file.lastModified,
-        kind: asset.kind,
-        data: bytesToBase64(new Uint8Array(await asset.file.arrayBuffer())),
-      }))
-    ),
-  };
-
-  const blob = new Blob(
-    [JSON.stringify(backup)],
-    { type: "application/json" }
-  );
-
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `KHOEM-AI-backup-${new Date().toISOString().slice(0, 10)}.json`;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
-
-async function importAssets(file: File): Promise<Asset[]> {
-  const backup = JSON.parse(await file.text()) as AssetBackup;
-
-  if (
-    backup.format !== "KHOEM-AI-ASSETS" ||
-    backup.version !== 1 ||
-    !Array.isArray(backup.assets)
-  ) {
-    throw new Error("Invalid KHOEM-AI backup file.");
-  }
-
-  const restored: Asset[] = [];
-
-  for (const item of backup.assets) {
-    if (
-      typeof item.name !== "string" ||
-      typeof item.data !== "string" ||
-      (item.kind !== "image" && item.kind !== "model")
-    ) {
-      throw new Error("Backup contains an invalid asset.");
-    }
-
-    const name = item.name.toLowerCase();
-    const validImage = /\.(png|jpe?g|webp|gif)$/i.test(name);
-    const validModel = /\.(glb|gltf)$/i.test(name);
-
-    if (
-      (item.kind === "image" && !validImage) ||
-      (item.kind === "model" && !validModel)
-    ) {
-      throw new Error(`Unsupported asset: ${item.name}`);
-    }
-
-    const bytes = base64ToBytes(item.data);
-    const blob = new Blob([bytes], {
-      type: item.type || "application/octet-stream",
-    });
-
-    const restoredFile = new File([blob], item.name, {
-      type: item.type || "",
-      lastModified: item.lastModified || Date.now(),
-    });
-
-    restored.push({
-      id: `${Date.now()}-${Math.random()}-${restored.length}`,
-      file: restoredFile,
-      kind: item.kind,
-    });
-  }
-
-  return restored;
-}
 
 export default function App() {
   const [assets, setAssets] = useState<Asset[]>([]);
@@ -188,7 +68,16 @@ export default function App() {
   async function handleExport() {
     try {
       setBackupMessage("Preparing backup...");
-      await exportAssets(assets);
+      const json = await createBackupJSON(assets);
+      const blob = new Blob([json], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `KHOEM-AI-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
       setBackupMessage(`Exported ${assets.length} assets successfully.`);
     } catch (error) {
       console.error("Export failed:", error);
@@ -204,7 +93,7 @@ export default function App() {
 
     try {
       setBackupMessage("Importing backup...");
-      const imported = await importAssets(file);
+      const imported = await restoreBackupJSON(await file.text());
 
       for (const asset of imported) {
         await saveAsset(asset);
