@@ -782,3 +782,130 @@ footer span {
     transition: none !important;
   }
 }
+
+/* KHOEM-AI PERSONAL COLOR SYSTEM */
+:root {
+  --ka-accent: #087fce;
+  --ka-background: #080e19;
+  --ka-surface: #111e31;
+  --ka-sun: #f5b942;
+  --ka-moon: #829cff;
+  --ka-flashlight: #f5b942;
+  --ka-car: #43b9ff;
+  --ka-cube: #55d6ad;
+}
+
+body {
+  background: var(--ka-background);
+}
+
+.topbar,
+.upload-panel,
+.stat-card,
+.library,
+.preview-panel,
+.studio-launch,
+.studio-panel {
+  background: var(--ka-surface);
+}
+
+.upload-button,
+.filter.active,
+.brand-icon {
+  background: var(--ka-accent);
+}
+
+.k-icon-sun { color: var(--ka-sun); }
+.k-icon-moon { color: var(--ka-moon); }
+.k-icon-flashlight { color: var(--ka-flashlight); }
+.k-icon-car { color: var(--ka-car); }
+.k-icon-cube { color: var(--ka-cube); }
+
+/* Color settings panel */
+.color-settings {
+  margin: 16px 0;
+  padding: 20px;
+  border: 1px solid #398fc5;
+  border-radius: 14px;
+  background: var(--ka-surface);
+}
+
+.color-settings-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.color-settings-heading h3 {
+  margin: 0 0 8px;
+}
+
+.color-settings-heading p:not(.eyebrow) {
+  color: #91a5bf;
+  font-size: 13px;
+}
+
+.color-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.color-control {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #30445d;
+  border-radius: 10px;
+  background: #17283d;
+}
+
+.color-control span {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.color-control input[type="color"] {
+  width: 100%;
+  height: 38px;
+  padding: 2px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.color-control small {
+  color: #91a5bf;
+  font-size: 10px;
+}
+
+:root[data-theme="day"] .color-settings {
+  background: var(--ka-surface);
+  border-color: #cbd9e8;
+  color: #17283d;
+}
+
+:root[data-theme="day"] .color-control {
+  background: #edf3f9;
+  border-color: #cbd9e8;
+}
+
+:root[data-theme="day"] .color-control small {
+  color: #536b83;
+}
+
+@media (max-width: 760px) {
+  .color-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 380px) {
+  .color-grid {
+    grid-template-columns: 1fr;
+  }
+}
