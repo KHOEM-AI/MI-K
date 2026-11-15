@@ -1021,6 +1021,79 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
     setMessage("បានលុប Texture ចេញពីវត្ថុ។");
   }
 
+  function centerAndFitObject() {
+    if (!selectedId) return;
+
+    const obj = meshesRef.current.get(selectedId);
+    const currentObj = objects.find((item) => item.id === selectedId);
+    if (!obj || !currentObj || currentObj.locked) return;
+
+    import("three").then((THREE) => {
+      if (!obj.parent || meshesRef.current.get(selectedId) !== obj) return;
+
+      obj.updateMatrixWorld(true);
+
+      // Calculate bounds in the object's local coordinate system.
+      const worldBox = new THREE.Box3().setFromObject(obj);
+      const inverseParent = new THREE.Matrix4();
+
+      obj.parent.updateMatrixWorld(true);
+      inverseParent.copy(obj.parent.matrixWorld).invert();
+
+      const localBox = worldBox.clone();
+      const corners = [
+        new THREE.Vector3(localBox.min.x, localBox.min.y, localBox.min.z),
+        new THREE.Vector3(localBox.min.x, localBox.min.y, localBox.max.z),
+        new THREE.Vector3(localBox.min.x, localBox.max.y, localBox.min.z),
+        new THREE.Vector3(localBox.min.x, localBox.max.y, localBox.max.z),
+        new THREE.Vector3(localBox.max.x, localBox.min.y, localBox.min.z),
+        new THREE.Vector3(localBox.max.x, localBox.min.y, localBox.max.z),
+        new THREE.Vector3(localBox.max.x, localBox.max.y, localBox.min.z),
+        new THREE.Vector3(localBox.max.x, localBox.max.y, localBox.max.z),
+      ];
+
+      const bounds = new THREE.Box3();
+      corners.forEach((corner) => {
+        corner.applyMatrix4(inverseParent);
+        bounds.expandByPoint(corner);
+      });
+
+      const size = new THREE.Vector3();
+      const center = new THREE.Vector3();
+      bounds.getSize(size);
+      bounds.getCenter(center);
+
+      const maxDim = Math.max(size.x, size.y, size.z);
+      if (!Number.isFinite(maxDim) || maxDim <= 0) return;
+
+      const factor = 2 / maxDim;
+      const newScale = {
+        x: currentObj.scale.x * factor,
+        y: currentObj.scale.y * factor,
+        z: currentObj.scale.z * factor,
+      };
+
+      const newPosition = {
+        x: currentObj.position.x - center.x * factor,
+        y: currentObj.position.y - center.y * factor,
+        z: currentObj.position.z - center.z * factor,
+      };
+
+      commitObjects(
+        objects.map((item) =>
+          item.id === selectedId
+            ? { ...item, scale: newScale, position: newPosition }
+            : item
+        )
+      );
+
+      setMessage("បានកែទំហំ និងដាក់វត្ថុឱ្យនៅកណ្តាល (Fit to Center)។");
+    }).catch((error) => {
+      console.error("Fit to Center failed:", error);
+      setMessage("មិនអាចកែទំហំ និងទីតាំងវត្ថុបានទេ។");
+    });
+  }
+
   function setCameraPreset(preset: "front" | "top" | "iso") {
     const camera = cameraRef.current;
     const controls = controlsRef.current;
@@ -1677,6 +1750,9 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
                   />
                   <small>{selectedObject.roughness.toFixed(2)}</small>
                 </label>
+                <button type="button" className="filter" onClick={centerAndFitObject}>
+                  Fit to Center
+                </button>
                 <button type="button" className="filter" onClick={duplicateObject}>
                   Duplicate
                 </button>
