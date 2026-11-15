@@ -2,12 +2,26 @@ import { useEffect, useRef, useState } from "react";
 import { saveAsset } from "../lib/storage.mjs";
 
 type Shape = "box" | "sphere" | "cone" | "cylinder" | "torus";
+type Vector3 = { x: number; y: number; z: number };
 
 type SceneObject = {
   id: string;
   name: string;
   shape: Shape;
   color: string;
+  position: Vector3;
+  rotation: Vector3;
+  scale: Vector3;
+};
+
+type StudioAsset = {
+  id: string;
+  file: File;
+  kind: "model";
+};
+
+type Studio3DProps = {
+  onAssetSaved?: (asset: StudioAsset) => void;
 };
 
 const presets: { name: string; shape: Shape }[] = [
@@ -17,6 +31,13 @@ const presets: { name: string; shape: Shape }[] = [
   { name: "Cylinder", shape: "cylinder" },
   { name: "Ring", shape: "torus" },
 ];
+
+const zero = (): Vector3 => ({ x: 0, y: 0, z: 0 });
+const one = (): Vector3 => ({ x: 1, y: 1, z: 1 });
+
+function createId() {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
 
 function createGeometry(THREE: typeof import("three"), shape: Shape) {
   switch (shape) {
@@ -33,27 +54,20 @@ function createGeometry(THREE: typeof import("three"), shape: Shape) {
   }
 }
 
-type StudioAsset = {
-  id: string;
-  file: File;
-  kind: "model";
-};
-
-type Studio3DProps = {
-  onAssetSaved?: (asset: StudioAsset) => void;
-};
-
-function createId() {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+function disposeMesh(mesh: import("three").Mesh) {
+  mesh.geometry.dispose();
+  const material = mesh.material;
+  if (Array.isArray(material)) {
+    material.forEach((item) => item.dispose());
+  } else {
+    material.dispose();
+  }
 }
 
 export default function Studio3D({ onAssetSaved }: Studio3DProps) {
   const canvasHost = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<import("three").Scene | null>(null);
-  const rendererRef = useRef<import("three").WebGLRenderer | null>(null);
-  const meshesRef = useRef(
-    new Map<string, import("three").Mesh>()
-  );
+  const meshesRef = useRef(new Map<string, import("three").Mesh>());
 
   const [objects, setObjects] = useState<SceneObject[]>([
     {
@@ -61,8 +75,17 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       name: "Cube 1",
       shape: "box",
       color: "#168de2",
+      position: zero(),
+      rotation: zero(),
+      scale: one(),
     },
   ]);
+
+  const [history, setHistory] = useState<{
+    past: SceneObject[][];
+    future: SceneObject[][];
+  }>({ past: [], future: [] });
+
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [newShape, setNewShape] = useState<Shape>("box");
   const [mode, setMode] = useState<"object" | "ui">("object");
@@ -70,11 +93,38 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
   const [exporting, setExporting] = useState(false);
   const [message, setMessage] = useState("");
 
-  const selectedObject = objects.find(
-    (item) => item.id === selectedId
-  );
+  const selectedObject = objects.find((item) => item.id === selectedId);
 
-  // Create the Three.js scene and renderer once.
+  function commitObjects(next: SceneObject[]) {
+    setHistory((current) => ({
+      past: [...current.past, objects].slice(-50),
+      future: [],
+    }));
+    setObjects(next);
+  }
+
+  function undo() {
+    if (!history.past.length) return;
+    const previous = history.past[history.past.length - 1];
+    setHistory((current) => ({
+      past: current.past.slice(0, -1),
+      future: [objects, ...current.future].slice(0, 50),
+    }));
+    setObjects(previous);
+    setMessage("បាន Undo សកម្មភាពចុងក្រោយ។");
+  }
+
+  function redo() {
+    if (!history.future.length) return;
+    const next = history.future[0];
+    setHistory((current) => ({
+      past: [...current.past, objects].slice(-50),
+      future: current.future.slice(1),
+    }));
+    setObjects(next);
+    setMessage("បាន Redo សកម្មភាព។");
+  }
+
   useEffect(() => {
     let renderer: import("three").WebGLRenderer | undefined;
     let frame = 0;
@@ -104,17 +154,11 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       light.position.set(4, 5, 4);
       scene.add(light);
 
-      const floor = new THREE.GridHelper(
-        12,
-        12,
-        0x31516e,
-        0x1b2b40
-      );
+      const floor = new THREE.GridHelper(12, 12, 0x31516e, 0x1b2b40);
       floor.position.y = -1.2;
       scene.add(floor);
 
       sceneRef.current = scene;
-      rendererRef.current = renderer;
       setSceneReady(true);
 
       const resize = () => {
@@ -122,7 +166,6 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
         const width = canvasHost.current.clientWidth;
         const height = canvasHost.current.clientHeight;
         if (!width || !height) return;
-
         renderer.setSize(width, height);
         camera.aspect = width / height;
         camera.updateProjectionMatrix();
@@ -134,15 +177,9 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
 
       const animate = () => {
         if (cleanup || !renderer || !scene || !camera) return;
-
-        meshesRef.current.forEach((mesh) => {
-          mesh.rotation.y += 0.003;
-        });
-
         renderer.render(scene, camera);
         frame = requestAnimationFrame(animate);
       };
-
       animate();
     }
 
@@ -155,59 +192,35 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       cleanup = true;
       cancelAnimationFrame(frame);
       observer?.disconnect();
-
-      meshesRef.current.forEach((mesh) => {
-        mesh.geometry.dispose();
-        const material = mesh.material;
-        if (Array.isArray(material)) {
-          material.forEach((item) => item.dispose());
-        } else {
-          material.dispose();
-        }
-      });
+      meshesRef.current.forEach(disposeMesh);
       meshesRef.current.clear();
-
       renderer?.dispose();
       renderer?.domElement.remove();
-
       sceneRef.current = null;
-      rendererRef.current = null;
     };
   }, []);
 
-  // Rebuild scene objects when the object list or selection changes.
   useEffect(() => {
     let cancelled = false;
 
     async function updateScene() {
       const THREE = await import("three");
-      if (cancelled) return;
+      if (cancelled || !sceneReady || !sceneRef.current) return;
 
       const scene = sceneRef.current;
-      if (!sceneReady || !scene) return;
 
       meshesRef.current.forEach((mesh) => {
         scene.remove(mesh);
-        mesh.geometry.dispose();
-
-        const material = mesh.material;
-        if (Array.isArray(material)) {
-          material.forEach((item) => item.dispose());
-        } else {
-          material.dispose();
-        }
+        disposeMesh(mesh);
       });
       meshesRef.current.clear();
 
-      objects.forEach((item, index) => {
+      objects.forEach((item) => {
         const material = new THREE.MeshStandardMaterial({
           color: item.color,
           metalness: 0.25,
           roughness: 0.35,
-          emissive:
-            item.id === selectedId
-              ? new THREE.Color("#183b60")
-              : new THREE.Color("#000000"),
+          emissive: item.id === selectedId ? "#183b60" : "#000000",
         });
 
         const mesh = new THREE.Mesh(
@@ -215,14 +228,24 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
           material
         );
 
-        const columns = 3;
-        const spacing = 2.5;
-        mesh.position.x =
-          ((index % columns) - 1) * spacing;
-        mesh.position.z =
-          Math.floor(index / columns) * spacing;
+        mesh.position.set(
+          item.position.x,
+          item.position.y,
+          item.position.z
+        );
+        mesh.rotation.set(
+          item.rotation.x,
+          item.rotation.y,
+          item.rotation.z
+        );
+        mesh.scale.set(
+          item.scale.x,
+          item.scale.y,
+          item.scale.z
+        );
 
         mesh.userData.objectId = item.id;
+        mesh.name = item.name;
         scene.add(mesh);
         meshesRef.current.set(item.id, mesh);
       });
@@ -239,23 +262,26 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
   }, [objects, selectedId, sceneReady]);
 
   function addObject() {
-    const preset = presets.find(
-      (item) => item.shape === newShape
-    );
+    const preset = presets.find((item) => item.shape === newShape);
+    const count = objects.filter((item) => item.shape === newShape).length + 1;
 
-    const count =
-      objects.filter((item) => item.shape === newShape).length + 1;
-
-    const nextObject: SceneObject = {
+    const next: SceneObject = {
       id: createId(),
       name: `${preset?.name ?? "Object"} ${count}`,
       shape: newShape,
       color: "#168de2",
+      position: {
+        x: ((objects.length % 3) - 1) * 2.5,
+        y: 0,
+        z: Math.floor(objects.length / 3) * 2.5,
+      },
+      rotation: zero(),
+      scale: one(),
     };
 
-    setObjects((current) => [...current, nextObject]);
-    setSelectedId(nextObject.id);
-    setMessage(`បានបន្ថែម ${nextObject.name}។`);
+    commitObjects([...objects, next]);
+    setSelectedId(next.id);
+    setMessage(`បានបន្ថែម ${next.name}។`);
   }
 
   function duplicateObject() {
@@ -265,48 +291,89 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       ...selectedObject,
       id: createId(),
       name: `${selectedObject.name} Copy`,
+      position: {
+        ...selectedObject.position,
+        x: selectedObject.position.x + 1.5,
+      },
+      rotation: { ...selectedObject.rotation },
+      scale: { ...selectedObject.scale },
     };
 
-    setObjects((current) => [...current, copy]);
+    commitObjects([...objects, copy]);
     setSelectedId(copy.id);
     setMessage(`បានចម្លង ${copy.name}។`);
   }
 
   function deleteObject() {
     if (!selectedId) return;
-
-    const remaining = objects.filter(
-      (item) => item.id !== selectedId
-    );
-
-    setObjects(remaining);
+    const remaining = objects.filter((item) => item.id !== selectedId);
+    commitObjects(remaining);
     setSelectedId(remaining[remaining.length - 1]?.id ?? null);
     setMessage("បានលុបវត្ថុដែលបានជ្រើស។");
   }
 
-  function updateSelectedColor(value: string) {
-    if (!selectedId) return;
+  function updateSelected(
+    key: "position" | "rotation" | "scale",
+    axis: keyof Vector3,
+    value: number
+  ) {
+    if (!selectedId || !Number.isFinite(value)) return;
 
-    setObjects((current) =>
-      current.map((item) =>
+    commitObjects(
+      objects.map((item) =>
         item.id === selectedId
-          ? { ...item, color: value }
+          ? { ...item, [key]: { ...item[key], [axis]: value } }
           : item
       )
     );
   }
 
+  function updateSelectedColor(value: string) {
+    if (!selectedId) return;
+    commitObjects(
+      objects.map((item) =>
+        item.id === selectedId ? { ...item, color: value } : item
+      )
+    );
+  }
+
+  function renderVectorControls(
+    title: string,
+    key: "position" | "rotation" | "scale",
+    values: Vector3,
+    step: number
+  ) {
+    return (
+      <div className="studio-transform-group">
+        <h4>{title}</h4>
+        <div className="studio-transform-grid">
+          {(["x", "y", "z"] as const).map((axis) => (
+            <label key={axis}>
+              {axis.toUpperCase()}
+              <input
+                type="number"
+                step={step}
+                value={Number(values[axis].toFixed(3))}
+                onChange={(event) =>
+                  updateSelected(key, axis, Number(event.target.value))
+                }
+              />
+            </label>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   async function exportGLB() {
     if (exporting) return;
-
-    if (objects.length === 0) {
+    if (!objects.length) {
       setMessage("សូមបន្ថែមវត្ថុ 3D មុនពេល Export។");
       return;
     }
 
     setExporting(true);
     setMessage("កំពុងបង្កើតឯកសារ GLB...");
-
     let exportScene: import("three").Scene | undefined;
 
     try {
@@ -317,46 +384,37 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
 
       exportScene = new THREE.Scene();
 
-      objects.forEach((item, index) => {
-        const material = new THREE.MeshStandardMaterial({
-          color: item.color,
-          metalness: 0.25,
-          roughness: 0.35,
-        });
-
+      objects.forEach((item) => {
         const mesh = new THREE.Mesh(
           createGeometry(THREE, item.shape),
-          material
+          new THREE.MeshStandardMaterial({
+            color: item.color,
+            metalness: 0.25,
+            roughness: 0.35,
+          })
         );
 
-        mesh.position.x = ((index % 3) - 1) * 2.5;
-        mesh.position.z = Math.floor(index / 3) * 2.5;
+        mesh.position.set(item.position.x, item.position.y, item.position.z);
+        mesh.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+        mesh.scale.set(item.scale.x, item.scale.y, item.scale.z);
         mesh.name = item.name;
-        exportScene?.add(mesh);
+        exportScene!.add(mesh);
       });
 
       exportScene.updateMatrixWorld(true);
 
       const exporter = new GLTFExporter();
-
-      const result = await new Promise<ArrayBuffer>(
-        (resolve, reject) => {
-          exporter.parse(
-            exportScene!,
-            (output) => {
-              if (output instanceof ArrayBuffer) {
-                resolve(output);
-              } else {
-                reject(
-                  new Error("GLB binary output was not returned.")
-                );
-              }
-            },
-            (error) => reject(error),
-            { binary: true }
-          );
-        }
-      );
+      const result = await new Promise<ArrayBuffer>((resolve, reject) => {
+        exporter.parse(
+          exportScene!,
+          (output) => {
+            if (output instanceof ArrayBuffer) resolve(output);
+            else reject(new Error("GLB binary output was not returned."));
+          },
+          (error) => reject(error),
+          { binary: true }
+        );
+      });
 
       const filename = `KHOEM-AI-scene-${Date.now()}.glb`;
       const file = new File([result], filename, {
@@ -382,7 +440,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       window.setTimeout(() => URL.revokeObjectURL(url), 3000);
 
       setMessage(
-        `បាន Export វត្ថុ ${objects.length} ក្នុង GLB និងរក្សាទុកក្នុង Asset Library រួចរាល់។`
+        `បាន Export វត្ថុ ${objects.length} ជា GLB និងរក្សាទុកក្នុង Asset Library រួចរាល់។`
       );
     } catch (error) {
       console.error("GLB export failed:", error);
@@ -392,6 +450,13 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
           : "មិនអាច Export GLB បានទេ។"
       );
     } finally {
+      if (exportScene) {
+        exportScene.traverse((item) => {
+          if ((item as import("three").Mesh).isMesh) {
+            disposeMesh(item as import("three").Mesh);
+          }
+        });
+      }
       setExporting(false);
     }
   }
@@ -431,9 +496,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
               Add Object
               <select
                 value={newShape}
-                onChange={(event) =>
-                  setNewShape(event.target.value as Shape)
-                }
+                onChange={(event) => setNewShape(event.target.value as Shape)}
               >
                 {presets.map((item) => (
                   <option key={item.shape} value={item.shape}>
@@ -442,13 +505,17 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
                 ))}
               </select>
             </label>
-
-            <button
-              type="button"
-              className="upload-button"
-              onClick={addObject}
-            >
+            <button type="button" className="upload-button" onClick={addObject}>
               + Add Object
+            </button>
+          </div>
+
+          <div className="studio-history-controls">
+            <button type="button" className="filter" onClick={undo} disabled={!history.past.length}>
+              ↶ Undo
+            </button>
+            <button type="button" className="filter" onClick={redo} disabled={!history.future.length}>
+              ↷ Redo
             </button>
           </div>
 
@@ -458,28 +525,18 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
 
           <div className="studio-object-manager">
             <h3>Scene Objects ({objects.length})</h3>
-
             {objects.length === 0 ? (
-              <p className="studio-note">
-                មិនទាន់មានវត្ថុទេ។ សូមចុច Add Object។
-              </p>
+              <p className="studio-note">មិនទាន់មានវត្ថុទេ។ សូមចុច Add Object។</p>
             ) : (
               <div className="studio-object-list">
                 {objects.map((item) => (
                   <button
                     type="button"
                     key={item.id}
-                    className={
-                      selectedId === item.id
-                        ? "studio-object-item selected"
-                        : "studio-object-item"
-                    }
+                    className={selectedId === item.id ? "studio-object-item selected" : "studio-object-item"}
                     onClick={() => setSelectedId(item.id)}
                   >
-                    <span
-                      className="studio-object-swatch"
-                      style={{ backgroundColor: item.color }}
-                    />
+                    <span className="studio-object-swatch" style={{ backgroundColor: item.color }} />
                     <span>{item.name}</span>
                     <small>{item.shape}</small>
                   </button>
@@ -489,38 +546,29 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
           </div>
 
           {selectedObject && (
-            <div className="studio-controls">
-              <label>
-                Selected Object
-                <input value={selectedObject.name} readOnly />
-              </label>
+            <div className="studio-transform-panel">
+              <h3>Transform: {selectedObject.name}</h3>
 
-              <label>
-                Material Color
-                <input
-                  type="color"
-                  value={selectedObject.color}
-                  onChange={(event) =>
-                    updateSelectedColor(event.target.value)
-                  }
-                />
-              </label>
+              <div className="studio-controls">
+                <label>
+                  Material Color
+                  <input
+                    type="color"
+                    value={selectedObject.color}
+                    onChange={(event) => updateSelectedColor(event.target.value)}
+                  />
+                </label>
+                <button type="button" className="filter" onClick={duplicateObject}>
+                  Duplicate
+                </button>
+                <button type="button" className="filter" onClick={deleteObject}>
+                  Delete
+                </button>
+              </div>
 
-              <button
-                type="button"
-                className="filter"
-                onClick={duplicateObject}
-              >
-                Duplicate
-              </button>
-
-              <button
-                type="button"
-                className="filter"
-                onClick={deleteObject}
-              >
-                Delete
-              </button>
+              {renderVectorControls("Move Position", "position", selectedObject.position, 0.1)}
+              {renderVectorControls("Rotate (Radians)", "rotation", selectedObject.rotation, 0.1)}
+              {renderVectorControls("Scale", "scale", selectedObject.scale, 0.1)}
             </div>
           )}
 
@@ -531,21 +579,14 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
               onClick={exportGLB}
               disabled={exporting || objects.length === 0}
             >
-              {exporting
-                ? "Exporting..."
-                : `Export ${objects.length} Object(s) as GLB`}
+              {exporting ? "Exporting..." : `Export ${objects.length} Object(s) as GLB`}
             </button>
           </div>
 
-          {message && (
-            <p className="backup-message" role="status">
-              {message}
-            </p>
-          )}
+          {message && <p className="backup-message" role="status">{message}</p>}
 
           <p className="studio-note">
-            អាចបន្ថែម ជ្រើសរើស ប្ដូរពណ៌ ចម្លង និងលុបវត្ថុ 3D។
-            Export GLB នឹងរួមបញ្ចូលវត្ថុទាំងអស់ក្នុង Scene។
+            Move, Rotate និង Scale ប្រើអ័ក្ស X, Y, Z។ Undo/Redo អាចត្រឡប់ការកែប្រែបានរហូតដល់ 50 សកម្មភាព។
           </p>
         </>
       ) : (
@@ -557,9 +598,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             <span>3D CARD COMPONENT</span>
             <button type="button">ACTION BUTTON</button>
           </div>
-          <p className="studio-note">
-            នេះជាគំរូ UI បែប 3D ដំបូង។
-          </p>
+          <p className="studio-note">នេះជាគំរូ UI បែប 3D ដំបូង។</p>
         </div>
       )}
     </section>
