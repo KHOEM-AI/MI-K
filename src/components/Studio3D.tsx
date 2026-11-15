@@ -492,6 +492,14 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
     setMessage("បានលុបវត្ថុដែលបានជ្រើស។");
   }
 
+  function clearScene() {
+    if (!objects.length) return;
+    if (!window.confirm("តើអ្នកពិតជាចង់លុបវត្ថុទាំងអស់ចេញពី Scene មែនទេ?")) return;
+    commitObjects([]);
+    setSelectedId(null);
+    setMessage("បានសម្អាតវត្ថុទាំងអស់ចេញពី Scene។");
+  }
+
   function refreshSavedScenes() {
     setSavedScenes(listScenes());
   }
@@ -1033,6 +1041,15 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             </label>
             <button type="button" className="upload-button" onClick={addObject}>
               + Add Object
+            </button>
+            <button
+              type="button"
+              className="filter"
+              onClick={clearScene}
+              disabled={objects.length === 0}
+              style={{ color: objects.length === 0 ? "inherit" : "#ff4d4f", borderColor: objects.length === 0 ? "inherit" : "#ff4d4f" }}
+            >
+              Clear Scene
             </button>
           </div>
 
