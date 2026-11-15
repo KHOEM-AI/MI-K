@@ -17,7 +17,7 @@ import type {
   AutobackupData,
 } from "../lib/sceneStorage.mjs";
 
-type Shape = "box" | "sphere" | "cone" | "cylinder" | "torus";
+type Shape = "box" | "sphere" | "cone" | "cylinder" | "torus" | "text";
 type Vector3 = { x: number; y: number; z: number };
 
 type SceneObject = {
@@ -34,6 +34,7 @@ type SceneObject = {
   locked?: boolean;
   textureData?: string | null;
   glbData?: string | null;
+  text?: string;
 };
 
 type StudioAsset = {
@@ -52,6 +53,7 @@ const presets: { name: string; shape: Shape }[] = [
   { name: "Cone", shape: "cone" },
   { name: "Cylinder", shape: "cylinder" },
   { name: "Ring", shape: "torus" },
+  { name: "Text", shape: "text" },
 ];
 
 const zero = (): Vector3 => ({ x: 0, y: 0, z: 0 });
@@ -642,7 +644,39 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
               });
             }
 
-            obj = new THREE.Mesh(createGeometry(THREE, item.shape), material);
+            let geo: import("three").BufferGeometry;
+            if (item.shape === "text") {
+              const { FontLoader } = await import("three/examples/jsm/loaders/FontLoader.js");
+              const { TextGeometry } = await import("three/examples/jsm/geometries/TextGeometry.js");
+              const fontLoader = new FontLoader();
+
+              const font = await new Promise<import("three/examples/jsm/loaders/FontLoader.js").Font>((resolve) => {
+                fontLoader.load("https://threejs.org/examples/fonts/helvetiker_regular.typeface.json", resolve);
+              });
+
+              geo = new TextGeometry(item.text || "Hello", {
+                font: font,
+                size: 1.5,
+                depth: 0.3, // Note: Older three.js uses 'height', newer uses 'depth'
+                curveSegments: 12,
+                bevelEnabled: true,
+                bevelThickness: 0.05,
+                bevelSize: 0.03,
+                bevelOffset: 0,
+                bevelSegments: 5
+              });
+
+              // Center the text geometry
+              geo.computeBoundingBox();
+              if (geo.boundingBox) {
+                const centerOffset = -0.5 * (geo.boundingBox.max.x - geo.boundingBox.min.x);
+                geo.translate(centerOffset, 0, 0);
+              }
+            } else {
+              geo = createGeometry(THREE, item.shape);
+            }
+
+            obj = new THREE.Mesh(geo, material);
           }
 
           if (cancelled) return;
@@ -681,6 +715,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       color: "#168de2",
       metalness: 0.25,
       roughness: 0.35,
+      text: newShape === "text" ? "KHOEM-AI" : undefined,
       position: {
         x: ((objects.length % 3) - 1) * 2.5,
         y: 0,
@@ -1271,10 +1306,38 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             material.map = texture;
           }
 
-          const mesh = new THREE.Mesh(
-            createGeometry(THREE, item.shape),
-            material
-          );
+          let geo: import("three").BufferGeometry;
+          if (item.shape === "text") {
+            const { FontLoader } = await import("three/examples/jsm/loaders/FontLoader.js");
+            const { TextGeometry } = await import("three/examples/jsm/geometries/TextGeometry.js");
+            const fontLoader = new FontLoader();
+
+            const font = await new Promise<import("three/examples/jsm/loaders/FontLoader.js").Font>((resolve) => {
+              fontLoader.load("https://threejs.org/examples/fonts/helvetiker_regular.typeface.json", resolve);
+            });
+
+            geo = new TextGeometry(item.text || "Hello", {
+              font: font,
+              size: 1.5,
+              depth: 0.3,
+              curveSegments: 12,
+              bevelEnabled: true,
+              bevelThickness: 0.05,
+              bevelSize: 0.03,
+              bevelOffset: 0,
+              bevelSegments: 5
+            });
+
+            geo.computeBoundingBox();
+            if (geo.boundingBox) {
+              const centerOffset = -0.5 * (geo.boundingBox.max.x - geo.boundingBox.min.x);
+              geo.translate(centerOffset, 0, 0);
+            }
+          } else {
+            geo = createGeometry(THREE, item.shape);
+          }
+
+          const mesh = new THREE.Mesh(geo, material);
 
           mesh.position.set(item.position.x, item.position.y, item.position.z);
           mesh.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
@@ -1723,6 +1786,26 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
                 <p className="studio-note" style={{ color: "#f0b849", marginBottom: "8px" }}>
                   🔒 វត្ថុនេះកំពុងត្រូវបានចាក់សោ។ សូមដោះសោដើម្បីកែប្រែ។
                 </p>
+              )}
+
+              {selectedObject.shape === "text" && (
+                <div className="studio-controls" style={{ marginBottom: "8px" }}>
+                  <label style={{ width: "100%" }}>
+                    Text Content
+                    <input
+                      type="text"
+                      value={selectedObject.text || ""}
+                      onChange={(e) => {
+                        commitObjects(
+                          objects.map((item) =>
+                            item.id === selectedObject.id ? { ...item, text: e.target.value } : item
+                          )
+                        );
+                      }}
+                      disabled={selectedObject.locked}
+                    />
+                  </label>
+                </div>
               )}
 
               <div className="studio-controls">
