@@ -106,6 +106,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
   const sceneRef = useRef<import("three").Scene | null>(null);
   const meshesRef = useRef(new Map<string, import("three").Mesh>());
   const controlsRef = useRef<import("three/examples/jsm/controls/OrbitControls.js").OrbitControls | null>(null);
+  const cameraRef = useRef<import("three").PerspectiveCamera | null>(null);
   const hemiLightRef = useRef<import("three").HemisphereLight | null>(null);
   const dirLightRef = useRef<import("three").DirectionalLight | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -199,6 +200,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
       camera.position.set(4, 3, 7);
       camera.lookAt(0, 0, 0);
+      cameraRef.current = camera;
 
       renderer = new THREE.WebGLRenderer({ antialias: true });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -268,6 +270,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       sceneRef.current = null;
       hemiLightRef.current = null;
       dirLightRef.current = null;
+      cameraRef.current = null;
     };
   }, []);
 
@@ -741,6 +744,24 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
     setMessage("បានលុប Texture ចេញពីវត្ថុ។");
   }
 
+  function setCameraPreset(preset: "front" | "top" | "iso") {
+    const camera = cameraRef.current;
+    const controls = controlsRef.current;
+    if (!camera || !controls) return;
+
+    if (preset === "front") {
+      camera.position.set(0, 0, 10);
+    } else if (preset === "top") {
+      camera.position.set(0, 10, 0.01); // slight offset to avoid gimbal lock
+    } else {
+      camera.position.set(4, 3, 7); // default iso
+    }
+
+    controls.target.set(0, 0, 0);
+    controls.update();
+    setMessage(`បានប្តូរមុំមើលទៅ ${preset.toUpperCase()}។`);
+  }
+
   function updateSelected(
     key: "position" | "rotation" | "scale",
     axis: keyof Vector3,
@@ -1092,6 +1113,33 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
                 ))}
               </div>
             )}
+          </div>
+
+          <div className="studio-controls" style={{ marginBottom: "8px", display: "flex", gap: "8px" }}>
+            <button
+              type="button"
+              className="filter"
+              onClick={() => setCameraPreset("front")}
+              style={{ flex: 1 }}
+            >
+              Front
+            </button>
+            <button
+              type="button"
+              className="filter"
+              onClick={() => setCameraPreset("top")}
+              style={{ flex: 1 }}
+            >
+              Top
+            </button>
+            <button
+              type="button"
+              className="filter"
+              onClick={() => setCameraPreset("iso")}
+              style={{ flex: 1 }}
+            >
+              Iso
+            </button>
           </div>
 
           <div className="studio-canvas" ref={canvasHost}>
