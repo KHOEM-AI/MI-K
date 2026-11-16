@@ -3,6 +3,7 @@ import { Eye, EyeOff, Lock, Unlock, Pencil, Sun, Moon, Lightbulb, HelpCircle, X,
 import { saveAsset } from "../lib/storage.mjs";
 import { UI3DPreview } from "./UI3DPreview";
 import { presets, MATERIAL_PRESETS, zero, one, createId } from "./studioConstants";
+import { createGeometry, disposeMesh } from "./studioGeometry";
 import type { Shape, Vector3, SceneObject, StudioAsset, Studio3DProps } from "./studioTypes";
 import {
   listScenes,
@@ -31,40 +32,6 @@ function serializeForBaseline(
     ambientIntensity: ambient,
     directionalIntensity: directional,
     backgroundColor: bg,
-  });
-}
-
-function createGeometry(THREE: typeof import("three"), shape: Shape) {
-  switch (shape) {
-    case "sphere":
-      return new THREE.SphereGeometry(1, 40, 32);
-    case "cone":
-      return new THREE.ConeGeometry(1, 2, 40);
-    case "cylinder":
-      return new THREE.CylinderGeometry(0.8, 0.8, 1.8, 40);
-    case "torus":
-      return new THREE.TorusGeometry(0.8, 0.28, 20, 80);
-    default:
-      return new THREE.BoxGeometry(1.7, 1.7, 1.7);
-  }
-}
-
-function disposeMesh(obj: import("three").Object3D) {
-  obj.traverse((child) => {
-    if ((child as import("three").Mesh).isMesh) {
-      const mesh = child as import("three").Mesh;
-      mesh.geometry.dispose();
-      const material = mesh.material;
-      if (Array.isArray(material)) {
-        material.forEach((m) => {
-          if ((m as any).map) (m as any).map.dispose();
-          m.dispose();
-        });
-      } else {
-        if ((material as any).map) (material as any).map.dispose();
-        material.dispose();
-      }
-    }
   });
 }
 
