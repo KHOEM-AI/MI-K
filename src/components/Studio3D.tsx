@@ -7,6 +7,7 @@ import { createGeometry, disposeMesh } from "./studioGeometry";
 import { CameraPresets } from "./CameraPresets";
 import { SceneLightingPanel } from "./SceneLightingPanel";
 import { MaterialPanel } from "./MaterialPanel";
+import { TransformPanel } from "./TransformPanel";
 import type { Shape, Vector3, SceneObject, StudioAsset, Studio3DProps } from "./studioTypes";
 import {
   listScenes,
@@ -1157,36 +1158,6 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
     );
   }
 
-  function renderVectorControls(
-    title: string,
-    key: "position" | "rotation" | "scale",
-    values: Vector3,
-    step: number,
-    disabled?: boolean
-  ) {
-    return (
-      <div className="studio-transform-group">
-        <h4>{title}</h4>
-        <div className="studio-transform-grid">
-          {(["x", "y", "z"] as const).map((axis) => (
-            <label key={axis}>
-              {axis.toUpperCase()}
-              <input
-                type="number"
-                step={step}
-                value={Number(values[axis].toFixed(3))}
-                onChange={(event) =>
-                  updateSelected(key, axis, Number(event.target.value))
-                }
-                disabled={disabled}
-              />
-            </label>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
   async function exportGLB() {
     if (exporting) return;
     if (!objects.length) {
@@ -1621,48 +1592,15 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
           </div>
 
           {selectedObject && (
-            <div className="studio-transform-panel">
-              <h3>Transform: {selectedObject.name}</h3>
-
-              {selectedObject.locked && (
-                <p className="studio-note" style={{ color: "#f0b849", marginBottom: "8px" }}>
-                  🔒 វត្ថុនេះកំពុងត្រូវបានចាក់សោ។ សូមដោះសោដើម្បីកែប្រែ។
-                </p>
-              )}
-
-              {selectedObject.shape === "text" && (
-                <div className="studio-controls" style={{ marginBottom: "8px" }}>
-                  <label style={{ width: "100%" }}>
-                    Text Content
-                    <input
-                      type="text"
-                      value={selectedObject.text || ""}
-                      onChange={(e) => {
-                        commitObjects(
-                          objects.map((item) =>
-                            item.id === selectedObject.id ? { ...item, text: e.target.value } : item
-                          )
-                        );
-                      }}
-                      disabled={selectedObject.locked}
-                    />
-                  </label>
-                </div>
-              )}
-
-              <MaterialPanel
-                selectedObject={selectedObject}
-                updateSelectedColor={updateSelectedColor}
-                updateSelectedMaterial={updateSelectedMaterial}
-                applyMaterialPreset={applyMaterialPreset}
-                handleTextureUpload={handleTextureUpload}
-                clearTexture={clearTexture}
-              />
-
-              {renderVectorControls("Move Position", "position", selectedObject.position, 0.1, selectedObject.locked)}
-              {renderVectorControls("Rotate (Radians)", "rotation", selectedObject.rotation, 0.1, selectedObject.locked)}
-              {renderVectorControls("Scale", "scale", selectedObject.scale, 0.1, selectedObject.locked)}
-            </div>
+            <TransformPanel
+              selectedObject={selectedObject}
+              updateSelected={updateSelected}
+              centerAndFitObject={centerAndFitObject}
+              duplicateObject={duplicateObject}
+              deleteObject={deleteObject}
+              commitObjects={commitObjects}
+              objects={objects}
+            />
           )}
 
           <div className="studio-export">
