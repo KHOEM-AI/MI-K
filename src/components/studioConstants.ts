@@ -10,6 +10,9 @@ export const presets: { name: string; shape: Shape }[] = [
   { name: "Text", shape: "text" },
   { name: "Audi Car", shape: "car" },
   { name: "Sports Car", shape: "sportcar" },
+  { name: "Table", shape: "table" },
+  { name: "Chair", shape: "chair" },
+  { name: "Sofa", shape: "sofa" },
 ];
 
 export const MATERIAL_PRESETS = [

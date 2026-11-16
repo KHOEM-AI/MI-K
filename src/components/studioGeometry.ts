@@ -214,6 +214,115 @@ export function createCarGeometry(
   return group;
 }
 
+export function createFurnitureGeometry(
+  THREE: typeof import("three"),
+  type: "table" | "chair" | "sofa",
+  color?: string,
+  metalness?: number,
+  roughness?: number
+): import("three").Group {
+  const group = new THREE.Group();
+  const defaultColor = type === "table" ? "#8b4513" : type === "chair" ? "#654321" : "#4a5568";
+  const material = new THREE.MeshStandardMaterial({
+    color: color || defaultColor,
+    metalness: metalness ?? 0.1,
+    roughness: roughness ?? 0.7,
+  });
+  const cushionMaterial = new THREE.MeshStandardMaterial({
+    color: "#cbd5e0",
+    metalness: 0.05,
+    roughness: 0.9,
+  });
+
+  if (type === "table") {
+    // Table top
+    const topGeo = new THREE.BoxGeometry(3, 0.15, 1.8);
+    const top = new THREE.Mesh(topGeo, material);
+    top.position.y = 1.5;
+    group.add(top);
+
+    // 4 Legs
+    const legGeo = new THREE.BoxGeometry(0.15, 1.5, 0.15);
+    const legPositions = [
+      [1.3, 0.75, 0.75],
+      [1.3, 0.75, -0.75],
+      [-1.3, 0.75, 0.75],
+      [-1.3, 0.75, -0.75],
+    ];
+    legPositions.forEach(([x, y, z]) => {
+      const leg = new THREE.Mesh(legGeo, material);
+      leg.position.set(x, y, z);
+      group.add(leg);
+    });
+  } else if (type === "chair") {
+    // Seat
+    const seatGeo = new THREE.BoxGeometry(1.2, 0.15, 1.2);
+    const seat = new THREE.Mesh(seatGeo, material);
+    seat.position.y = 1.0;
+    group.add(seat);
+
+    // Backrest
+    const backGeo = new THREE.BoxGeometry(1.2, 1.2, 0.15);
+    const back = new THREE.Mesh(backGeo, material);
+    back.position.set(0, 1.6, -0.55);
+    group.add(back);
+
+    // 4 Legs
+    const legGeo = new THREE.BoxGeometry(0.12, 1.0, 0.12);
+    const legPositions = [
+      [0.5, 0.5, 0.5],
+      [0.5, 0.5, -0.5],
+      [-0.5, 0.5, 0.5],
+      [-0.5, 0.5, -0.5],
+    ];
+    legPositions.forEach(([x, y, z]) => {
+      const leg = new THREE.Mesh(legGeo, material);
+      leg.position.set(x, y, z);
+      group.add(leg);
+    });
+  } else {
+    // Sofa - base
+    const baseGeo = new THREE.BoxGeometry(3.5, 0.5, 1.5);
+    const base = new THREE.Mesh(baseGeo, material);
+    base.position.y = 0.5;
+    group.add(base);
+
+    // Backrest
+    const backGeo = new THREE.BoxGeometry(3.5, 1.0, 0.3);
+    const back = new THREE.Mesh(backGeo, material);
+    back.position.set(0, 1.2, -0.6);
+    group.add(back);
+
+    // 2 Armrests
+    const armGeo = new THREE.BoxGeometry(0.3, 0.7, 1.5);
+    const armL = new THREE.Mesh(armGeo, material);
+    armL.position.set(-1.6, 0.85, 0);
+    group.add(armL);
+    const armR = new THREE.Mesh(armGeo, material);
+    armR.position.set(1.6, 0.85, 0);
+    group.add(armR);
+
+    // 3 Cushions
+    const cushionGeo = new THREE.BoxGeometry(1.0, 0.2, 1.2);
+    const cushionPositions = [-1.1, 0, 1.1];
+    cushionPositions.forEach((x) => {
+      const cushion = new THREE.Mesh(cushionGeo, cushionMaterial);
+      cushion.position.set(x, 0.85, 0.05);
+      group.add(cushion);
+    });
+  }
+
+  // Enable shadows
+  group.traverse((child) => {
+    if ((child as import("three").Mesh).isMesh) {
+      child.castShadow = true;
+      child.receiveShadow = true;
+    }
+  });
+
+  return group;
+}
+
 export function disposeMesh(obj: import("three").Object3D) {
   obj.traverse((child) => {
     if ((child as import("three").Mesh).isMesh) {
