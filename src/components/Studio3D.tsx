@@ -2099,6 +2099,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
                         ? "studio-object-item selected"
                         : "studio-object-item"
                     }
+                    title={`ឈ្មោះ: ${scene.name}\nចំនួនវត្ថុ: ${(scene.objects as SceneObject[]).length}\nបង្កើត: ${new Date(scene.createdAt).toLocaleString()}\nកែប្រែចុងក្រោយ: ${new Date(scene.updatedAt).toLocaleString()}`}
                   >
                     {scene.thumbnail ? (
                       <img
