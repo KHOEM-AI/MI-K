@@ -16,6 +16,7 @@ export const presets: { name: string; shape: Shape }[] = [
   { name: "Tree", shape: "tree" },
   { name: "House", shape: "house" },
   { name: "Lamp", shape: "lamp" },
+  { name: "KHOEM-AI", shape: "khoem" },
 ];
 
 export const MATERIAL_PRESETS = [

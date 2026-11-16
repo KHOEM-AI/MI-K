@@ -431,6 +431,126 @@ export function createFurnitureGeometry(
   return group;
 }
 
+
+export function createKhoemGeometry(
+  THREE: typeof import("three"),
+  color?: string,
+  metalness?: number,
+  roughness?: number
+): import("three").Group {
+  const group = new THREE.Group();
+
+  // Materials
+  const bodyMat = new THREE.MeshStandardMaterial({
+    color: color || "#a0a0a0",
+    metalness: metalness ?? 0.9,
+    roughness: roughness ?? 0.2,
+  });
+  const darkMat = new THREE.MeshStandardMaterial({
+    color: "#1a1a1a",
+    metalness: 0.8,
+    roughness: 0.3,
+  });
+  const glassMat = new THREE.MeshStandardMaterial({
+    color: "#0a0a0a",
+    metalness: 0.9,
+    roughness: 0.1,
+    transparent: true,
+    opacity: 0.8,
+  });
+  const neonMat = new THREE.MeshStandardMaterial({
+    color: "#00aaff",
+    emissive: "#00aaff",
+    emissiveIntensity: 2.0,
+  });
+
+  // Body
+  const body = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.6, 2.2), bodyMat);
+  body.position.y = 0.6;
+  group.add(body);
+
+  // Nose (slanted front)
+  const nose = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.4, 2.0), bodyMat);
+  nose.position.set(2.4, 0.5, 0);
+  nose.rotation.z = -0.2;
+  group.add(nose);
+
+  // Cabin (glass)
+  const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.5, 1.8), glassMat);
+  cabin.position.set(-0.5, 1.15, 0);
+  cabin.rotation.z = 0.1;
+  group.add(cabin);
+
+  // Spoiler base
+  const spoilerBaseL = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.5, 2.0), darkMat);
+  spoilerBaseL.position.set(-2.2, 1.0, 0.8);
+  group.add(spoilerBaseL);
+
+  const spoilerBaseR = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.5, 2.0), darkMat);
+  spoilerBaseR.position.set(-2.2, 1.0, -0.8);
+  group.add(spoilerBaseR);
+
+  // Spoiler wing
+  const spoilerWing = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.1, 2.2), bodyMat);
+  spoilerWing.position.set(-2.3, 1.3, 0);
+  group.add(spoilerWing);
+
+  // Wheels
+  const wheelGeo = new THREE.CylinderGeometry(0.6, 0.6, 0.4, 24);
+  const wheelPositions = [
+    [1.5, 0.6, 1.15],
+    [1.5, 0.6, -1.15],
+    [-1.4, 0.6, 1.15],
+    [-1.4, 0.6, -1.15],
+  ];
+  const wheels: import("three").Mesh[] = [];
+  wheelPositions.forEach(([x, y, z]) => {
+    const wheel = new THREE.Mesh(wheelGeo, darkMat);
+    wheel.rotation.x = Math.PI / 2;
+    wheel.position.set(x, y, z);
+    wheel.castShadow = true;
+    group.add(wheel);
+    wheels.push(wheel);
+  });
+  group.userData.wheels = wheels;
+
+  // Headlights (neon blue)
+  const headlightGeo = new THREE.BoxGeometry(0.1, 0.1, 0.6);
+  const headlightL = new THREE.Mesh(headlightGeo, neonMat);
+  headlightL.position.set(2.9, 0.6, 0.7);
+  headlightL.rotation.y = 0.2;
+  group.add(headlightL);
+
+  const headlightR = new THREE.Mesh(headlightGeo, neonMat);
+  headlightR.position.set(2.9, 0.6, -0.7);
+  headlightR.rotation.y = -0.2;
+  group.add(headlightR);
+
+  // Underglow (neon blue)
+  const underglowGeo = new THREE.BoxGeometry(3.5, 0.05, 0.1);
+  const underglowL = new THREE.Mesh(underglowGeo, neonMat);
+  underglowL.position.set(0, 0.2, 1.15);
+  group.add(underglowL);
+
+  const underglowR = new THREE.Mesh(underglowGeo, neonMat);
+  underglowR.position.set(0, 0.2, -1.15);
+  group.add(underglowR);
+
+  // Taillight bar
+  const taillight = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.1, 1.8), neonMat);
+  taillight.position.set(-2.4, 0.7, 0);
+  group.add(taillight);
+
+  // Enable shadows
+  group.traverse((child) => {
+    if ((child as import("three").Mesh).isMesh) {
+      child.castShadow = true;
+      child.receiveShadow = true;
+    }
+  });
+
+  return group;
+}
 export function disposeMesh(obj: import("three").Object3D) {
   obj.traverse((child) => {
     if ((child as import("three").Mesh).isMesh) {
