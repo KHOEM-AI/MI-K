@@ -307,6 +307,9 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
   const [snapToGrid, setSnapToGrid] = useState(false);
   const [bgColor, setBgColor] = useState("#080f1b");
   const [showHelp, setShowHelp] = useState(false);
+  const [useEnvMap, setUseEnvMap] = useState(true);
+  const useEnvMapRef = useRef(useEnvMap);
+  useEnvMapRef.current = useEnvMap;
   const [activeLighting, setActiveLighting] = useState<"day" | "night" | "studio" | null>("day");
   const baselineRef = useRef<string>("");
   const autosaveTimerRef = useRef<number | null>(null);
@@ -420,6 +423,8 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
     let scene: import("three").Scene | undefined;
     let camera: import("three").PerspectiveCamera | undefined;
     let controls: import("three/examples/jsm/controls/OrbitControls.js").OrbitControls | undefined;
+    let envMap: import("three").Texture | undefined;
+    let pmremGenerator: import("three").PMREMGenerator | undefined;
 
     async function start() {
       const THREE = await import("three");
@@ -478,6 +483,53 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       shadowPlane.receiveShadow = true;
       scene.add(shadowPlane);
 
+      // Load HDRI Environment Map
+      pmremGenerator = new THREE.PMREMGenerator(renderer);
+      pmremGenerator.compileEquirectangularShader();
+
+      const { RGBELoader } = await import("three/examples/jsm/loaders/RGBELoader.js");
+      if (cleanup) {
+        pmremGenerator.dispose();
+        pmremGenerator = undefined;
+        return;
+      }
+
+      const hdrLoader = new RGBELoader();
+
+      hdrLoader.load(
+        "https://threejs.org/examples/textures/equirectangular/royal_esplanade_1k.hdr",
+        (texture) => {
+          if (cleanup || !pmremGenerator) {
+            texture.dispose();
+            pmremGenerator?.dispose();
+            pmremGenerator = undefined;
+            return;
+          }
+
+          try {
+            envMap = pmremGenerator.fromEquirectangular(texture).texture;
+            scene!.userData.envMap = envMap;
+            scene!.environment = useEnvMapRef.current ? envMap : null;
+          } catch (error) {
+            console.error("HDRI conversion failed:", error);
+            setMessage("មិនអាចបង្កើត HDRI Environment Map បានទេ។");
+          } finally {
+            texture.dispose();
+            pmremGenerator?.dispose();
+            pmremGenerator = undefined;
+          }
+        },
+        undefined,
+        (error) => {
+          pmremGenerator?.dispose();
+          pmremGenerator = undefined;
+          if (!cleanup) {
+            console.error("HDRI load failed:", error);
+            setMessage("មិនអាច Load HDRI បានទេ។ សូមពិនិត្យ Internet connection។");
+          }
+        }
+      );
+
       sceneRef.current = scene;
       setSceneReady(true);
 
@@ -517,6 +569,14 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       controlsRef.current = null;
       meshesRef.current.forEach(disposeMesh);
       meshesRef.current.clear();
+      if (scene) {
+        scene.environment = null;
+        scene.userData.envMap = null;
+      }
+      envMap?.dispose();
+      envMap = undefined;
+      pmremGenerator?.dispose();
+      pmremGenerator = undefined;
       renderer?.dispose();
       renderer?.domElement.remove();
       sceneRef.current = null;
@@ -559,6 +619,11 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
     if (hemiLightRef.current) hemiLightRef.current.intensity = ambientIntensity;
     if (dirLightRef.current) dirLightRef.current.intensity = directionalIntensity;
   }, [ambientIntensity, directionalIntensity, sceneReady]);
+
+  useEffect(() => {
+    if (!sceneReady || !sceneRef.current) return;
+    sceneRef.current.environment = useEnvMap ? sceneRef.current.userData.envMap || null : null;
+  }, [useEnvMap, sceneReady]);
 
   useEffect(() => {
     if (!sceneReady || !sceneRef.current) return;
@@ -1738,6 +1803,14 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
                   value={bgColor}
                   onChange={(event) => setBgColor(event.target.value)}
                 />
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", fontSize: "0.9rem" }}>
+                <input
+                  type="checkbox"
+                  checked={useEnvMap}
+                  onChange={(e) => setUseEnvMap(e.target.checked)}
+                />
+                HDRI Reflections
               </label>
             </div>
             <div className="studio-controls">
