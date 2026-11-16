@@ -541,7 +541,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
               const fontLoader = new FontLoader();
 
               const font = await new Promise<import("three/examples/jsm/loaders/FontLoader.js").Font>((resolve) => {
-                fontLoader.load("https://threejs.org/examples/fonts/helvetiker_regular.typeface.json", resolve);
+                fontLoader.load("/fonts/helvetiker_regular.typeface.json", resolve);
               });
 
               geo = new TextGeometry(item.text || "Hello", {
@@ -1244,7 +1244,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             const fontLoader = new FontLoader();
 
             const font = await new Promise<import("three/examples/jsm/loaders/FontLoader.js").Font>((resolve) => {
-              fontLoader.load("https://threejs.org/examples/fonts/helvetiker_regular.typeface.json", resolve);
+              fontLoader.load("/fonts/helvetiker_regular.typeface.json", resolve);
             });
 
             geo = new TextGeometry(item.text || "Hello", {
