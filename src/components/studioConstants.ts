@@ -8,6 +8,8 @@ export const presets: { name: string; shape: Shape }[] = [
   { name: "Cylinder", shape: "cylinder" },
   { name: "Ring", shape: "torus" },
   { name: "Text", shape: "text" },
+  { name: "Audi Car", shape: "car" },
+  { name: "Sports Car", shape: "sportcar" },
 ];
 
 export const MATERIAL_PRESETS = [

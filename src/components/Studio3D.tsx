@@ -3,7 +3,7 @@ import { Eye, EyeOff, Lock, Unlock, Pencil, HelpCircle, X, Camera, Trash2, Copy,
 import { saveAsset } from "../lib/storage.mjs";
 import { UI3DPreview } from "./UI3DPreview";
 import { presets, MATERIAL_PRESETS, zero, one, createId } from "./studioConstants";
-import { createGeometry, disposeMesh } from "./studioGeometry";
+import { createGeometry, createCarGeometry, disposeMesh } from "./studioGeometry";
 import { CameraPresets } from "./CameraPresets";
 import { SceneLightingPanel } from "./SceneLightingPanel";
 import { MaterialPanel } from "./MaterialPanel";
@@ -687,8 +687,11 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
               });
             }
 
-            let geo: import("three").BufferGeometry;
-            if (item.shape === "text") {
+            if (item.shape === "car" || item.shape === "sportcar") {
+              obj = createCarGeometry(THREE, item.shape);
+            } else {
+              let geo: import("three").BufferGeometry;
+              if (item.shape === "text") {
               const { FontLoader } = await import("three/examples/jsm/loaders/FontLoader.js");
               const { TextGeometry } = await import("three/examples/jsm/geometries/TextGeometry.js");
               const fontLoader = new FontLoader();
@@ -719,9 +722,10 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
               geo = createGeometry(THREE, item.shape);
             }
 
-            obj = new THREE.Mesh(geo, material);
-            obj.castShadow = true;
-            obj.receiveShadow = true;
+              obj = new THREE.Mesh(geo, material);
+              obj.castShadow = true;
+              obj.receiveShadow = true;
+            }
           }
 
           if (cancelled) return;
@@ -1455,6 +1459,16 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             material.map = texture;
           }
 
+          if (item.shape === "car" || item.shape === "sportcar") {
+            const carGroup = createCarGeometry(THREE, item.shape);
+            carGroup.position.set(item.position.x, item.position.y, item.position.z);
+            carGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            carGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            carGroup.name = item.name;
+            exportScene.add(carGroup);
+            return;
+          }
+
           let geo: import("three").BufferGeometry;
           if (item.shape === "text") {
             const { FontLoader } = await import("three/examples/jsm/loaders/FontLoader.js");
@@ -2084,6 +2098,16 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
               });
             });
             material.map = texture;
+          }
+
+          if (item.shape === "car" || item.shape === "sportcar") {
+            const carGroup = createCarGeometry(THREE, item.shape);
+            carGroup.position.set(item.position.x, item.position.y, item.position.z);
+            carGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            carGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            carGroup.name = item.name;
+            exportScene!.add(carGroup);
+            return;
           }
 
           let geo: import("three").BufferGeometry;
