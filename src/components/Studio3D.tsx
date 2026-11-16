@@ -96,6 +96,11 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
   const [showTour, setShowTour] = useState(false);
   const [tourStep, setTourStep] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordedChunksRef = useRef<Blob[]>([]);
+  const recordingTimeoutRef = useRef<number | null>(null);
   const lastSnapshotRef = useRef<string>("");
   const autoSaveTimerRef = useRef<number | null>(null);
   const [bgColor, setBgColor] = useState("#080f1b");
@@ -1235,6 +1240,92 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
 
     setMessage(`បាន Export Scene ទាំង ${allScenes.length} ជា JSON។`);
   }
+
+  function handleStartRecording() {
+    const renderer = rendererRef.current;
+    if (!renderer) return;
+
+    try {
+      const canvas = renderer.domElement;
+      const stream = canvas.captureStream(30); // 30 FPS
+
+      // Try to use VP9 first for better quality, fallback to VP8
+      let mimeType = "video/webm;codecs=vp9";
+      if (!MediaRecorder.isTypeSupported(mimeType)) {
+        mimeType = "video/webm;codecs=vp8";
+      }
+      if (!MediaRecorder.isTypeSupported(mimeType)) {
+        mimeType = "video/webm";
+      }
+
+      const recorder = new MediaRecorder(stream, { mimeType });
+      recordedChunksRef.current = [];
+
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          recordedChunksRef.current.push(event.data);
+        }
+      };
+
+      const startedAt = Date.now();
+
+      recorder.onstop = () => {
+        const elapsed = Math.floor((Date.now() - startedAt) / 1000);
+        stream.getTracks().forEach((track) => track.stop());
+        if (recordingTimeoutRef.current !== null) {
+          window.clearTimeout(recordingTimeoutRef.current);
+          recordingTimeoutRef.current = null;
+        }
+        const blob = new Blob(recordedChunksRef.current, { type: "video/webm" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `KHOEM-AI-${(sceneName || "Scene").replace(/[^\w-]/g, "_")}-${Date.now()}.webm`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.setTimeout(() => URL.revokeObjectURL(url), 3000);
+
+        setMessage(`បានថតវីដេអូរួចរាល់! (${elapsed}s)`);
+        setRecordingTime(0);
+      };
+
+      recorder.start();
+      mediaRecorderRef.current = recorder;
+      setIsRecording(true);
+      setRecordingTime(0);
+      setMessage("កំពុងថតវីដេអូ... ចុច Stop ដើម្បីបញ្ចប់។");
+
+      // Auto-stop after 30 seconds
+      recordingTimeoutRef.current = window.setTimeout(() => {
+        handleStopRecording();
+      }, 30000);
+    } catch (error) {
+      console.error("Recording failed:", error);
+      setMessage("មិនអាចថតវីដេអូបានទេ។ Browser របស់អ្នកអាចមិនគាំទ្រ។");
+    }
+  }
+
+  function handleStopRecording() {
+    if (recordingTimeoutRef.current !== null) {
+      window.clearTimeout(recordingTimeoutRef.current);
+      recordingTimeoutRef.current = null;
+    }
+    if (mediaRecorderRef.current?.state === "recording") {
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current = null;
+      setIsRecording(false);
+    }
+  }
+
+  // Update recording time counter
+  useEffect(() => {
+    if (!isRecording) return;
+    const timer = setInterval(() => {
+      setRecordingTime((prev) => prev + 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [isRecording]);
 
   async function handleExportHTML() {
     if (exporting || objects.length === 0) return;
@@ -2549,6 +2640,45 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             >
               {exporting ? "Exporting..." : "Export as Interactive HTML"}
             </button>
+            {isRecording ? (
+              <button
+                type="button"
+                className="upload-button"
+                onClick={handleStopRecording}
+                style={{
+                  marginTop: "8px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                  backgroundColor: "#ff4d4f",
+                  color: "white",
+                  borderColor: "transparent",
+                }}
+              >
+                <span
+                  style={{
+                    display: "inline-block",
+                    width: "10px",
+                    height: "10px",
+                    backgroundColor: "white",
+                    borderRadius: "50%",
+                    animation: "pulse 1s ease-in-out infinite",
+                  }}
+                />
+                Stop Recording ({recordingTime}s)
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="filter"
+                onClick={handleStartRecording}
+                disabled={!sceneReady || objects.length === 0}
+                style={{ marginTop: "8px", color: "#ff4d4f" }}
+              >
+                ● Record Video (30s max)
+              </button>
+            )}
           </div>
 
           {message && <p className="backup-message" role="status">{message}</p>}
@@ -2641,6 +2771,13 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
           </div>
         </div>
       )}
+
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.5; transform: scale(1.2); }
+        }
+      `}</style>
 
       {showSettings && (
         <div
