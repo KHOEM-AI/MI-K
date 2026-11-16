@@ -688,7 +688,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             }
 
             if (item.shape === "car" || item.shape === "sportcar") {
-              obj = createCarGeometry(THREE, item.shape, item.color);
+              obj = createCarGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
             } else {
               let geo: import("three").BufferGeometry;
               if (item.shape === "text") {
@@ -1460,7 +1460,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
           }
 
           if (item.shape === "car" || item.shape === "sportcar") {
-            const carGroup = createCarGeometry(THREE, item.shape, item.color);
+            const carGroup = createCarGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
             carGroup.position.set(item.position.x, item.position.y, item.position.z);
             carGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
             carGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
@@ -2101,7 +2101,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
           }
 
           if (item.shape === "car" || item.shape === "sportcar") {
-            const carGroup = createCarGeometry(THREE, item.shape, item.color);
+            const carGroup = createCarGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
             carGroup.position.set(item.position.x, item.position.y, item.position.z);
             carGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
             carGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
