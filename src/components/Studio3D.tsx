@@ -91,6 +91,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
   const [snapToGrid, setSnapToGrid] = useState(false);
   const [autoRotate, setAutoRotate] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [sceneSearchQuery, setSceneSearchQuery] = useState("");
   const [showTour, setShowTour] = useState(false);
   const [tourStep, setTourStep] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
@@ -1151,6 +1152,9 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
     setMessage("បានលុប Scene។");
   }
 
+  const filteredSavedScenes = savedScenes.filter((scene) =>
+    scene.name.toLowerCase().includes(sceneSearchQuery.toLowerCase().trim())
+  );
   const filteredObjects = objects.filter((item) =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase().trim())
   );
@@ -2034,8 +2038,31 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
                 មិនទាន់មាន Scene ដែលបានរក្សាទុកទេ។ សូមដាក់ឈ្មោះ ហើយចុច Save Scene។
               </p>
             ) : (
-              <div className="studio-object-list">
-                {savedScenes.map((scene) => (
+              <>
+                {savedScenes.length > 3 && (
+                  <input
+                    type="text"
+                    placeholder="ស្វែងរក Scene..."
+                    value={sceneSearchQuery}
+                    onChange={(e) => setSceneSearchQuery(e.target.value)}
+                    style={{
+                      width: "100%",
+                      padding: "8px 12px",
+                      marginBottom: "12px",
+                      borderRadius: "6px",
+                      border: "1px solid #31516e",
+                      backgroundColor: "#080f1b",
+                      color: "#ffffff",
+                      fontSize: "0.9rem",
+                      boxSizing: "border-box",
+                    }}
+                  />
+                )}
+                {filteredSavedScenes.length === 0 && sceneSearchQuery.trim() ? (
+                  <p className="studio-note">រកមិនឃើញ Scene ដែលត្រូវនឹងការស្វែងរកទេ។</p>
+                ) : (
+                  <div className="studio-object-list">
+                    {filteredSavedScenes.map((scene) => (
                   <div
                     key={scene.id}
                     className={
@@ -2100,9 +2127,11 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
                     >
                       Load
                     </button>
+                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                )}
+              </>
             )}
           </div>
 
