@@ -116,3 +116,33 @@ KHOEM-AI
 ---
 
 Copyright belongs to the project owner.
+
+
+Stage Feature Commit
+1-3 Multi-object + Transform + Material (មុន)
+4-6 Light + Save/Load + JSON 056d313 → 0b10202
+7 Auto Backup 47617a8
+8 Scene Hierarchy 5dde0d0
+9 Texture Upload bdb375c
+10 Camera Presets 9e6457d
+11 Grid Snapping 4835be2
+12 Lighting Presets 6e940ec
+13 Background Color ac2cb33
+14 Clear Scene df892af
+15 Keyboard Shortcuts a5279ac
+16 3D UI Preview ab22c15
+17 GLB Import ca7a362
+18 Fit to Center 853e887
+19 Help Modal 63964cb
+20 Button Unification 63964cb
+21 Active Lighting 4e68e10
+22 Pro Shortcuts 22d3037
+23 Lazy Loading + Prefetch 970a6fa (implicit)
+24 3D Text 63964cb
+25 Real-time Shadows 63964cb
+26 Preset Materials 63964cb
+27 HDRI Environment Map 7bef573
+28 Auto-Rotate Camera 9cdb198
+29 Export PNG f14b31a
+30a-g Refactor (7 components) f14b31a
+31 Object Search 305832d ✅
