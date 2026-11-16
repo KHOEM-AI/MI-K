@@ -93,6 +93,8 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [showTour, setShowTour] = useState(false);
   const [tourStep, setTourStep] = useState(0);
+  const lastSnapshotRef = useRef<string>("");
+  const autoSaveTimerRef = useRef<number | null>(null);
   const [bgColor, setBgColor] = useState("#080f1b");
   const [showHelp, setShowHelp] = useState(false);
   const [useEnvMap, setUseEnvMap] = useState(true);
@@ -512,6 +514,57 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       }
     });
   }, [bgColor, sceneReady]);
+
+  // Auto-save Scene every 30 seconds (if changes detected)
+  useEffect(() => {
+    if (!sceneReady || objects.length === 0) return;
+
+    // Clear existing timer
+    if (autoSaveTimerRef.current) {
+      window.clearInterval(autoSaveTimerRef.current);
+    }
+
+    autoSaveTimerRef.current = window.setInterval(() => {
+      const currentSnapshot = serializeForBaseline(
+        objects,
+        ambientIntensity,
+        directionalIntensity,
+        bgColor
+      );
+
+      // Only save if changed since last successful auto-save
+      if (currentSnapshot === lastSnapshotRef.current) return;
+
+      const timestamp = new Date().toLocaleTimeString();
+      const now = Date.now();
+      const previousAutoSave = listScenes().find(
+        (scene) => scene && scene.id === "autosave-latest"
+      );
+      const snapshot: SceneSnapshot = {
+        id: "autosave-latest",
+        name: `Auto-Save ${timestamp}`,
+        objects,
+        ambientIntensity,
+        directionalIntensity,
+        backgroundColor: bgColor,
+        thumbnail: captureSceneThumbnail(),
+        createdAt: previousAutoSave?.createdAt ?? now,
+        updatedAt: now,
+      };
+
+      if (saveScene(snapshot)) {
+        lastSnapshotRef.current = currentSnapshot;
+        refreshSavedScenes();
+        console.log(`[Auto-Save] Scene saved at ${timestamp}`);
+      }
+    }, 30000); // 30 seconds
+
+    return () => {
+      if (autoSaveTimerRef.current) {
+        window.clearInterval(autoSaveTimerRef.current);
+      }
+    };
+  }, [objects, ambientIntensity, directionalIntensity, bgColor, sceneReady]);
 
   useEffect(() => {
     if (!sceneReady) return;
@@ -1964,6 +2017,11 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
           <div className="studio-object-manager">
             <h3>
               Scene Objects ({objects.length})
+              {sceneReady && (
+                <span style={{ color: "#6b7280", fontSize: "0.7rem", marginLeft: "8px" }}>
+                  💾 Auto-Save
+                </span>
+              )}
               {selectedIds.length > 1 && (
                 <span style={{ color: "#4a90d9", fontSize: "0.85rem", marginLeft: "8px" }}>
                   ({selectedIds.length} ជ្រើស)
