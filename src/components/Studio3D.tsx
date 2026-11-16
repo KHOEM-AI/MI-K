@@ -87,6 +87,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
   const [pendingAutobackup, setPendingAutobackup] = useState<AutobackupData | null>(null);
   const [snapToGrid, setSnapToGrid] = useState(false);
   const [autoRotate, setAutoRotate] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [bgColor, setBgColor] = useState("#080f1b");
   const [showHelp, setShowHelp] = useState(false);
   const [useEnvMap, setUseEnvMap] = useState(true);
@@ -778,6 +779,10 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
     }
     setMessage("បានលុប Scene។");
   }
+
+  const filteredObjects = objects.filter((item) =>
+    item.name.toLowerCase().includes(searchQuery.toLowerCase().trim())
+  );
 
   function handleExportPNG() {
     const renderer = rendererRef.current;
@@ -1539,11 +1544,32 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
 
           <div className="studio-object-manager">
             <h3>Scene Objects ({objects.length})</h3>
+            {objects.length > 0 && (
+              <input
+                type="text"
+                placeholder="ស្វែងរកឈ្មោះវត្ថុ..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "8px 12px",
+                  marginBottom: "12px",
+                  borderRadius: "6px",
+                  border: "1px solid #31516e",
+                  backgroundColor: "#080f1b",
+                  color: "#ffffff",
+                  fontSize: "0.9rem",
+                  boxSizing: "border-box",
+                }}
+              />
+            )}
             {objects.length === 0 ? (
               <p className="studio-note">មិនទាន់មានវត្ថុទេ។ សូមចុច Add Object។</p>
+            ) : filteredObjects.length === 0 ? (
+              <p className="studio-note">រកមិនឃើញវត្ថុដែលត្រូវនឹងការស្វែងរកទេ។</p>
             ) : (
               <div className="studio-object-list">
-                {objects.map((item) => (
+                {filteredObjects.map((item) => (
                   <div
                     key={item.id}
                     className={selectedId === item.id ? "studio-object-item selected" : "studio-object-item"}
