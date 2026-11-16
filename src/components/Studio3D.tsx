@@ -428,6 +428,8 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
 
       renderer = new THREE.WebGLRenderer({ antialias: true });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       canvasHost.current.appendChild(renderer.domElement);
 
       controls = new OrbitControls(camera, renderer.domElement);
@@ -443,12 +445,30 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
 
       const light = new THREE.DirectionalLight(0xffffff, directionalIntensity);
       light.position.set(4, 5, 4);
+      light.castShadow = true;
+      light.shadow.mapSize.width = 1024;
+      light.shadow.mapSize.height = 1024;
+      light.shadow.camera.near = 0.5;
+      light.shadow.camera.far = 50;
+      light.shadow.camera.left = -10;
+      light.shadow.camera.right = 10;
+      light.shadow.camera.top = 10;
+      light.shadow.camera.bottom = -10;
       scene.add(light);
       dirLightRef.current = light;
 
       const floor = new THREE.GridHelper(12, 12, 0x31516e, 0x1b2b40);
       floor.position.y = -1.2;
       scene.add(floor);
+
+      const shadowPlane = new THREE.Mesh(
+        new THREE.PlaneGeometry(20, 20),
+        new THREE.ShadowMaterial({ opacity: 0.3, color: 0x000000 })
+      );
+      shadowPlane.rotation.x = -Math.PI / 2;
+      shadowPlane.position.y = -1.19;
+      shadowPlane.receiveShadow = true;
+      scene.add(shadowPlane);
 
       sceneRef.current = scene;
       setSceneReady(true);
@@ -606,6 +626,12 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
                 item.glbData!,
                 (gltf) => {
                   const root = gltf.scene;
+                  root.traverse((child) => {
+                    if ((child as import("three").Mesh).isMesh) {
+                      child.castShadow = true;
+                      child.receiveShadow = true;
+                    }
+                  });
                   // Apply emissive to all meshes if selected
                   if (item.id === selectedId) {
                     root.traverse((child) => {
@@ -677,6 +703,8 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             }
 
             obj = new THREE.Mesh(geo, material);
+            obj.castShadow = true;
+            obj.receiveShadow = true;
           }
 
           if (cancelled) return;
