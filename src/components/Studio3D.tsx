@@ -6,6 +6,7 @@ import { presets, MATERIAL_PRESETS, zero, one, createId } from "./studioConstant
 import { createGeometry, disposeMesh } from "./studioGeometry";
 import { CameraPresets } from "./CameraPresets";
 import { SceneLightingPanel } from "./SceneLightingPanel";
+import { MaterialPanel } from "./MaterialPanel";
 import type { Shape, Vector3, SceneObject, StudioAsset, Studio3DProps } from "./studioTypes";
 import {
   listScenes,
@@ -1649,111 +1650,14 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
                 </div>
               )}
 
-              <div className="studio-controls">
-                <label>
-                  Material Color
-                  <input
-                    type="color"
-                    value={selectedObject.color}
-                    onChange={(event) => updateSelectedColor(event.target.value)}
-                    disabled={selectedObject.locked}
-                  />
-                </label>
-                <label>
-                  Texture Image (Max 1MB)
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleTextureUpload}
-                    disabled={selectedObject.locked}
-                    style={{ display: "none" }}
-                    id={`texture-upload-${selectedObject.id}`}
-                  />
-                  <button
-                    type="button"
-                    className="filter"
-                    disabled={selectedObject.locked}
-                    onClick={() => document.getElementById(`texture-upload-${selectedObject.id}`)?.click()}
-                    style={{ marginTop: "4px" }}
-                  >
-                    {selectedObject.textureData ? "Change Texture" : "Upload Texture"}
-                  </button>
-                </label>
-                {selectedObject.textureData && (
-                  <button
-                    type="button"
-                    className="filter"
-                    disabled={selectedObject.locked}
-                    onClick={() => clearTexture(selectedObject.id)}
-                  >
-                    Clear Texture
-                  </button>
-                )}
-                <div style={{ display: "flex", gap: "4px", marginBottom: "8px", flexWrap: "wrap" }}>
-                  {MATERIAL_PRESETS.map((preset) => {
-                    const Icon = preset.icon;
-                    return (
-                      <button
-                        key={preset.name}
-                        type="button"
-                        className="filter"
-                        onClick={() => applyMaterialPreset(preset)}
-                        disabled={selectedObject.locked}
-                        style={{
-                          flex: "1 1 30%",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          gap: "4px",
-                          fontSize: "0.8rem",
-                          padding: "6px"
-                        }}
-                        title={preset.name}
-                      >
-                        <Icon size={14} /> {preset.name}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <label>
-                  Metalness
-                  <input
-                    type="range"
-                    min={0}
-                    max={1}
-                    step={0.01}
-                    value={selectedObject.metalness}
-                    onChange={(event) =>
-                      updateSelectedMaterial("metalness", Number(event.target.value))
-                    }
-                  />
-                  <small>{selectedObject.metalness.toFixed(2)}</small>
-                </label>
-                <label>
-                  Roughness
-                  <input
-                    type="range"
-                    min={0}
-                    max={1}
-                    step={0.01}
-                    value={selectedObject.roughness}
-                    onChange={(event) =>
-                      updateSelectedMaterial("roughness", Number(event.target.value))
-                    }
-                  />
-                  <small>{selectedObject.roughness.toFixed(2)}</small>
-                </label>
-                <button type="button" className="upload-button" onClick={centerAndFitObject}>
-                  Fit to Center
-                </button>
-                <button type="button" className="upload-button" onClick={duplicateObject}>
-                  Duplicate
-                </button>
-                <button type="button" className="upload-button" onClick={deleteObject}>
-                  Delete
-                </button>
-              </div>
+              <MaterialPanel
+                selectedObject={selectedObject}
+                updateSelectedColor={updateSelectedColor}
+                updateSelectedMaterial={updateSelectedMaterial}
+                applyMaterialPreset={applyMaterialPreset}
+                handleTextureUpload={handleTextureUpload}
+                clearTexture={clearTexture}
+              />
 
               {renderVectorControls("Move Position", "position", selectedObject.position, 0.1, selectedObject.locked)}
               {renderVectorControls("Rotate (Radians)", "rotation", selectedObject.rotation, 0.1, selectedObject.locked)}
