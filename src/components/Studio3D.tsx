@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { Eye, EyeOff, Lock, Unlock, Pencil, Sun, Moon, Lightbulb, HelpCircle, X, Gem, Droplet, TreePine, Box, RotateCw, Camera } from "lucide-react";
+import { Eye, EyeOff, Lock, Unlock, Pencil, Sun, Moon, Lightbulb, HelpCircle, X, RotateCw, Camera } from "lucide-react";
 import { saveAsset } from "../lib/storage.mjs";
 import { UI3DPreview } from "./UI3DPreview";
+import { presets, MATERIAL_PRESETS, zero, one, createId } from "./studioConstants";
 import type { Shape, Vector3, SceneObject, StudioAsset, Studio3DProps } from "./studioTypes";
 import {
   listScenes,
@@ -18,30 +19,6 @@ import type {
   SceneSnapshot,
   AutobackupData,
 } from "../lib/sceneStorage.mjs";
-
-const presets: { name: string; shape: Shape }[] = [
-  { name: "Cube", shape: "box" },
-  { name: "Sphere", shape: "sphere" },
-  { name: "Cone", shape: "cone" },
-  { name: "Cylinder", shape: "cylinder" },
-  { name: "Ring", shape: "torus" },
-  { name: "Text", shape: "text" },
-];
-
-const MATERIAL_PRESETS = [
-  { name: "Gold", color: "#ffd700", metalness: 1.0, roughness: 0.2, icon: Gem },
-  { name: "Silver", color: "#e0e0e0", metalness: 1.0, roughness: 0.3, icon: Gem },
-  { name: "Glass", color: "#88ccff", metalness: 0.9, roughness: 0.1, icon: Droplet },
-  { name: "Wood", color: "#8b4513", metalness: 0.0, roughness: 0.9, icon: TreePine },
-  { name: "Plastic", color: "#ff6b6b", metalness: 0.1, roughness: 0.4, icon: Box },
-];
-
-const zero = (): Vector3 => ({ x: 0, y: 0, z: 0 });
-const one = (): Vector3 => ({ x: 1, y: 1, z: 1 });
-
-function createId() {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-}
 
 function serializeForBaseline(
   objs: SceneObject[],
