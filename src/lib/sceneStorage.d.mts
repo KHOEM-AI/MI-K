@@ -5,6 +5,7 @@ export type SceneSnapshot = {
   ambientIntensity: number;
   directionalIntensity: number;
   backgroundColor?: string;
+  thumbnail?: string | null;
   createdAt: number;
   updatedAt: number;
 };

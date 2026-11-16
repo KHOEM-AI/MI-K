@@ -861,6 +861,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       ambientIntensity,
       directionalIntensity,
       backgroundColor: bgColor,
+      thumbnail: captureSceneThumbnail(),
       createdAt: existing?.createdAt ?? now,
       updatedAt: now,
     };
@@ -895,6 +896,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       ambientIntensity,
       directionalIntensity,
       backgroundColor: bgColor,
+      thumbnail: captureSceneThumbnail(),
       createdAt: now,
       updatedAt: now,
     };
@@ -962,6 +964,26 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
   const filteredObjects = objects.filter((item) =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase().trim())
   );
+
+  function captureSceneThumbnail(): string | null {
+    const renderer = rendererRef.current;
+    const scene = sceneRef.current;
+    const camera = cameraRef.current;
+    if (!renderer || !scene || !camera) return null;
+    try {
+      renderer.render(scene, camera);
+      const canvas = document.createElement("canvas");
+      canvas.width = 160;
+      canvas.height = 90;
+      const context = canvas.getContext("2d");
+      if (!context) return null;
+      context.drawImage(renderer.domElement, 0, 0, 160, 90);
+      return canvas.toDataURL("image/jpeg", 0.55);
+    } catch (error) {
+      console.warn("Scene thumbnail capture failed:", error);
+      return null;
+    }
+  }
 
   function handleExportPNG() {
     const renderer = rendererRef.current;
@@ -1684,6 +1706,15 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
                         : "studio-object-item"
                     }
                   >
+                    {scene.thumbnail ? (
+                      <img
+                        src={scene.thumbnail}
+                        alt={`${scene.name} preview`}
+                        width={80}
+                        height={45}
+                        style={{ objectFit: "cover", borderRadius: "6px", flexShrink: 0 }}
+                      />
+                    ) : null}
                     <span>{scene.name}</span>
                     <small>
                       {(scene.objects as SceneObject[]).length} obj
