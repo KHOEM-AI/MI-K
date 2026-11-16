@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Eye, EyeOff, Lock, Unlock, Pencil, HelpCircle, X, Camera, Trash2, Copy } from "lucide-react";
+import { Eye, EyeOff, Lock, Unlock, Pencil, HelpCircle, X, Camera, Trash2, Copy, RotateCcw } from "lucide-react";
 import { saveAsset } from "../lib/storage.mjs";
 import { UI3DPreview } from "./UI3DPreview";
 import { presets, MATERIAL_PRESETS, zero, one, createId } from "./studioConstants";
@@ -93,6 +93,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [showTour, setShowTour] = useState(false);
   const [tourStep, setTourStep] = useState(0);
+  const [showSettings, setShowSettings] = useState(false);
   const lastSnapshotRef = useRef<string>("");
   const autoSaveTimerRef = useRef<number | null>(null);
   const [bgColor, setBgColor] = useState("#080f1b");
@@ -1094,6 +1095,47 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
     }
   }
 
+  function handleResetTour() {
+    localStorage.removeItem("khoem-ai-tour-seen");
+    setShowSettings(false);
+    setTourStep(0);
+    setShowTour(true);
+    setMessage("បានកំណត់ Tour ឡើងវិញ។");
+  }
+
+  function handleClearAllData() {
+    if (
+      !window.confirm(
+        "តើអ្នកពិតជាចង់លុបទិន្នន័យទាំងអស់មែនទេ? (Scene ទាំងអស់ និង Auto-Save នឹងត្រូវលុប ហើយមិនអាចត្រឡប់វិញបានទេ)"
+      )
+    )
+      return;
+
+    localStorage.removeItem("khoem-ai.scenes.v1");
+    localStorage.removeItem("khoem-ai.autobackup.v1");
+    localStorage.removeItem("khoem-ai-tour-seen");
+
+    // Reset auto-save baselines to prevent empty data from being saved again.
+    const emptySnapshot = serializeForBaseline(
+      [],
+      ambientIntensity,
+      directionalIntensity,
+      bgColor
+    );
+    lastSnapshotRef.current = emptySnapshot;
+    baselineRef.current = emptySnapshot;
+
+    setObjects([]);
+    setSelectedId(null);
+    setSelectedIds([]);
+    setSceneName("");
+    setCurrentSceneId(null);
+    setSavedScenes([]);
+    setPendingAutobackup(null);
+    setShowSettings(false);
+    setMessage("បានលុបទិន្នន័យទាំងអស់។ App ត្រូវបានកំណត់ឡើងវិញ។");
+  }
+
   function handleDeleteScene(id: string) {
     if (!window.confirm("លុប Scene នេះទេ?")) return;
     const ok = deleteScene(id);
@@ -1792,8 +1834,16 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
         <button
           type="button"
           className="upload-button"
-          onClick={() => setShowHelp(true)}
+          onClick={() => setShowSettings(true)}
           style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "6px" }}
+        >
+          ⚙️ Settings
+        </button>
+        <button
+          type="button"
+          className="upload-button"
+          onClick={() => setShowHelp(true)}
+          style={{ display: "flex", alignItems: "center", gap: "6px" }}
         >
           <HelpCircle size={16} /> Help
         </button>
@@ -2328,6 +2378,87 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
                   {tourStep < TOUR_STEPS.length - 1 ? "បន្ទាប់" : "ចាប់ផ្តើម! 🚀"}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showSettings && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.7)",
+            zIndex: 9999,
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            padding: "20px",
+          }}
+          onClick={() => setShowSettings(false)}
+        >
+          <div
+            style={{
+              backgroundColor: "#111e31",
+              color: "#ffffff",
+              padding: "24px",
+              borderRadius: "12px",
+              maxWidth: "480px",
+              width: "100%",
+              border: "1px solid #168de2",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+              <h3 style={{ margin: 0, color: "#168de2" }}>⚙️ Settings</h3>
+              <button
+                type="button"
+                onClick={() => setShowSettings(false)}
+                style={{ background: "none", border: "none", color: "#ffffff", cursor: "pointer", display: "flex" }}
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div style={{ marginBottom: "20px" }}>
+              <h4 style={{ fontSize: "1rem", marginBottom: "8px" }}>ការណែនាំ (Tour)</h4>
+              <p style={{ fontSize: "0.9rem", color: "#a0aec0", marginBottom: "12px" }}>
+                បើអ្នកចង់មើលការណែនាំឡើងវិញ សូមចុចប៊ូតុងខាងក្រោម។
+              </p>
+              <button
+                type="button"
+                className="upload-button"
+                onClick={handleResetTour}
+                style={{ display: "flex", alignItems: "center", gap: "6px" }}
+              >
+                <RotateCcw size={16} /> Reset Tour
+              </button>
+            </div>
+
+            <div style={{ borderTop: "1px solid #31516e", paddingTop: "20px" }}>
+              <h4 style={{ fontSize: "1rem", marginBottom: "8px", color: "#ff6b6b" }}>
+                តំបន់គ្រោះថ្នាក់
+              </h4>
+              <p style={{ fontSize: "0.9rem", color: "#a0aec0", marginBottom: "12px" }}>
+                លុប Scene ទាំងអស់ Auto-Save និងការកំណត់ Tour។ សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។
+              </p>
+              <button
+                type="button"
+                className="filter"
+                onClick={handleClearAllData}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  color: "#ff6b6b",
+                  borderColor: "#ff6b6b",
+                }}
+              >
+                <Trash2 size={16} /> Clear All Data
+              </button>
             </div>
           </div>
         </div>
