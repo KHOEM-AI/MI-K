@@ -739,6 +739,42 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
     }
   }
 
+  function handleSaveAsNewScene() {
+    const baseName = sceneName.trim() || "Scene";
+    const newName = `${baseName} Copy ${new Date().toLocaleTimeString()}`;
+    const now = Date.now();
+    const newId = createId();
+
+    const snapshot: SceneSnapshot = {
+      id: newId,
+      name: newName,
+      objects,
+      ambientIntensity,
+      directionalIntensity,
+      backgroundColor: bgColor,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    const ok = saveScene(snapshot);
+    if (ok) {
+      refreshSavedScenes();
+      setCurrentSceneId(newId);
+      setSceneName(newName);
+      baselineRef.current = serializeForBaseline(
+        objects,
+        ambientIntensity,
+        directionalIntensity,
+        bgColor
+      );
+      clearAutobackup();
+      setPendingAutobackup(null);
+      setMessage(`បានបង្កើត Scene ថ្មី: "${newName}"។`);
+    } else {
+      setMessage("មិនអាចបង្កើត Scene ថ្មីបានទេ។");
+    }
+  }
+
   function handleLoadScene(id: string) {
     const snapshot = loadScene(id);
     if (!snapshot) {
@@ -1443,6 +1479,14 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
                 onClick={handleSaveScene}
               >
                 {currentSceneId ? "Update Scene" : "Save Scene"}
+              </button>
+              <button
+                type="button"
+                className="filter"
+                onClick={handleSaveAsNewScene}
+                title="បង្កើត Scene ថ្មីដោយមិនប៉ះពាល់ដើម"
+              >
+                Save As New
               </button>
               <button
                 type="button"
