@@ -104,15 +104,26 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
   function toggleSelectObject(id: string, event: React.MouseEvent) {
     const isCtrl = event.ctrlKey || event.metaKey;
     const isShift = event.shiftKey;
+    const clickedObject = objects.find((o) => o.id === id);
+    const groupMembers = clickedObject?.groupId
+      ? objects.filter((o) => o.groupId === clickedObject.groupId).map((o) => o.id)
+      : [id];
 
     if (isCtrl) {
-      // Ctrl+Click: Toggle selection
-      setSelectedIds((prev) =>
-        prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+      // Ctrl+Click: Toggle selection (for group, toggle all members)
+      const allSelected = groupMembers.every((gid) => selectedIds.includes(gid));
+      const nextSelectedIds = allSelected
+        ? selectedIds.filter((x) => !groupMembers.includes(x))
+        : [...new Set([...selectedIds, ...groupMembers])];
+
+      setSelectedIds(nextSelectedIds);
+      setSelectedId(
+        allSelected
+          ? nextSelectedIds[nextSelectedIds.length - 1] ?? null
+          : id
       );
-      setSelectedId(id);
     } else if (isShift && selectedId) {
-      // Shift+Click: Range select (between selectedId and id)
+      // Shift+Click: Range select
       const currentIndex = objects.findIndex((o) => o.id === selectedId);
       const targetIndex = objects.findIndex((o) => o.id === id);
       if (currentIndex !== -1 && targetIndex !== -1) {
@@ -123,9 +134,9 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
         setSelectedId(id);
       }
     } else {
-      // Normal click: Single selection
+      // Normal click: Select whole group (if in group) or single object
       setSelectedId(id);
-      setSelectedIds([id]);
+      setSelectedIds(groupMembers);
     }
   }
 
@@ -1799,6 +1810,9 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
                       cursor: "pointer",
                       border: selectedIds.includes(item.id) && item.id !== selectedId
                         ? "1px dashed #4a90d9"
+                        : undefined,
+                      backgroundColor: item.groupId
+                        ? "rgba(74, 144, 217, 0.05)"
                         : undefined,
                     }}
                   >
