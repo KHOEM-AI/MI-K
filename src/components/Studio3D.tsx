@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Eye, EyeOff, Lock, Unlock, Pencil, Sun, Moon, Lightbulb, HelpCircle, X, Gem, Droplet, TreePine, Box } from "lucide-react";
+import { Eye, EyeOff, Lock, Unlock, Pencil, Sun, Moon, Lightbulb, HelpCircle, X, Gem, Droplet, TreePine, Box, RotateCw } from "lucide-react";
 import { saveAsset } from "../lib/storage.mjs";
 import {
   listScenes,
@@ -305,6 +305,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
   const [currentSceneId, setCurrentSceneId] = useState<string | null>(null);
   const [pendingAutobackup, setPendingAutobackup] = useState<AutobackupData | null>(null);
   const [snapToGrid, setSnapToGrid] = useState(false);
+  const [autoRotate, setAutoRotate] = useState(false);
   const [bgColor, setBgColor] = useState("#080f1b");
   const [showHelp, setShowHelp] = useState(false);
   const [useEnvMap, setUseEnvMap] = useState(true);
@@ -624,6 +625,13 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
     if (!sceneReady || !sceneRef.current) return;
     sceneRef.current.environment = useEnvMap ? sceneRef.current.userData.envMap || null : null;
   }, [useEnvMap, sceneReady]);
+
+  useEffect(() => {
+    if (controlsRef.current) {
+      controlsRef.current.autoRotate = autoRotate;
+      controlsRef.current.autoRotateSpeed = 2.0; // ល្បឿនបង្វិល
+    }
+  }, [autoRotate]);
 
   useEffect(() => {
     if (!sceneReady || !sceneRef.current) return;
@@ -1760,6 +1768,14 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
               style={{ flex: 1 }}
             >
               Iso
+            </button>
+            <button
+              type="button"
+              className={autoRotate ? "upload-button" : "filter"}
+              onClick={() => setAutoRotate(!autoRotate)}
+              style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
+            >
+              <RotateCw size={16} /> Auto Rotate
             </button>
           </div>
 
