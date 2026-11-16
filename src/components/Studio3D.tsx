@@ -702,7 +702,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
 
             if (item.shape === "car" || item.shape === "sportcar") {
               obj = createCarGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
-            } else if (item.shape === "table" || item.shape === "chair" || item.shape === "sofa") {
+            } else if (item.shape === "table" || item.shape === "chair" || item.shape === "sofa" || item.shape === "tree" || item.shape === "house" || item.shape === "lamp") {
               obj = createFurnitureGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
             } else {
               let geo: import("three").BufferGeometry;
@@ -1484,7 +1484,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             return;
           }
 
-          if (item.shape === "table" || item.shape === "chair" || item.shape === "sofa") {
+          if (item.shape === "table" || item.shape === "chair" || item.shape === "sofa" || item.shape === "tree" || item.shape === "house" || item.shape === "lamp") {
             const furnitureGroup = createFurnitureGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
             furnitureGroup.position.set(item.position.x, item.position.y, item.position.z);
             furnitureGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
@@ -2135,7 +2135,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             return;
           }
 
-          if (item.shape === "table" || item.shape === "chair" || item.shape === "sofa") {
+          if (item.shape === "table" || item.shape === "chair" || item.shape === "sofa" || item.shape === "tree" || item.shape === "house" || item.shape === "lamp") {
             const furnitureGroup = createFurnitureGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
             furnitureGroup.position.set(item.position.x, item.position.y, item.position.z);
             furnitureGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);

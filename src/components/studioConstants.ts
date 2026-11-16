@@ -13,6 +13,9 @@ export const presets: { name: string; shape: Shape }[] = [
   { name: "Table", shape: "table" },
   { name: "Chair", shape: "chair" },
   { name: "Sofa", shape: "sofa" },
+  { name: "Tree", shape: "tree" },
+  { name: "House", shape: "house" },
+  { name: "Lamp", shape: "lamp" },
 ];
 
 export const MATERIAL_PRESETS = [

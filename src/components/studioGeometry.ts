@@ -216,13 +216,19 @@ export function createCarGeometry(
 
 export function createFurnitureGeometry(
   THREE: typeof import("three"),
-  type: "table" | "chair" | "sofa",
+  type: "table" | "chair" | "sofa" | "tree" | "house" | "lamp",
   color?: string,
   metalness?: number,
   roughness?: number
 ): import("three").Group {
   const group = new THREE.Group();
-  const defaultColor = type === "table" ? "#8b4513" : type === "chair" ? "#654321" : "#4a5568";
+  const defaultColor = 
+    type === "table" ? "#8b4513" : 
+    type === "chair" ? "#654321" : 
+    type === "sofa" ? "#4a5568" : 
+    type === "tree" ? "#2d5016" : 
+    type === "house" ? "#d4a373" : 
+    "#fbbf24";
   const material = new THREE.MeshStandardMaterial({
     color: color || defaultColor,
     metalness: metalness ?? 0.1,
@@ -280,7 +286,7 @@ export function createFurnitureGeometry(
       leg.position.set(x, y, z);
       group.add(leg);
     });
-  } else {
+  } else if (type === "sofa") {
     // Sofa - base
     const baseGeo = new THREE.BoxGeometry(3.5, 0.5, 1.5);
     const base = new THREE.Mesh(baseGeo, material);
@@ -310,6 +316,108 @@ export function createFurnitureGeometry(
       cushion.position.set(x, 0.85, 0.05);
       group.add(cushion);
     });
+  } else if (type === "tree") {
+    // Tree trunk
+    const trunkGeo = new THREE.CylinderGeometry(0.25, 0.35, 2.5, 8);
+    const trunkMaterial = new THREE.MeshStandardMaterial({
+      color: "#5d3a1a",
+      metalness: 0.05,
+      roughness: 0.9,
+    });
+    const trunk = new THREE.Mesh(trunkGeo, trunkMaterial);
+    trunk.position.y = 1.25;
+    group.add(trunk);
+
+    // Foliage (3 spheres of different sizes)
+    const foliageMat = new THREE.MeshStandardMaterial({
+      color: color || "#2d5016",
+      metalness: 0.05,
+      roughness: 0.8,
+    });
+    const foliage1Geo = new THREE.SphereGeometry(1.5, 16, 12);
+    const foliage1 = new THREE.Mesh(foliage1Geo, foliageMat);
+    foliage1.position.y = 3.0;
+    group.add(foliage1);
+
+    const foliage2Geo = new THREE.SphereGeometry(1.2, 16, 12);
+    const foliage2 = new THREE.Mesh(foliage2Geo, foliageMat);
+    foliage2.position.set(0.8, 3.8, 0.5);
+    group.add(foliage2);
+
+    const foliage3 = new THREE.Mesh(foliage2Geo, foliageMat);
+    foliage3.position.set(-0.8, 3.8, -0.5);
+    group.add(foliage3);
+  } else if (type === "house") {
+    // House walls
+    const wallsGeo = new THREE.BoxGeometry(3, 2.5, 3);
+    const walls = new THREE.Mesh(wallsGeo, material);
+    walls.position.y = 1.25;
+    group.add(walls);
+
+    // Roof (cone)
+    const roofGeo = new THREE.ConeGeometry(2.5, 1.5, 4);
+    const roofMaterial = new THREE.MeshStandardMaterial({
+      color: "#8b0000",
+      metalness: 0.1,
+      roughness: 0.7,
+    });
+    const roof = new THREE.Mesh(roofGeo, roofMaterial);
+    roof.position.y = 3.25;
+    roof.rotation.y = Math.PI / 4;
+    group.add(roof);
+
+    // Door
+    const doorGeo = new THREE.BoxGeometry(0.6, 1.2, 0.1);
+    const doorMaterial = new THREE.MeshStandardMaterial({
+      color: "#4a2c1a",
+      metalness: 0.2,
+      roughness: 0.6,
+    });
+    const door = new THREE.Mesh(doorGeo, doorMaterial);
+    door.position.set(0, 0.6, 1.55);
+    group.add(door);
+
+    // 2 Windows
+    const windowGeo = new THREE.BoxGeometry(0.5, 0.5, 0.1);
+    const windowMaterial = new THREE.MeshStandardMaterial({
+      color: "#88ccff",
+      metalness: 0.9,
+      roughness: 0.1,
+      transparent: true,
+      opacity: 0.7,
+    });
+    const window1 = new THREE.Mesh(windowGeo, windowMaterial);
+    window1.position.set(-0.9, 1.8, 1.55);
+    group.add(window1);
+    const window2 = new THREE.Mesh(windowGeo, windowMaterial);
+    window2.position.set(0.9, 1.8, 1.55);
+    group.add(window2);
+  } else if (type === "lamp") {
+    // Base
+    const baseGeo = new THREE.CylinderGeometry(0.5, 0.6, 0.2, 16);
+    const base = new THREE.Mesh(baseGeo, material);
+    base.position.y = 0.1;
+    group.add(base);
+
+    // Pole
+    const poleGeo = new THREE.CylinderGeometry(0.08, 0.08, 3, 8);
+    const pole = new THREE.Mesh(poleGeo, material);
+    pole.position.y = 1.6;
+    group.add(pole);
+
+    // Shade (cone)
+    const shadeGeo = new THREE.ConeGeometry(0.8, 1.0, 16, 1, true);
+    const shadeMaterial = new THREE.MeshStandardMaterial({
+      color: "#fbbf24",
+      metalness: 0.1,
+      roughness: 0.8,
+      emissive: "#fbbf24",
+      emissiveIntensity: 0.5,
+      side: THREE.DoubleSide,
+    });
+    const shade = new THREE.Mesh(shadeGeo, shadeMaterial);
+    shade.position.y = 3.2;
+    group.add(shade);
   }
 
   // Enable shadows
