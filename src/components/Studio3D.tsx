@@ -1236,6 +1236,197 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
     setMessage(`បាន Export Scene ទាំង ${allScenes.length} ជា JSON។`);
   }
 
+  async function handleExportHTML() {
+    if (exporting || objects.length === 0) return;
+
+    setExporting(true);
+    setMessage("កំពុងបង្កើត HTML...");
+
+    try {
+      // First, generate the GLB data URL using existing export logic
+      const THREE = await import("three");
+      const { GLTFExporter } = await import("three/examples/jsm/exporters/GLTFExporter.js");
+
+      const exportScene = new THREE.Scene();
+      exportScene.background = new THREE.Color(bgColor);
+
+      // Add lights
+      const ambient = new THREE.AmbientLight(0xffffff, ambientIntensity);
+      exportScene.add(ambient);
+      const directional = new THREE.DirectionalLight(0xffffff, directionalIntensity);
+      directional.position.set(4, 5, 4);
+      exportScene.add(directional);
+
+      // Add objects (reuse existing logic)
+      const loader = new THREE.TextureLoader();
+      await Promise.all(
+        objects.map(async (item) => {
+          const material = new THREE.MeshStandardMaterial({
+            color: item.color,
+            metalness: item.metalness,
+            roughness: item.roughness,
+          });
+
+          if (item.textureData) {
+            const texture = await new Promise<import("three").Texture>((resolve) => {
+              loader.load(item.textureData!, (tex) => {
+                tex.colorSpace = THREE.SRGBColorSpace;
+                resolve(tex);
+              });
+            });
+            material.map = texture;
+          }
+
+          let geo: import("three").BufferGeometry;
+          if (item.shape === "text") {
+            const { FontLoader } = await import("three/examples/jsm/loaders/FontLoader.js");
+            const { TextGeometry } = await import("three/examples/jsm/geometries/TextGeometry.js");
+            const fontLoader = new FontLoader();
+            const font = await new Promise<import("three/examples/jsm/loaders/FontLoader.js").Font>((resolve) => {
+              fontLoader.load("/fonts/helvetiker_regular.typeface.json", resolve);
+            });
+            geo = new TextGeometry(item.text || "Hello", {
+              font, size: 1.5, depth: 0.3, curveSegments: 12,
+              bevelEnabled: true, bevelThickness: 0.05, bevelSize: 0.03, bevelOffset: 0, bevelSegments: 5,
+            });
+            geo.computeBoundingBox();
+            if (geo.boundingBox) {
+              geo.translate(-0.5 * (geo.boundingBox.max.x - geo.boundingBox.min.x), 0, 0);
+            }
+          } else {
+            geo = createGeometry(THREE, item.shape);
+          }
+
+          const mesh = new THREE.Mesh(geo, material);
+          mesh.position.set(item.position.x, item.position.y, item.position.z);
+          mesh.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+          mesh.scale.set(item.scale.x, item.scale.y, item.scale.z);
+          mesh.name = item.name;
+          exportScene.add(mesh);
+        })
+      );
+
+      exportScene.updateMatrixWorld(true);
+
+      // Export to GLB data URL
+      const exporter = new GLTFExporter();
+      const glbResult = await new Promise<ArrayBuffer>((resolve, reject) => {
+        exporter.parse(exportScene, (output) => {
+          if (output instanceof ArrayBuffer) resolve(output);
+          else reject(new Error("GLB export failed"));
+        }, reject, { binary: true });
+      });
+
+      const glbBase64 = btoa(
+        new Uint8Array(glbResult).reduce((data, byte) => data + String.fromCharCode(byte), "")
+      );
+      const glbDataUrl = `data:model/gltf-binary;base64,${glbBase64}`;
+
+      // Create HTML with embedded Three.js viewer
+      const htmlContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${sceneName || "KHOEM-AI 3D Scene"}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: sans-serif; background: ${bgColor}; overflow: hidden; }
+    #canvas-container { width: 100vw; height: 100vh; }
+    #info { position: fixed; top: 16px; left: 16px; color: #fff; background: rgba(0,0,0,0.7); padding: 12px 16px; border-radius: 8px; font-size: 14px; }
+    #info strong { color: #168de2; }
+  </style>
+</head>
+<body>
+  <div id="info">
+    <strong>${sceneName || "KHOEM-AI Scene"}</strong><br>
+    ${objects.length} objects · ${new Date().toLocaleDateString()}<br>
+    <small>Drag to rotate · Scroll to zoom</small>
+  </div>
+  <div id="canvas-container"></div>
+  <script type="importmap">
+    { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/" } }
+  </script>
+  <script type="module">
+    import * as THREE from "three";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+    import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color("${bgColor}");
+
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.set(4, 3, 7);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    document.getElementById("canvas-container").appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 1.5;
+
+    // Load GLB from embedded data
+    const loader = new GLTFLoader();
+    loader.load("${glbDataUrl}", (gltf) => {
+      scene.add(gltf.scene);
+      // Auto-fit camera
+      const box = new THREE.Box3().setFromObject(gltf.scene);
+      const center = box.getCenter(new THREE.Vector3());
+      const size = box.getSize(new THREE.Vector3());
+      const maxDim = Math.max(size.x, size.y, size.z);
+      const fov = camera.fov * (Math.PI / 180);
+      const distance = Math.abs(maxDim / 2 / Math.tan(fov / 2)) * 1.5;
+      camera.position.set(center.x + distance, center.y + distance * 0.5, center.z + distance);
+      controls.target.copy(center);
+      controls.update();
+    });
+
+    const grid = new THREE.GridHelper(12, 12, 0x31516e, 0x1b2b40);
+    grid.position.y = -1.2;
+    scene.add(grid);
+
+    window.addEventListener("resize", () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</body>
+</html>`;
+
+      // Download the HTML file
+      const blob = new Blob([htmlContent], { type: "text/html" });
+      const filename = `KHOEM-AI-${(sceneName || "Scene").replace(/[^\w-]/g, "_")}-${Date.now()}.html`;
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 3000);
+
+      setMessage(`បាន Export Scene ជា HTML: ${filename}`);
+    } catch (error) {
+      console.error("HTML export failed:", error);
+      setMessage(error instanceof Error ? `Export HTML failed: ${error.message}` : "មិនអាច Export HTML បានទេ។");
+    } finally {
+      setExporting(false);
+    }
+  }
+
   function handleExportJSON() {
     if (!objects.length) {
       setMessage("សូមបន្ថែមវត្ថុ 3D មុនពេល Export JSON។");
@@ -2348,6 +2539,15 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
               disabled={exporting || objects.length === 0}
             >
               {exporting ? "Exporting..." : `Export ${objects.length} Object(s) as GLB`}
+            </button>
+            <button
+              type="button"
+              className="filter"
+              onClick={handleExportHTML}
+              disabled={exporting || objects.length === 0}
+              style={{ marginTop: "8px", color: "#4a90d9" }}
+            >
+              {exporting ? "Exporting..." : "Export as Interactive HTML"}
             </button>
           </div>
 
