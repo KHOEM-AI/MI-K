@@ -98,6 +98,10 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
   const [showSettings, setShowSettings] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
+  const [bgMusicFile, setBgMusicFile] = useState<File | null>(null);
+  const bgMusicInputRef = useRef<HTMLInputElement | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordedChunksRef = useRef<Blob[]>([]);
   const recordingTimeoutRef = useRef<number | null>(null);
@@ -1241,15 +1245,63 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
     setMessage(`បាន Export Scene ទាំង ${allScenes.length} ជា JSON។`);
   }
 
-  function handleStartRecording() {
+  function handleMusicUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      setMessage("ឯកសារតន្ត្រីធំពេក (អតិបរមា 10MB)។");
+      return;
+    }
+
+    if (!file.type.startsWith("audio/")) {
+      setMessage("សូមជ្រើសរើសឯកសារតន្ត្រី MP3, WAV ឬ OGG។");
+      return;
+    }
+
+    setBgMusicFile(file);
+    setMessage(`បានបន្ថែមតន្ត្រី: "${file.name}"។`);
+  }
+
+  function handleClearMusic() {
+    setBgMusicFile(null);
+    setMessage("បានលុបតន្ត្រីចេញ។");
+  }
+
+  async function handleStartRecording() {
     const renderer = rendererRef.current;
     if (!renderer) return;
 
+    let stream: MediaStream | null = null;
+
     try {
       const canvas = renderer.domElement;
-      const stream = canvas.captureStream(30); // 30 FPS
+      stream = canvas.captureStream(30);
 
-      // Try to use VP9 first for better quality, fallback to VP8
+      if (bgMusicFile) {
+        const audioContext = new AudioContext();
+        audioContextRef.current = audioContext;
+
+        await audioContext.resume();
+
+        const arrayBuffer = await bgMusicFile.arrayBuffer();
+        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+
+        const destination = audioContext.createMediaStreamDestination();
+        const audioSource = audioContext.createBufferSource();
+
+        audioSource.buffer = audioBuffer;
+        audioSource.loop = true;
+        audioSource.connect(destination);
+        destination.stream.getAudioTracks().forEach((track) => {
+          stream?.addTrack(track);
+        });
+
+        audioSourceRef.current = audioSource;
+        audioSource.start();
+      }
+
       let mimeType = "video/webm;codecs=vp9";
       if (!MediaRecorder.isTypeSupported(mimeType)) {
         mimeType = "video/webm;codecs=vp8";
@@ -1271,21 +1323,40 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
 
       recorder.onstop = () => {
         const elapsed = Math.floor((Date.now() - startedAt) / 1000);
-        stream.getTracks().forEach((track) => track.stop());
+
+        audioSourceRef.current?.stop();
+        audioSourceRef.current = null;
+
+        stream?.getTracks().forEach((track) => track.stop());
+
+        const audioContext = audioContextRef.current;
+        audioContextRef.current = null;
+        if (audioContext && audioContext.state !== "closed") {
+          void audioContext.close();
+        }
+
         if (recordingTimeoutRef.current !== null) {
           window.clearTimeout(recordingTimeoutRef.current);
           recordingTimeoutRef.current = null;
         }
-        const blob = new Blob(recordedChunksRef.current, { type: "video/webm" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `KHOEM-AI-${(sceneName || "Scene").replace(/[^\w-]/g, "_")}-${Date.now()}.webm`;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        window.setTimeout(() => URL.revokeObjectURL(url), 3000);
 
+        const blob = new Blob(recordedChunksRef.current, {
+          type: "video/webm",
+        });
+
+        if (blob.size > 0) {
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = `KHOEM-AI-${(sceneName || "Scene").replace(/[^\w-]/g, "_")}-${Date.now()}.webm`;
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          window.setTimeout(() => URL.revokeObjectURL(url), 3000);
+        }
+
+        mediaRecorderRef.current = null;
+        setIsRecording(false);
         setMessage(`បានថតវីដេអូរួចរាល់! (${elapsed}s)`);
         setRecordingTime(0);
       };
@@ -1294,15 +1365,31 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       mediaRecorderRef.current = recorder;
       setIsRecording(true);
       setRecordingTime(0);
-      setMessage("កំពុងថតវីដេអូ... ចុច Stop ដើម្បីបញ្ចប់។");
+      setMessage(
+        bgMusicFile
+          ? "កំពុងថតវីដេអូជាមួយតន្ត្រី..."
+          : "កំពុងថតវីដេអូ... ចុច Stop ដើម្បីបញ្ចប់។"
+      );
 
-      // Auto-stop after 30 seconds
       recordingTimeoutRef.current = window.setTimeout(() => {
         handleStopRecording();
       }, 30000);
     } catch (error) {
       console.error("Recording failed:", error);
-      setMessage("មិនអាចថតវីដេអូបានទេ។ Browser របស់អ្នកអាចមិនគាំទ្រ។");
+
+      audioSourceRef.current?.stop();
+      audioSourceRef.current = null;
+
+      stream?.getTracks().forEach((track) => track.stop());
+
+      const audioContext = audioContextRef.current;
+      audioContextRef.current = null;
+      if (audioContext && audioContext.state !== "closed") {
+        void audioContext.close();
+      }
+
+      setIsRecording(false);
+      setMessage("មិនអាចថតវីដេអូ ឬបញ្ចូលតន្ត្រីបានទេ។");
     }
   }
 
@@ -2640,6 +2727,37 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             >
               {exporting ? "Exporting..." : "Export as Interactive HTML"}
             </button>
+            <div style={{ marginTop: "8px", display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+              <button
+                type="button"
+                className="filter"
+                onClick={() => bgMusicInputRef.current?.click()}
+                style={{ fontSize: "0.85rem" }}
+              >
+                🎵 {bgMusicFile ? "Change Music" : "Add Background Music"}
+              </button>
+              {bgMusicFile && (
+                <>
+                  <small style={{ color: "#4a90d9" }}>🎶 {bgMusicFile.name}</small>
+                  <button
+                    type="button"
+                    className="filter"
+                    onClick={handleClearMusic}
+                    style={{ fontSize: "0.75rem", padding: "4px 8px", color: "#ff6b6b" }}
+                  >
+                    Remove
+                  </button>
+                </>
+              )}
+              <input
+                ref={bgMusicInputRef}
+                type="file"
+                accept="audio/*"
+                onChange={handleMusicUpload}
+                style={{ display: "none" }}
+              />
+            </div>
+
             {isRecording ? (
               <button
                 type="button"
