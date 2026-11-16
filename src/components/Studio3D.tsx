@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Eye, EyeOff, Lock, Unlock, Pencil, Sun, Moon, Lightbulb, HelpCircle, X } from "lucide-react";
+import { Eye, EyeOff, Lock, Unlock, Pencil, Sun, Moon, Lightbulb, HelpCircle, X, Gem, Droplet, TreePine, Box } from "lucide-react";
 import { saveAsset } from "../lib/storage.mjs";
 import {
   listScenes,
@@ -54,6 +54,14 @@ const presets: { name: string; shape: Shape }[] = [
   { name: "Cylinder", shape: "cylinder" },
   { name: "Ring", shape: "torus" },
   { name: "Text", shape: "text" },
+];
+
+const MATERIAL_PRESETS = [
+  { name: "Gold", color: "#ffd700", metalness: 1.0, roughness: 0.2, icon: Gem },
+  { name: "Silver", color: "#e0e0e0", metalness: 1.0, roughness: 0.3, icon: Gem },
+  { name: "Glass", color: "#88ccff", metalness: 0.9, roughness: 0.1, icon: Droplet },
+  { name: "Wood", color: "#8b4513", metalness: 0.0, roughness: 0.9, icon: TreePine },
+  { name: "Plastic", color: "#ff6b6b", metalness: 0.1, roughness: 0.4, icon: Box },
 ];
 
 const zero = (): Vector3 => ({ x: 0, y: 0, z: 0 });
@@ -1253,6 +1261,18 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
     );
   }
 
+  function applyMaterialPreset(preset: { color: string; metalness: number; roughness: number }) {
+    if (!selectedId) return;
+    commitObjects(
+      objects.map((item) =>
+        item.id === selectedId
+          ? { ...item, color: preset.color, metalness: preset.metalness, roughness: preset.roughness }
+          : item
+      )
+    );
+    setMessage("បានប្តូរ Material ទៅជា Preset។");
+  }
+
   function updateSelectedMaterial(
     key: "metalness" | "roughness",
     value: number
@@ -1876,6 +1896,33 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
                     Clear Texture
                   </button>
                 )}
+                <div style={{ display: "flex", gap: "4px", marginBottom: "8px", flexWrap: "wrap" }}>
+                  {MATERIAL_PRESETS.map((preset) => {
+                    const Icon = preset.icon;
+                    return (
+                      <button
+                        key={preset.name}
+                        type="button"
+                        className="filter"
+                        onClick={() => applyMaterialPreset(preset)}
+                        disabled={selectedObject.locked}
+                        style={{
+                          flex: "1 1 30%",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "4px",
+                          fontSize: "0.8rem",
+                          padding: "6px"
+                        }}
+                        title={preset.name}
+                      >
+                        <Icon size={14} /> {preset.name}
+                      </button>
+                    );
+                  })}
+                </div>
+
                 <label>
                   Metalness
                   <input
