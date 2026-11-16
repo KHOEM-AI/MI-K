@@ -8,6 +8,7 @@ import { CameraPresets } from "./CameraPresets";
 import { SceneLightingPanel } from "./SceneLightingPanel";
 import { MaterialPanel } from "./MaterialPanel";
 import { TransformPanel } from "./TransformPanel";
+import { EnvironmentTemplates, generateTemplate } from "./EnvironmentTemplates";
 import type { Shape, Vector3, SceneObject, StudioAsset, Studio3DProps } from "./studioTypes";
 import {
   listScenes,
@@ -767,6 +768,14 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       cancelled = true;
     };
   }, [objects, selectedId, sceneReady]);
+
+  function handleLoadTemplate(template: "park" | "room" | "studio") {
+    const newObjects = generateTemplate(template);
+    commitObjects(newObjects);
+    setSelectedId(newObjects[0]?.id ?? null);
+    setSelectedIds([]);
+    setMessage(`បានបង្កើត Scene ថ្មីជា "${template}"។`);
+  }
 
   function addObject() {
     const preset = presets.find((item) => item.shape === newShape);
@@ -2347,6 +2356,8 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
               Clear Scene
             </button>
           </div>
+
+          <EnvironmentTemplates onLoadTemplate={handleLoadTemplate} />
 
           <div className="studio-history-controls">
             <button type="button" className="upload-button" onClick={undo} disabled={!history.past.length}>
