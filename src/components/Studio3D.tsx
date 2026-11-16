@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Eye, EyeOff, Lock, Unlock, Pencil, Sun, Moon, Lightbulb, HelpCircle, X, Gem, Droplet, TreePine, Box, RotateCw } from "lucide-react";
+import { Eye, EyeOff, Lock, Unlock, Pencil, Sun, Moon, Lightbulb, HelpCircle, X, Gem, Droplet, TreePine, Box, RotateCw, Camera } from "lucide-react";
 import { saveAsset } from "../lib/storage.mjs";
 import {
   listScenes,
@@ -265,6 +265,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
   const meshesRef = useRef(new Map<string, import("three").Object3D>());
   const controlsRef = useRef<import("three/examples/jsm/controls/OrbitControls.js").OrbitControls | null>(null);
   const cameraRef = useRef<import("three").PerspectiveCamera | null>(null);
+  const rendererRef = useRef<import("three").WebGLRenderer | null>(null);
   const hemiLightRef = useRef<import("three").HemisphereLight | null>(null);
   const dirLightRef = useRef<import("three").DirectionalLight | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -440,8 +441,9 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       camera.lookAt(0, 0, 0);
       cameraRef.current = camera;
 
-      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      rendererRef.current = renderer;
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       canvasHost.current.appendChild(renderer.domElement);
@@ -580,6 +582,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       pmremGenerator = undefined;
       renderer?.dispose();
       renderer?.domElement.remove();
+      rendererRef.current = null;
       sceneRef.current = null;
       hemiLightRef.current = null;
       dirLightRef.current = null;
@@ -995,6 +998,23 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       setSceneName("");
     }
     setMessage("បានលុប Scene។");
+  }
+
+  function handleExportPNG() {
+    const renderer = rendererRef.current;
+    const scene = sceneRef.current;
+    const camera = cameraRef.current;
+    if (!renderer || !scene || !camera) return;
+
+    // Render once more just before capturing to ensure the buffer is not cleared
+    renderer.render(scene, camera);
+    const dataURL = renderer.domElement.toDataURL("image/png");
+
+    const link = document.createElement("a");
+    link.download = `KHOEM-AI-Screenshot-${Date.now()}.png`;
+    link.href = dataURL;
+    link.click();
+    setMessage("បានថតរូប 3D Preview ជោគជ័យ។");
   }
 
   function handleExportJSON() {
@@ -2058,6 +2078,15 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
           )}
 
           <div className="studio-export">
+            <button
+              type="button"
+              className="upload-button"
+              onClick={handleExportPNG}
+              disabled={!sceneReady}
+              style={{ marginBottom: "8px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
+            >
+              <Camera size={16} /> Export PNG (Screenshot)
+            </button>
             <button
               type="button"
               className="upload-button"
