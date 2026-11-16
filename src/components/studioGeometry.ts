@@ -93,13 +93,17 @@ export function createCarGeometry(
       [-1.3, 0.45, 1.0],
       [-1.3, 0.45, -1.0],
     ];
+    const wheels: import("three").Mesh[] = [];
     wheelPositions.forEach(([x, y, z]) => {
       const wheel = new THREE.Mesh(wheelGeo, wheelMaterial);
       wheel.rotation.x = Math.PI / 2;
       wheel.position.set(x, y, z);
       wheel.castShadow = true;
+      wheel.userData.wheel = true;
       group.add(wheel);
+      wheels.push(wheel);
     });
+    group.userData.wheels = wheels;
 
     // Headlights
     const headlightGeo = new THREE.BoxGeometry(0.1, 0.2, 0.4);
@@ -172,13 +176,17 @@ export function createCarGeometry(
       [-1.4, 0.55, 1.05],
       [-1.4, 0.55, -1.05],
     ];
+    const wheels: import("three").Mesh[] = [];
     wheelPositions.forEach(([x, y, z]) => {
       const wheel = new THREE.Mesh(wheelGeo, wheelMaterial);
       wheel.rotation.x = Math.PI / 2;
       wheel.position.set(x, y, z);
       wheel.castShadow = true;
+      wheel.userData.wheel = true;
       group.add(wheel);
+      wheels.push(wheel);
     });
+    group.userData.wheels = wheels;
 
     // Headlights (angular)
     const headlightGeo = new THREE.BoxGeometry(0.15, 0.15, 0.5);

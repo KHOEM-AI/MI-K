@@ -432,9 +432,22 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       observer.observe(canvasHost.current);
       resize();
 
+      let wheelAngle = 0;
       const animate = () => {
         if (cleanup || !renderer || !scene || !camera) return;
         controls?.update();
+
+        // Animate car wheels around their axle
+        wheelAngle += 0.05;
+        wheelAngle += 0.05;
+        meshesRef.current.forEach((obj) => {
+          if (obj.userData.wheels && Array.isArray(obj.userData.wheels)) {
+            obj.userData.wheels.forEach((wheel: import("three").Mesh) => {
+              wheel.rotation.z = wheelAngle;
+            });
+          }
+        });
+
         renderer.render(scene, camera);
         frame = requestAnimationFrame(animate);
       };
