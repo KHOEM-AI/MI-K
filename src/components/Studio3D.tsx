@@ -658,24 +658,36 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
   function duplicateObject() {
     if (!selectedObject) return;
 
-    const copy: SceneObject = {
-      ...selectedObject,
-      id: createId(),
-      name: `${selectedObject.name} Copy`,
-      position: {
-        ...selectedObject.position,
-        x: selectedObject.position.x + 1.5,
-      },
-      rotation: { ...selectedObject.rotation },
-      scale: { ...selectedObject.scale },
-      visible: selectedObject.visible !== false,
-      locked: false, // Duplicated objects are unlocked by default
-      textureData: selectedObject.textureData,
-    };
+    const idsToDuplicate = new Set(
+      selectedIds.length > 0 ? selectedIds : [selectedObject.id]
+    );
 
-    commitObjects([...objects, copy]);
-    setSelectedId(copy.id);
-    setMessage(`បានចម្លង ${copy.name}។`);
+    const copies: SceneObject[] = [];
+    objects.forEach((item) => {
+      if (idsToDuplicate.has(item.id)) {
+        copies.push({
+          ...item,
+          id: createId(),
+          name: `${item.name} Copy`,
+          position: {
+            ...item.position,
+            x: item.position.x + 1.5,
+          },
+          rotation: { ...item.rotation },
+          scale: { ...item.scale },
+          visible: item.visible !== false,
+          locked: false,
+          textureData: item.textureData,
+        });
+      }
+    });
+
+    if (copies.length === 0) return;
+
+    commitObjects([...objects, ...copies]);
+    setSelectedId(copies[copies.length - 1].id);
+    setSelectedIds(copies.map((c) => c.id));
+    setMessage(`បានចម្លងវត្ថុ ${copies.length}។`);
   }
 
   function deleteObject() {
@@ -1685,7 +1697,14 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
           />
 
           <div className="studio-object-manager">
-            <h3>Scene Objects ({objects.length})</h3>
+            <h3>
+              Scene Objects ({objects.length})
+              {selectedIds.length > 1 && (
+                <span style={{ color: "#4a90d9", fontSize: "0.85rem", marginLeft: "8px" }}>
+                  ({selectedIds.length} ជ្រើស)
+                </span>
+              )}
+            </h3>
             {objects.length > 0 && (
               <input
                 type="text"
@@ -1711,6 +1730,11 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
               <p className="studio-note">រកមិនឃើញវត្ថុដែលត្រូវនឹងការស្វែងរកទេ។</p>
             ) : (
               <div className="studio-object-list">
+                {selectedIds.length > 1 && (
+                  <p className="studio-note" style={{ color: "#4a90d9", fontSize: "0.8rem", marginBottom: "8px" }}>
+                    💡 ចុច Delete ដើម្បីលុបវត្ថុទាំង {selectedIds.length} ព្រមគ្នា
+                  </p>
+                )}
                 {filteredObjects.map((item) => (
                   <div
                     key={item.id}
