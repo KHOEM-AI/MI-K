@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Eye, EyeOff, Lock, Unlock, Pencil, HelpCircle, X, Camera } from "lucide-react";
+import { Eye, EyeOff, Lock, Unlock, Pencil, HelpCircle, X, Camera, Trash2 } from "lucide-react";
 import { saveAsset } from "../lib/storage.mjs";
 import { UI3DPreview } from "./UI3DPreview";
 import { presets, MATERIAL_PRESETS, zero, one, createId } from "./studioConstants";
@@ -1046,6 +1046,31 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
     setMessage(`បានបើក "${snapshot.name}"។`);
   }
 
+  function handleRenameScene(id: string, currentName: string) {
+    const newName = window.prompt("បញ្ចូលឈ្មោះថ្មីសម្រាប់ Scene:", currentName);
+    if (!newName?.trim() || newName.trim() === currentName) return;
+
+    const snapshot = loadScene(id);
+    if (!snapshot) {
+      setMessage("រកមិនឃើញ Scene នេះទេ។");
+      return;
+    }
+
+    const updated: SceneSnapshot = {
+      ...snapshot,
+      name: newName.trim(),
+      updatedAt: Date.now(),
+    };
+
+    if (saveScene(updated)) {
+      refreshSavedScenes();
+      if (currentSceneId === id) setSceneName(newName.trim());
+      setMessage(`បានប្តូរឈ្មោះទៅ "${newName.trim()}"។`);
+    } else {
+      setMessage("មិនអាចប្តូរឈ្មោះ Scene បានទេ។");
+    }
+  }
+
   function handleDeleteScene(id: string) {
     if (!window.confirm("លុប Scene នេះទេ?")) return;
     const ok = deleteScene(id);
@@ -1955,23 +1980,41 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
                         style={{ objectFit: "cover", borderRadius: "6px", flexShrink: 0 }}
                       />
                     ) : null}
-                    <span>{scene.name}</span>
-                    <small>
+                    <span style={{ flex: 1, textAlign: "left", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {scene.name}
+                    </span>
+                    <small style={{ marginRight: "8px" }}>
                       {(scene.objects as SceneObject[]).length} obj
                     </small>
                     <button
                       type="button"
-                      className="filter"
-                      onClick={() => handleLoadScene(scene.id)}
+                      title="ប្តូរឈ្មោះ"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRenameScene(scene.id, scene.name);
+                      }}
+                      style={{ background: "none", border: "none", cursor: "pointer", padding: "6px", display: "flex", alignItems: "center", color: "#a0aec0" }}
                     >
-                      Load
+                      <Pencil size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      title="លុប"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteScene(scene.id);
+                      }}
+                      style={{ background: "none", border: "none", cursor: "pointer", padding: "6px", display: "flex", alignItems: "center", color: "#ff6b6b" }}
+                    >
+                      <Trash2 size={14} />
                     </button>
                     <button
                       type="button"
                       className="filter"
-                      onClick={() => handleDeleteScene(scene.id)}
+                      onClick={() => handleLoadScene(scene.id)}
+                      style={{ marginLeft: "4px" }}
                     >
-                      Delete
+                      Load
                     </button>
                   </div>
                 ))}
