@@ -20,12 +20,13 @@ export function createGeometry(
 
 export function createCarGeometry(
   THREE: typeof import("three"),
-  type: "car" | "sportcar"
+  type: "car" | "sportcar",
+  bodyColor?: string
 ): import("three").Group {
   const group = new THREE.Group();
 
   const bodyMaterial = new THREE.MeshStandardMaterial({
-    color: type === "car" ? "#1e3a8a" : "#dc2626",
+    color: bodyColor || (type === "car" ? "#1e3a8a" : "#dc2626"),
     metalness: 0.8,
     roughness: 0.3,
   });
