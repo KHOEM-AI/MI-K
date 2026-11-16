@@ -75,6 +75,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
   }>({ past: [], future: [] });
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [newShape, setNewShape] = useState<Shape>("box");
   const [mode, setMode] = useState<"object" | "ui">("object");
   const [sceneReady, setSceneReady] = useState(false);
@@ -99,6 +100,34 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
   const autosaveTimerRef = useRef<number | null>(null);
 
   const selectedObject = objects.find((item) => item.id === selectedId);
+
+  function toggleSelectObject(id: string, event: React.MouseEvent) {
+    const isCtrl = event.ctrlKey || event.metaKey;
+    const isShift = event.shiftKey;
+
+    if (isCtrl) {
+      // Ctrl+Click: Toggle selection
+      setSelectedIds((prev) =>
+        prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+      );
+      setSelectedId(id);
+    } else if (isShift && selectedId) {
+      // Shift+Click: Range select (between selectedId and id)
+      const currentIndex = objects.findIndex((o) => o.id === selectedId);
+      const targetIndex = objects.findIndex((o) => o.id === id);
+      if (currentIndex !== -1 && targetIndex !== -1) {
+        const start = Math.min(currentIndex, targetIndex);
+        const end = Math.max(currentIndex, targetIndex);
+        const range = objects.slice(start, end + 1).map((o) => o.id);
+        setSelectedIds(range);
+        setSelectedId(id);
+      }
+    } else {
+      // Normal click: Single selection
+      setSelectedId(id);
+      setSelectedIds([id]);
+    }
+  }
 
   function commitObjects(next: SceneObject[]) {
     setHistory((current) => ({
@@ -650,11 +679,17 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
   }
 
   function deleteObject() {
-    if (!selectedId) return;
-    const remaining = objects.filter((item) => item.id !== selectedId);
+    const idsToDelete = new Set(
+      selectedIds.length > 0 ? selectedIds : selectedId ? [selectedId] : []
+    );
+
+    if (idsToDelete.size === 0) return;
+
+    const remaining = objects.filter((item) => !idsToDelete.has(item.id));
     commitObjects(remaining);
     setSelectedId(remaining[remaining.length - 1]?.id ?? null);
-    setMessage("បានលុបវត្ថុដែលបានជ្រើស។");
+    setSelectedIds([]);
+    setMessage(`បានលុបវត្ថុ ${idsToDelete.size}។`);
   }
 
   function handleGLBImport(event: React.ChangeEvent<HTMLInputElement>) {
@@ -747,6 +782,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
     if (!window.confirm("តើអ្នកពិតជាចង់លុបវត្ថុទាំងអស់ចេញពី Scene មែនទេ?")) return;
     commitObjects([]);
     setSelectedId(null);
+    setSelectedIds([]);
     setMessage("បានសម្អាតវត្ថុទាំងអស់ចេញពី Scene។");
   }
 
@@ -1679,8 +1715,14 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
                   <div
                     key={item.id}
                     className={selectedId === item.id ? "studio-object-item selected" : "studio-object-item"}
-                    onClick={() => setSelectedId(item.id)}
-                    style={{ opacity: item.visible === false ? 0.5 : 1, cursor: "pointer" }}
+                    onClick={(e) => toggleSelectObject(item.id, e)}
+                    style={{
+                      opacity: item.visible === false ? 0.5 : 1,
+                      cursor: "pointer",
+                      border: selectedIds.includes(item.id) && item.id !== selectedId
+                        ? "1px dashed #4a90d9"
+                        : undefined,
+                    }}
                   >
                     <span className="studio-object-swatch" style={{ backgroundColor: item.color }} />
                     <span style={{ flex: 1, textAlign: "left", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
