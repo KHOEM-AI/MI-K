@@ -655,6 +655,42 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
     setMessage(`បានបន្ថែម ${next.name}។`);
   }
 
+  function groupSelectedObjects() {
+    if (selectedIds.length < 2) {
+      setMessage("សូមជ្រើសរើសវត្ថុយ៉ាងហោចណាស់ ២ ដើម្បីបង្កើត Group។");
+      return;
+    }
+
+    const groupName = window.prompt("បញ្ចូលឈ្មោះ Group:", "Group 1");
+    if (!groupName?.trim()) return;
+
+    const newGroupId = createId();
+    commitObjects(
+      objects.map((item) =>
+        selectedIds.includes(item.id)
+          ? { ...item, groupId: newGroupId, groupName: groupName.trim() }
+          : item
+      )
+    );
+    setMessage(`បានបង្កើត Group "${groupName.trim()}" ជាមួយវត្ថុ ${selectedIds.length}។`);
+  }
+
+  function ungroupSelectedObjects() {
+    if (selectedIds.length === 0) {
+      setMessage("សូមជ្រើសរើសវត្ថុដើម្បីដោះចេញពី Group។");
+      return;
+    }
+
+    commitObjects(
+      objects.map((item) =>
+        selectedIds.includes(item.id)
+          ? { ...item, groupId: undefined, groupName: undefined }
+          : item
+      )
+    );
+    setMessage(`បានដោះវត្ថុ ${selectedIds.length} ចេញពី Group។`);
+  }
+
   function duplicateObject() {
     if (!selectedObject) return;
 
@@ -1705,6 +1741,24 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
                 </span>
               )}
             </h3>
+            <div style={{ display: "flex", gap: "8px", marginBottom: "12px" }}>
+              <button
+                type="button"
+                className="filter"
+                disabled={selectedIds.length < 2}
+                onClick={groupSelectedObjects}
+              >
+                Group
+              </button>
+              <button
+                type="button"
+                className="filter"
+                disabled={selectedIds.length === 0}
+                onClick={ungroupSelectedObjects}
+              >
+                Ungroup
+              </button>
+            </div>
             {objects.length > 0 && (
               <input
                 type="text"

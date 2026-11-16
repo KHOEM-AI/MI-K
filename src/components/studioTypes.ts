@@ -16,6 +16,8 @@ export type SceneObject = {
   textureData?: string | null;
   glbData?: string | null;
   text?: string;
+  groupId?: string;
+  groupName?: string;
 };
 
 export type StudioAsset = {
