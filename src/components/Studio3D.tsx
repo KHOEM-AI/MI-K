@@ -1002,6 +1002,37 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
     setMessage("បានថតរូប 3D Preview ជោគជ័យ។");
   }
 
+  function handleExportAllScenes() {
+    const allScenes = listScenes();
+    if (allScenes.length === 0) {
+      setMessage("មិនមាន Scene ដែលបានរក្សាទុកទេ។");
+      return;
+    }
+
+    const payload = {
+      version: 1,
+      exportedAt: Date.now(),
+      app: "KHOEM-AI 3D Studio",
+      type: "all-scenes",
+      scenes: allScenes,
+    };
+
+    const text = JSON.stringify(payload, null, 2);
+    const blob = new Blob([text], { type: "application/json" });
+    const filename = `KHOEM-AI-All-Scenes-${Date.now()}.json`;
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 3000);
+
+    setMessage(`បាន Export Scene ទាំង ${allScenes.length} ជា JSON។`);
+  }
+
   function handleExportJSON() {
     if (!objects.length) {
       setMessage("សូមបន្ថែមវត្ថុ 3D មុនពេល Export JSON។");
@@ -1689,6 +1720,15 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
                 onChange={handleImportJSON}
                 style={{ display: "none" }}
               />
+              <button
+                type="button"
+                className="filter"
+                onClick={handleExportAllScenes}
+                disabled={savedScenes.length === 0}
+                style={{ color: savedScenes.length === 0 ? "inherit" : "#4a90d9" }}
+              >
+                Export All ({savedScenes.length})
+              </button>
             </div>
 
             {savedScenes.length === 0 ? (
