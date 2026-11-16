@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { Eye, EyeOff, Lock, Unlock, Pencil, Sun, Moon, Lightbulb, HelpCircle, X, Camera } from "lucide-react";
+import { Eye, EyeOff, Lock, Unlock, Pencil, HelpCircle, X, Camera } from "lucide-react";
 import { saveAsset } from "../lib/storage.mjs";
 import { UI3DPreview } from "./UI3DPreview";
 import { presets, MATERIAL_PRESETS, zero, one, createId } from "./studioConstants";
 import { createGeometry, disposeMesh } from "./studioGeometry";
 import { CameraPresets } from "./CameraPresets";
+import { SceneLightingPanel } from "./SceneLightingPanel";
 import type { Shape, Vector3, SceneObject, StudioAsset, Studio3DProps } from "./studioTypes";
 import {
   listScenes,
@@ -1550,83 +1551,19 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             <span className="studio-hint">3D LIVE PREVIEW</span>
           </div>
 
-          <div className="studio-transform-panel">
-            <h3>Scene Lighting</h3>
-            <div className="studio-controls" style={{ marginBottom: "8px", display: "flex", gap: "8px" }}>
-              <button
-                type="button"
-                className={activeLighting === "day" ? "upload-button" : "filter"}
-                onClick={() => setLightingPreset("day")}
-                style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
-              >
-                <Sun size={16} color="#fbbf24" /> Day
-              </button>
-              <button
-                type="button"
-                className={activeLighting === "night" ? "upload-button" : "filter"}
-                onClick={() => setLightingPreset("night")}
-                style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
-              >
-                <Moon size={16} color="#818cf8" /> Night
-              </button>
-              <button
-                type="button"
-                className={activeLighting === "studio" ? "upload-button" : "filter"}
-                onClick={() => setLightingPreset("studio")}
-                style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
-              >
-                <Lightbulb size={16} color="#facc15" /> Studio
-              </button>
-            </div>
-            <div className="studio-controls" style={{ marginBottom: "8px" }}>
-              <label>
-                Background Color
-                <input
-                  type="color"
-                  value={bgColor}
-                  onChange={(event) => setBgColor(event.target.value)}
-                />
-              </label>
-              <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", fontSize: "0.9rem" }}>
-                <input
-                  type="checkbox"
-                  checked={useEnvMap}
-                  onChange={(e) => setUseEnvMap(e.target.checked)}
-                />
-                HDRI Reflections
-              </label>
-            </div>
-            <div className="studio-controls">
-              <label>
-                Ambient Light: {ambientIntensity.toFixed(2)}
-                <input
-                  type="range"
-                  min={0}
-                  max={5}
-                  step={0.1}
-                  value={ambientIntensity}
-                  onChange={(event) => {
-                    setAmbientIntensity(Number(event.target.value));
-                    setActiveLighting(null);
-                  }}
-                />
-              </label>
-              <label>
-                Directional Light: {directionalIntensity.toFixed(2)}
-                <input
-                  type="range"
-                  min={0}
-                  max={5}
-                  step={0.1}
-                  value={directionalIntensity}
-                  onChange={(event) => {
-                    setDirectionalIntensity(Number(event.target.value));
-                    setActiveLighting(null);
-                  }}
-                />
-              </label>
-            </div>
-          </div>
+          <SceneLightingPanel
+            activeLighting={activeLighting}
+            setLightingPreset={setLightingPreset}
+            bgColor={bgColor}
+            setBgColor={setBgColor}
+            useEnvMap={useEnvMap}
+            setUseEnvMap={setUseEnvMap}
+            ambientIntensity={ambientIntensity}
+            setAmbientIntensity={setAmbientIntensity}
+            directionalIntensity={directionalIntensity}
+            setDirectionalIntensity={setDirectionalIntensity}
+            setActiveLighting={setActiveLighting}
+          />
 
           <div className="studio-object-manager">
             <h3>Scene Objects ({objects.length})</h3>
