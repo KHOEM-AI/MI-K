@@ -51,6 +51,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const glbInputRef = useRef<HTMLInputElement | null>(null);
   const txtInputRef = useRef<HTMLInputElement | null>(null);
+  const allScenesInputRef = useRef<HTMLInputElement | null>(null);
 
   const [objects, setObjects] = useState<SceneObject[]>([
     {
@@ -1131,6 +1132,87 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
     reader.readAsText(file);
   }
 
+  function handleImportAllScenesFile(file: File) {
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = typeof e.target?.result === "string" ? e.target.result : "";
+      if (!text.trim()) {
+        setMessage("ឯកសារ JSON ទទេ។");
+        return;
+      }
+
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(text);
+      } catch (error) {
+        console.error("JSON parse failed:", error);
+        setMessage("ឯកសារ JSON មិនត្រឹមត្រូវ (parse error)។");
+        return;
+      }
+
+      // Validate that this is an "all-scenes" payload
+      if (
+        !parsed ||
+        typeof parsed !== "object" ||
+        !("scenes" in parsed) ||
+        !Array.isArray((parsed as any).scenes)
+      ) {
+        setMessage("ឯកសារនេះមិនមែនជា 'All Scenes' backup ទេ។");
+        return;
+      }
+
+      const scenes = (parsed as any).scenes as unknown[];
+      if (scenes.length === 0) {
+        setMessage("ឯកសារគ្មាន Scene ណាមួយទេ។");
+        return;
+      }
+
+      // Import each scene using the existing saveScene function
+      let imported = 0;
+      let skipped = 0;
+
+      scenes.forEach((scene: unknown, index: number) => {
+        if (
+          !scene ||
+          typeof scene !== "object" ||
+          !("id" in scene) ||
+          !("name" in scene) ||
+          !("objects" in scene) ||
+          !Array.isArray((scene as any).objects)
+        ) {
+          skipped++;
+          return;
+        }
+
+        const snapshot: SceneSnapshot = {
+          id: createId(),
+          name: (scene as any).name,
+          objects: (scene as any).objects,
+          ambientIntensity: (scene as any).ambientIntensity ?? 2,
+          directionalIntensity: (scene as any).directionalIntensity ?? 3,
+          backgroundColor: (scene as any).backgroundColor ?? "#080f1b",
+          thumbnail: (scene as any).thumbnail ?? null,
+          createdAt: (scene as any).createdAt ?? Date.now(),
+          updatedAt: Date.now(),
+        };
+
+        if (saveScene(snapshot)) imported++;
+        else skipped++;
+      });
+
+      refreshSavedScenes();
+      setMessage(`បាន Import Scene ${imported}${skipped > 0 ? ` (រំលង ${skipped})` : ""}។`);
+    };
+
+    reader.onerror = () => {
+      setMessage("មិនអាចអានឯកសារបានទេ។");
+    };
+
+    reader.readAsText(file);
+  }
+
   function handleImportJSON(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.target.value = "";
@@ -1729,6 +1811,25 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
               >
                 Export All ({savedScenes.length})
               </button>
+              <button
+                type="button"
+                className="filter"
+                onClick={() => allScenesInputRef.current?.click()}
+                style={{ color: "#4a90d9" }}
+              >
+                Import All
+              </button>
+              <input
+                ref={allScenesInputRef}
+                type="file"
+                accept="application/json,.json"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  e.target.value = "";
+                  if (file) handleImportAllScenesFile(file);
+                }}
+                style={{ display: "none" }}
+              />
             </div>
 
             {savedScenes.length === 0 ? (
