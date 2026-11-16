@@ -92,6 +92,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
   const [autoRotate, setAutoRotate] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [sceneSearchQuery, setSceneSearchQuery] = useState("");
+  const [sortOrder, setSortOrder] = useState<"newest" | "oldest" | "name-asc" | "name-desc">("newest");
   const [showTour, setShowTour] = useState(false);
   const [tourStep, setTourStep] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
@@ -1152,9 +1153,17 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
     setMessage("បានលុប Scene។");
   }
 
-  const filteredSavedScenes = savedScenes.filter((scene) =>
-    scene.name.toLowerCase().includes(sceneSearchQuery.toLowerCase().trim())
-  );
+  const filteredSavedScenes = savedScenes
+    .filter((scene) =>
+      scene.name.toLowerCase().includes(sceneSearchQuery.toLowerCase().trim())
+    )
+    .sort((a, b) => {
+      if (sortOrder === "newest") return b.updatedAt - a.updatedAt;
+      if (sortOrder === "oldest") return a.updatedAt - b.updatedAt;
+      if (sortOrder === "name-asc") return a.name.localeCompare(b.name);
+      if (sortOrder === "name-desc") return b.name.localeCompare(a.name);
+      return 0;
+    });
   const filteredObjects = objects.filter((item) =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase().trim())
   );
@@ -2040,23 +2049,43 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             ) : (
               <>
                 {savedScenes.length > 3 && (
-                  <input
-                    type="text"
-                    placeholder="ស្វែងរក Scene..."
-                    value={sceneSearchQuery}
-                    onChange={(e) => setSceneSearchQuery(e.target.value)}
-                    style={{
-                      width: "100%",
-                      padding: "8px 12px",
-                      marginBottom: "12px",
-                      borderRadius: "6px",
-                      border: "1px solid #31516e",
-                      backgroundColor: "#080f1b",
-                      color: "#ffffff",
-                      fontSize: "0.9rem",
-                      boxSizing: "border-box",
-                    }}
-                  />
+                  <div style={{ display: "flex", gap: "8px", marginBottom: "12px" }}>
+                    <input
+                      type="text"
+                      placeholder="ស្វែងរក Scene..."
+                      value={sceneSearchQuery}
+                      onChange={(e) => setSceneSearchQuery(e.target.value)}
+                      style={{
+                        flex: 1,
+                        padding: "8px 12px",
+                        borderRadius: "6px",
+                        border: "1px solid #31516e",
+                        backgroundColor: "#080f1b",
+                        color: "#ffffff",
+                        fontSize: "0.9rem",
+                        boxSizing: "border-box",
+                      }}
+                    />
+                    <select
+                      value={sortOrder}
+                      onChange={(e) => setSortOrder(e.target.value as typeof sortOrder)}
+                      title="តម្រៀប"
+                      style={{
+                        padding: "8px 12px",
+                        borderRadius: "6px",
+                        border: "1px solid #31516e",
+                        backgroundColor: "#080f1b",
+                        color: "#ffffff",
+                        fontSize: "0.9rem",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <option value="newest">ថ្មីបំផុត</option>
+                      <option value="oldest">ចាស់បំផុត</option>
+                      <option value="name-asc">ឈ្មោះ A-Z</option>
+                      <option value="name-desc">ឈ្មោះ Z-A</option>
+                    </select>
+                  </div>
                 )}
                 {filteredSavedScenes.length === 0 && sceneSearchQuery.trim() ? (
                   <p className="studio-note">រកមិនឃើញ Scene ដែលត្រូវនឹងការស្វែងរកទេ។</p>
