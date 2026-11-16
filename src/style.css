@@ -909,3 +909,125 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Mobile Optimization (Stage 38)
+   ═══════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 640px) {
+  /* Larger touch targets for buttons */
+  .studio-controls button,
+  .studio-controls .upload-button,
+  .studio-controls .filter {
+    min-height: 44px;
+    font-size: 0.95rem;
+    padding: 10px 14px;
+  }
+
+  /* Bigger font for labels and inputs */
+  .studio-controls label {
+    font-size: 0.95rem;
+  }
+
+  .studio-controls input[type="text"],
+  .studio-controls input[type="number"],
+  .studio-controls select {
+    min-height: 44px;
+    font-size: 16px; /* Prevents iOS zoom on focus */
+    padding: 10px;
+  }
+
+  /* Bigger object list items */
+  .studio-object-item {
+    padding: 12px 10px;
+    font-size: 0.95rem;
+    min-height: 52px;
+  }
+
+  /* Bigger icon buttons in object list */
+  .studio-object-item button {
+    padding: 8px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* Bigger color picker and range inputs */
+  .studio-controls input[type="color"] {
+    min-height: 44px;
+    min-width: 60px;
+  }
+
+  .studio-controls input[type="range"] {
+    height: 44px;
+  }
+
+  /* Bigger slider thumb (better for touch) */
+  .studio-controls input[type="range"]::-webkit-slider-thumb {
+    width: 28px;
+    height: 28px;
+  }
+
+  .studio-controls input[type="range"]::-moz-range-thumb {
+    width: 28px;
+    height: 28px;
+  }
+
+  /* Search box */
+  .studio-object-manager input[type="text"] {
+    min-height: 44px;
+    font-size: 16px;
+    padding: 10px 14px;
+  }
+
+  /* Scene Manager buttons */
+  .studio-transform-panel .studio-controls {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .studio-transform-panel .studio-controls button {
+    flex: 1 1 calc(50% - 4px);
+    min-width: 0;
+  }
+
+  /* Camera preset buttons (4 across on mobile) */
+  .studio-controls > button[style*="flex: 1"] {
+    font-size: 0.85rem;
+    padding: 10px 6px;
+  }
+
+  /* Ensure 3D Canvas has proper height on mobile */
+  .studio-canvas {
+    min-height: 280px;
+    height: 280px;
+  }
+
+  /* Help modal - full width on mobile */
+  .help-modal-content {
+    max-width: 95vw !important;
+    padding: 16px !important;
+  }
+
+  /* Group buttons */
+  .studio-object-manager > div > button {
+    min-height: 44px;
+    font-size: 0.9rem;
+  }
+}
+
+/* Extra small screens (phones < 400px) */
+@media (max-width: 400px) {
+  .studio-controls button {
+    font-size: 0.85rem;
+    padding: 8px 10px;
+  }
+
+  .studio-object-item {
+    font-size: 0.85rem;
+  }
+
+  .studio-canvas {
+    min-height: 240px;
+    height: 240px;
+  }
+}
