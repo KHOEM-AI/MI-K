@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Eye, EyeOff, Lock, Unlock, Pencil, HelpCircle, X, Camera, Trash2 } from "lucide-react";
+import { Eye, EyeOff, Lock, Unlock, Pencil, HelpCircle, X, Camera, Trash2, Copy } from "lucide-react";
 import { saveAsset } from "../lib/storage.mjs";
 import { UI3DPreview } from "./UI3DPreview";
 import { presets, MATERIAL_PRESETS, zero, one, createId } from "./studioConstants";
@@ -1071,6 +1071,29 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
     }
   }
 
+  function handleDuplicateScene(id: string) {
+    const snapshot = loadScene(id);
+    if (!snapshot) {
+      setMessage("រកមិនឃើញ Scene នេះទេ។");
+      return;
+    }
+
+    const copy: SceneSnapshot = {
+      ...snapshot,
+      id: createId(),
+      name: `${snapshot.name} Copy`,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+
+    if (saveScene(copy)) {
+      refreshSavedScenes();
+      setMessage(`បានចម្លង Scene ទៅ "${copy.name}"។`);
+    } else {
+      setMessage("មិនអាចចម្លង Scene បានទេ។");
+    }
+  }
+
   function handleDeleteScene(id: string) {
     if (!window.confirm("លុប Scene នេះទេ?")) return;
     const ok = deleteScene(id);
@@ -1986,6 +2009,17 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
                     <small style={{ marginRight: "8px" }}>
                       {(scene.objects as SceneObject[]).length} obj
                     </small>
+                    <button
+                      type="button"
+                      title="ចម្លង"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDuplicateScene(scene.id);
+                      }}
+                      style={{ background: "none", border: "none", cursor: "pointer", padding: "6px", display: "flex", alignItems: "center", color: "#4a90d9" }}
+                    >
+                      <Copy size={14} />
+                    </button>
                     <button
                       type="button"
                       title="ប្តូរឈ្មោះ"
