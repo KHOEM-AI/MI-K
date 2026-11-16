@@ -50,6 +50,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
   const dirLightRef = useRef<import("three").DirectionalLight | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const glbInputRef = useRef<HTMLInputElement | null>(null);
+  const txtInputRef = useRef<HTMLInputElement | null>(null);
 
   const [objects, setObjects] = useState<SceneObject[]>([
     {
@@ -692,6 +693,53 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       setMessage(`បាន Import Model: ${next.name}។`);
     };
     reader.readAsDataURL(file);
+  }
+
+  function handleTextImport(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    if (file.size > 10 * 1024) {
+      setMessage("ឯកសារ .txt ធំពេក (អតិបរមា 10KB)។");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = (e.target?.result as string) || "";
+      const trimmed = text.trim().slice(0, 100); // កំណត់អក្សរអតិបរមា ១០០ តួ
+      if (!trimmed) {
+        setMessage("ឯកសារ .txt ទទេ។");
+        return;
+      }
+
+      const next: SceneObject = {
+        id: createId(),
+        name: `Text: ${file.name.replace(/\.txt$/i, "")}`,
+        shape: "text",
+        color: "#168de2",
+        metalness: 0.25,
+        roughness: 0.35,
+        text: trimmed,
+        position: { x: 0, y: 0, z: 0 },
+        rotation: { x: 0, y: 0, z: 0 },
+        scale: { x: 1, y: 1, z: 1 },
+        visible: true,
+        locked: false,
+        textureData: null,
+      };
+
+      commitObjects([...objects, next]);
+      setSelectedId(next.id);
+      setMessage(`បាន Import Text ពី File: "${file.name}"។`);
+    };
+
+    reader.onerror = () => {
+      setMessage(`មិនអាចអានឯកសារ .txt "${file.name}" បានទេ។`);
+    };
+
+    reader.readAsText(file);
   }
 
   function clearScene() {
@@ -1405,6 +1453,20 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
               type="file"
               accept=".glb,model/gltf-binary"
               onChange={handleGLBImport}
+              style={{ display: "none" }}
+            />
+            <button
+              type="button"
+              className="upload-button"
+              onClick={() => txtInputRef.current?.click()}
+            >
+              Import .txt
+            </button>
+            <input
+              ref={txtInputRef}
+              type="file"
+              accept=".txt,text/plain"
+              onChange={handleTextImport}
               style={{ display: "none" }}
             />
             <button
