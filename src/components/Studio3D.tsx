@@ -91,6 +91,8 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
   const [snapToGrid, setSnapToGrid] = useState(false);
   const [autoRotate, setAutoRotate] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showTour, setShowTour] = useState(false);
+  const [tourStep, setTourStep] = useState(0);
   const [bgColor, setBgColor] = useState("#080f1b");
   const [showHelp, setShowHelp] = useState(false);
   const [useEnvMap, setUseEnvMap] = useState(true);
@@ -101,6 +103,50 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
   const autosaveTimerRef = useRef<number | null>(null);
 
   const selectedObject = objects.find((item) => item.id === selectedId);
+
+  const TOUR_STEPS = [
+    {
+      title: "សូមស្វាគមន៍មកកាន់ KHOEM-AI 3D Studio! 🎉",
+      body: "អ្នកអាចបង្កើត កែសម្រួល និង Export វត្ថុ 3D បានយ៉ាងងាយស្រួល។ តោះ! មើល Feature សំខាន់ៗទាំងអស់គ្នា។",
+    },
+    {
+      title: "1. បន្ថែមវត្ថុ 3D",
+      body: "ចុចប៊ូតុង '+ Add Object' ដើម្បីបន្ថែម Cube, Sphere, Cone, Cylinder, Ring ឬ Text។ អ្នកក៏អាច Import GLB ឬ .txt បានផងដែរ។",
+    },
+    {
+      title: "2. កែសម្រួល Material",
+      body: "ជ្រើសរើសវត្ថុមួយ រួចកែ Color, Metalness, Roughness, បន្ថែម Texture ឬជ្រើស Preset ដូចជា Gold, Silver, Glass។",
+    },
+    {
+      title: "3. ពន្លឺ និង Camera",
+      body: "ប្តូរ Lighting Preset (Day/Night/Studio), បើក Shadows, ឬប្រើ Camera Presets (Front/Top/Iso) ដើម្បីមើលវត្ថុពីមុំផ្សេងៗ។",
+    },
+    {
+      title: "4. Save & Backup",
+      body: "រក្សាទុក Scene ជា Local Storage (Save Scene), បង្កើត Version ថ្មី (Save As New), Export/Import JSON, ឬ Export All Scenes។",
+    },
+    {
+      title: "5. Multi-Select & Group",
+      body: "Ctrl+Click ដើម្បីជ្រើសវត្ថុច្រើន, Shift+Click សម្រាប់ Range, ឬប្រើ Group ដើម្បីដាក់វត្ថុជាក្រុម។",
+    },
+    {
+      title: "6. Keyboard Shortcuts",
+      body: "ប្រើ Ctrl+Z (Undo), Ctrl+D (Duplicate), F (Fit to Center), Delete (លុប), Esc (ដោះជម្រើស) ដើម្បីធ្វើការបានលឿន។",
+    },
+    {
+      title: "7. Export & Share 🚀",
+      body: "Export PNG (Screenshot) ឬ Export GLB ដើម្បីចែករំលែក Scene ទៅកាន់អ្នកដទៃ។ សូមរីករាយនឹងការបង្កើត!",
+    },
+  ];
+
+  useEffect(() => {
+    const hasSeenTour = localStorage.getItem("khoem-ai-tour-seen");
+    if (!hasSeenTour) {
+      // Delay slightly so scene is rendered first
+      const timer = setTimeout(() => setShowTour(true), 500);
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   function toggleSelectObject(id: string, event: React.MouseEvent) {
     const isCtrl = event.ctrlKey || event.metaKey;
@@ -2069,6 +2115,87 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
         </>
       ) : (
         <UI3DPreview />
+      )}
+
+      {showTour && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.85)",
+            zIndex: 10000,
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            padding: "20px",
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "#111e31",
+              color: "#ffffff",
+              padding: "32px",
+              borderRadius: "16px",
+              maxWidth: "520px",
+              width: "100%",
+              border: "2px solid #168de2",
+              boxShadow: "0 20px 60px rgba(22, 141, 226, 0.4)",
+            }}
+          >
+            <h2 style={{ margin: "0 0 16px", color: "#168de2", fontSize: "1.4rem" }}>
+              {TOUR_STEPS[tourStep].title}
+            </h2>
+            <p style={{ margin: "0 0 24px", lineHeight: "1.7", color: "#d1d5db" }}>
+              {TOUR_STEPS[tourStep].body}
+            </p>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ color: "#6b7280", fontSize: "0.9rem" }}>
+                {tourStep + 1} / {TOUR_STEPS.length}
+              </span>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <button
+                  type="button"
+                  className="filter"
+                  onClick={() => {
+                    localStorage.setItem("khoem-ai-tour-seen", "true");
+                    setShowTour(false);
+                  }}
+                  style={{ padding: "8px 16px" }}
+                >
+                  រំលង (Skip)
+                </button>
+                {tourStep > 0 && (
+                  <button
+                    type="button"
+                    className="filter"
+                    onClick={() => setTourStep(tourStep - 1)}
+                    style={{ padding: "8px 16px" }}
+                  >
+                    ត្រឡប់
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="upload-button"
+                  onClick={() => {
+                    if (tourStep < TOUR_STEPS.length - 1) {
+                      setTourStep(tourStep + 1);
+                    } else {
+                      localStorage.setItem("khoem-ai-tour-seen", "true");
+                      setShowTour(false);
+                    }
+                  }}
+                  style={{ padding: "8px 20px" }}
+                >
+                  {tourStep < TOUR_STEPS.length - 1 ? "បន្ទាប់" : "ចាប់ផ្តើម! 🚀"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {showHelp && (
