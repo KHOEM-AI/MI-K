@@ -222,12 +222,12 @@ export function createFurnitureGeometry(
   roughness?: number
 ): import("three").Group {
   const group = new THREE.Group();
-  const defaultColor = 
-    type === "table" ? "#8b4513" : 
-    type === "chair" ? "#654321" : 
-    type === "sofa" ? "#4a5568" : 
-    type === "tree" ? "#2d5016" : 
-    type === "house" ? "#d4a373" : 
+  const defaultColor =
+    type === "table" ? "#8b4513" :
+    type === "chair" ? "#654321" :
+    type === "sofa" ? "#4a5568" :
+    type === "tree" ? "#2d5016" :
+    type === "house" ? "#d4a373" :
     "#fbbf24";
   const material = new THREE.MeshStandardMaterial({
     color: color || defaultColor,
@@ -551,6 +551,102 @@ export function createKhoemGeometry(
 
   return group;
 }
+
+export function createHighwayGeometry(
+  THREE: typeof import("three"),
+  color?: string,
+  metalness?: number,
+  roughness?: number
+): import("three").Group {
+  const group = new THREE.Group();
+
+  // Materials
+  const asphaltMat = new THREE.MeshStandardMaterial({
+    color: color || "#2a2a2a",
+    metalness: metalness ?? 0.1,
+    roughness: roughness ?? 0.9,
+  });
+  const lineMat = new THREE.MeshStandardMaterial({ color: "#f5f5dc", metalness: 0.1, roughness: 0.8 });
+  const poleMat = new THREE.MeshStandardMaterial({ color: "#4a4a4a", metalness: 0.8, roughness: 0.3 });
+  const ledMat = new THREE.MeshStandardMaterial({
+    color: "#ffffaa",
+    emissive: "#ffff00",
+    emissiveIntensity: 2.0,
+  });
+
+  // 1. Road (Dual Lane)
+  const roadGeo = new THREE.BoxGeometry(4, 0.1, 40);
+  const road1 = new THREE.Mesh(roadGeo, asphaltMat);
+  road1.position.set(-2, 0, 0);
+  group.add(road1);
+
+  const road2 = new THREE.Mesh(roadGeo, asphaltMat);
+  road2.position.set(2, 0, 0);
+  group.add(road2);
+
+  // 2. Center Divider (Grass/Median)
+  const medianGeo = new THREE.BoxGeometry(0.5, 0.2, 40);
+  const median = new THREE.Mesh(medianGeo, new THREE.MeshStandardMaterial({ color: "#3a5a3a", roughness: 0.9 }));
+  median.position.set(0, 0.15, 0);
+  group.add(median);
+
+  // 3. Lane Markings (Dashed white lines)
+  for (let i = -18; i <= 18; i += 3) {
+    const dashGeo = new THREE.BoxGeometry(0.1, 0.02, 1.5);
+    const dash1 = new THREE.Mesh(dashGeo, lineMat);
+    dash1.position.set(-2, 0.06, i);
+    group.add(dash1);
+    const dash2 = new THREE.Mesh(dashGeo, lineMat);
+    dash2.position.set(2, 0.06, i);
+    group.add(dash2);
+  }
+
+  // 4. Twin Lamp Posts (Both sides)
+  const poleGeo = new THREE.CylinderGeometry(0.08, 0.1, 4, 8);
+  const armGeo = new THREE.BoxGeometry(1.5, 0.08, 0.08);
+  const lampGeo = new THREE.BoxGeometry(0.6, 0.15, 0.4);
+
+  const positions = [-5, -10, -15, 5, 10, 15, 0]; // Spacing along the road
+
+  positions.forEach((z) => {
+    // Left side
+    const leftPole = new THREE.Mesh(poleGeo, poleMat);
+    leftPole.position.set(-4.5, 2, z);
+    group.add(leftPole);
+
+    const leftArm = new THREE.Mesh(armGeo, poleMat);
+    leftArm.position.set(-3.75, 4, z);
+    group.add(leftArm);
+
+    const leftLamp = new THREE.Mesh(lampGeo, ledMat);
+    leftLamp.position.set(-3.2, 3.9, z);
+    group.add(leftLamp);
+
+    // Right side
+    const rightPole = new THREE.Mesh(poleGeo, poleMat);
+    rightPole.position.set(4.5, 2, z);
+    group.add(rightPole);
+
+    const rightArm = new THREE.Mesh(armGeo, poleMat);
+    rightArm.position.set(3.75, 4, z);
+    group.add(rightArm);
+
+    const rightLamp = new THREE.Mesh(lampGeo, ledMat);
+    rightLamp.position.set(3.2, 3.9, z);
+    group.add(rightLamp);
+  });
+
+  // Enable shadows
+  group.traverse((child) => {
+    if ((child as import("three").Mesh).isMesh) {
+      child.castShadow = true;
+      child.receiveShadow = true;
+    }
+  });
+
+  return group;
+}
+
 export function disposeMesh(obj: import("three").Object3D) {
   obj.traverse((child) => {
     if ((child as import("three").Mesh).isMesh) {

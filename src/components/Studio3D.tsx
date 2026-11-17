@@ -3,7 +3,7 @@ import { Eye, EyeOff, Lock, Unlock, Pencil, HelpCircle, X, Camera, Trash2, Copy,
 import { saveAsset } from "../lib/storage.mjs";
 import { UI3DPreview } from "./UI3DPreview";
 import { presets, MATERIAL_PRESETS, zero, one, createId } from "./studioConstants";
-import { createGeometry, createCarGeometry, createFurnitureGeometry, createKhoemGeometry, disposeMesh } from "./studioGeometry";
+import { createGeometry, createCarGeometry, createFurnitureGeometry, createKhoemGeometry, createHighwayGeometry, disposeMesh } from "./studioGeometry";
 import { CameraPresets } from "./CameraPresets";
 import { SceneLightingPanel } from "./SceneLightingPanel";
 import { MaterialPanel } from "./MaterialPanel";
@@ -707,6 +707,8 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
               obj = createFurnitureGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
             } else if (item.shape === "khoem") {
               obj = createKhoemGeometry(THREE, item.color, item.metalness, item.roughness);
+            } else if (item.shape === "highway") {
+              obj = createHighwayGeometry(THREE, item.color, item.metalness, item.roughness);
             } else {
               let geo: import("three").BufferGeometry;
               if (item.shape === "text") {
@@ -1515,6 +1517,16 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             return;
           }
 
+          if (item.shape === "highway") {
+            const highwayGroup = createHighwayGeometry(THREE, item.color, item.metalness, item.roughness);
+            highwayGroup.position.set(item.position.x, item.position.y, item.position.z);
+            highwayGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            highwayGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            highwayGroup.name = item.name;
+            exportScene.add(highwayGroup);
+            return;
+          }
+
           let geo: import("three").BufferGeometry;
           if (item.shape === "text") {
             const { FontLoader } = await import("three/examples/jsm/loaders/FontLoader.js");
@@ -2173,6 +2185,16 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             khoemGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
             khoemGroup.name = item.name;
             exportScene!.add(khoemGroup);
+            return;
+          }
+
+          if (item.shape === "highway") {
+            const highwayGroup = createHighwayGeometry(THREE, item.color, item.metalness, item.roughness);
+            highwayGroup.position.set(item.position.x, item.position.y, item.position.z);
+            highwayGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            highwayGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            highwayGroup.name = item.name;
+            exportScene!.add(highwayGroup);
             return;
           }
 
