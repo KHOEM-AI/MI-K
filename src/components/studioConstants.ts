@@ -158,6 +158,14 @@ export const presets: { name: string; shape: Shape }[] = [
   { name: "Swing", shape: "swing" },
   { name: "Slide", shape: "slide" },
   { name: "Sandbox", shape: "sandbox" },
+  { name: "Street Sign", shape: "streetsign" },
+  { name: "Traffic Cone", shape: "trafficcone" },
+  { name: "Barrier", shape: "barrier" },
+  { name: "Fire Hydrant", shape: "firehydrant" },
+  { name: "Trash Can", shape: "trashcan" },
+  { name: "Bench2", shape: "bench2" },
+  { name: "Picnic Table", shape: "picnictable" },
+  { name: "BBQ Grill", shape: "bbqgrill" },
 ];
 
 

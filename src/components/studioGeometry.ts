@@ -5736,3 +5736,186 @@ export function createParkGeometry(
   });
   return group;
 }
+
+// ============================================================
+// STREET & OUTDOOR GEOMETRIES (Street Sign, Traffic Cone, Barrier, Fire Hydrant, Trash Can, Bench2, Picnic Table, BBQ Grill)
+// ============================================================
+
+export function createStreetGeometry(
+  THREE: typeof import("three"),
+  type: "streetsign" | "trafficcone" | "barrier" | "firehydrant" | "trashcan" | "bench2" | "picnictable" | "bbqgrill",
+  color?: string,
+  metalness?: number,
+  roughness?: number
+): import("three").Group {
+  const group = new THREE.Group();
+
+  if (type === "streetsign") {
+    const poleMat = new THREE.MeshStandardMaterial({ color: "#5a5a5a", roughness: roughness ?? 0.6, metalness: metalness ?? 0.7 });
+    const signMat = new THREE.MeshStandardMaterial({ color: color || "#2a7a2a", roughness: 0.5 });
+    const textMat = new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.6 });
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 2.5, 8), poleMat);
+    pole.position.y = 1.25;
+    group.add(pole);
+    const sign = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.3, 0.05), signMat);
+    sign.position.set(0.3, 2.3, 0);
+    group.add(sign);
+    // Text strips
+    for (let i = 0; i < 3; i++) {
+      const strip = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.04, 0.01), textMat);
+      strip.position.set(0.3, 2.25 + i * 0.05, 0.03);
+      group.add(strip);
+    }
+    const sign2 = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.2, 0.05), signMat);
+    sign2.position.set(-0.2, 1.9, 0);
+    sign2.rotation.y = Math.PI;
+    group.add(sign2);
+  } else if (type === "trafficcone") {
+    const coneMat = new THREE.MeshStandardMaterial({ color: color || "#ff6b00", roughness: roughness ?? 0.6 });
+    const stripeMat = new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.6 });
+    const base = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.05, 0.35), coneMat);
+    base.position.y = 0.025;
+    group.add(base);
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.6, 12), coneMat);
+    cone.position.y = 0.35;
+    group.add(cone);
+    // White stripe
+    const stripe = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.13, 0.1, 12), stripeMat);
+    stripe.position.y = 0.4;
+    group.add(stripe);
+  } else if (type === "barrier") {
+    const redMat = new THREE.MeshStandardMaterial({ color: color || "#cc0000", roughness: roughness ?? 0.5 });
+    const whiteMat = new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.5 });
+    const legMat = new THREE.MeshStandardMaterial({ color: "#2a2a2a", roughness: 0.6, metalness: 0.7 });
+    // Horizontal bar
+    const bar = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.2, 0.08), redMat);
+    bar.position.y = 1;
+    group.add(bar);
+    // White stripes
+    for (let i = 0; i < 4; i++) {
+      const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.2, 0.09), whiteMat);
+      stripe.position.set(-0.6 + i * 0.4, 1, 0);
+      group.add(stripe);
+    }
+    // Legs
+    for (const x of [-0.7, 0.7]) {
+      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1, 0.5), legMat);
+      leg.position.set(x, 0.5, 0);
+      group.add(leg);
+    }
+  } else if (type === "firehydrant") {
+    const redMat = new THREE.MeshStandardMaterial({ color: color || "#cc0000", roughness: roughness ?? 0.6 });
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.22, 0.1, 12), redMat);
+    base.position.y = 0.05;
+    group.add(base);
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.18, 0.5, 12), redMat);
+    body.position.y = 0.35;
+    group.add(body);
+    const top = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 8), redMat);
+    top.position.y = 0.6;
+    top.scale.set(1, 0.6, 1);
+    group.add(top);
+    // Side caps
+    for (const side of [-1, 1]) {
+      const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.1, 8), redMat);
+      cap.rotation.z = Math.PI / 2;
+      cap.position.set(side * 0.18, 0.35, 0);
+      group.add(cap);
+    }
+  } else if (type === "trashcan") {
+    const bodyMat = new THREE.MeshStandardMaterial({ color: color || "#2a5a2a", roughness: roughness ?? 0.7, metalness: metalness ?? 0.3 });
+    const lidMat = new THREE.MeshStandardMaterial({ color: "#1a3a1a", roughness: 0.6, metalness: 0.4 });
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.25, 0.8, 16), bodyMat);
+    body.position.y = 0.4;
+    group.add(body);
+    const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.08, 16), lidMat);
+    lid.position.y = 0.84;
+    group.add(lid);
+    // Vertical ribs
+    for (let i = 0; i < 8; i++) {
+      const angle = (i / 8) * Math.PI * 2;
+      const rib = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.7, 0.03), lidMat);
+      rib.position.set(Math.cos(angle) * 0.28, 0.4, Math.sin(angle) * 0.28);
+      group.add(rib);
+    }
+  } else if (type === "bench2") {
+    const woodMat = new THREE.MeshStandardMaterial({ color: color || "#a0522d", roughness: roughness ?? 0.8 });
+    const metalMat = new THREE.MeshStandardMaterial({ color: "#2a2a2a", roughness: 0.6, metalness: 0.7 });
+    // Curved seat (multiple planks)
+    for (let i = 0; i < 5; i++) {
+      const plank = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.05, 0.08), woodMat);
+      plank.position.set(0, 0.5, -0.2 + i * 0.1);
+      group.add(plank);
+    }
+    // Curved back
+    for (let i = 0; i < 4; i++) {
+      const plank = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.05, 0.08), woodMat);
+      plank.position.set(0, 0.7 + i * 0.1, -0.3 - i * 0.02);
+      plank.rotation.x = -0.1 * i;
+      group.add(plank);
+    }
+    // Metal legs
+    for (const x of [-0.75, 0.75]) {
+      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.5, 0.5), metalMat);
+      leg.position.set(x, 0.25, 0);
+      group.add(leg);
+    }
+  } else if (type === "picnictable") {
+    const woodMat = new THREE.MeshStandardMaterial({ color: color || "#a0522d", roughness: roughness ?? 0.8 });
+    // Table top
+    const top = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.08, 0.8), woodMat);
+    top.position.y = 0.75;
+    group.add(top);
+    // Table legs (A-frame)
+    for (const x of [-0.6, 0.6]) {
+      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.75, 0.08), woodMat);
+      leg.position.set(x, 0.375, 0);
+      group.add(leg);
+    }
+    // Seats
+    for (const side of [-1, 1]) {
+      const seat = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.06, 0.3), woodMat);
+      seat.position.set(0, 0.45, side * 0.55);
+      group.add(seat);
+      // Seat supports
+      for (const x of [-0.6, 0.6]) {
+        const sup = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.45, 0.08), woodMat);
+        sup.position.set(x, 0.225, side * 0.55);
+        group.add(sup);
+      }
+    }
+  } else if (type === "bbqgrill") {
+    const metalMat = new THREE.MeshStandardMaterial({ color: color || "#2a2a2a", roughness: roughness ?? 0.5, metalness: metalness ?? 0.8 });
+    const fireMat = new THREE.MeshStandardMaterial({ color: "#ff4400", emissive: "#ff2200", emissiveIntensity: 1.5, roughness: 0.5 });
+    // Legs
+    for (const [x, z] of [[-0.3, -0.2], [-0.3, 0.2], [0.3, -0.2], [0.3, 0.2]]) {
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.8, 6), metalMat);
+      leg.position.set(x, 0.4, z);
+      group.add(leg);
+    }
+    // Grill body
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.3, 16), metalMat);
+    body.position.y = 0.85;
+    group.add(body);
+    // Grill grates
+    for (let i = 0; i < 5; i++) {
+      const grate = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.02, 0.04), metalMat);
+      grate.position.set(0, 1.0, -0.3 + i * 0.15);
+      group.add(grate);
+    }
+    // Fire glow
+    for (let i = 0; i < 6; i++) {
+      const flame = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.15, 6), fireMat);
+      flame.position.set((Math.random() - 0.5) * 0.5, 0.9, (Math.random() - 0.5) * 0.5);
+      group.add(flame);
+    }
+  }
+
+  group.traverse((child) => {
+    if ((child as import("three").Mesh).isMesh) {
+      child.castShadow = true;
+      child.receiveShadow = true;
+    }
+  });
+  return group;
+}
