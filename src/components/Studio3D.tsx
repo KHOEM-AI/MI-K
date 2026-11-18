@@ -113,6 +113,9 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
   const [useEnvMap, setUseEnvMap] = useState(true);
   const useEnvMapRef = useRef(useEnvMap);
   useEnvMapRef.current = useEnvMap;
+  const [blinkingLights, setBlinkingLights] = useState(true);
+  const blinkingLightsRef = useRef(blinkingLights);
+  blinkingLightsRef.current = blinkingLights;
   const [activeLighting, setActiveLighting] = useState<"day" | "night" | "studio" | null>("day");
   const baselineRef = useRef<string>("");
   const autosaveTimerRef = useRef<number | null>(null);
@@ -434,6 +437,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       resize();
 
       let wheelAngle = 0;
+      let ledTime = 0;
       const animate = () => {
         if (cleanup || !renderer || !scene || !camera) return;
         controls?.update();
@@ -445,6 +449,28 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
           if (obj.userData.wheels && Array.isArray(obj.userData.wheels)) {
             obj.userData.wheels.forEach((wheel: import("three").Mesh) => {
               wheel.rotation.z = wheelAngle;
+            });
+          }
+        });
+
+        ledTime += 0.08;
+        meshesRef.current.forEach((obj) => {
+          const ledLights = obj.userData.ledLights;
+          if (Array.isArray(ledLights)) {
+            const intensity = blinkingLightsRef.current
+              ? 0.2 + (Math.sin(ledTime) + 1) * 1.4
+              : 1;
+
+            ledLights.forEach((led: import("three").Mesh) => {
+              const materials = Array.isArray(led.material)
+                ? led.material
+                : [led.material];
+
+              materials.forEach((material) => {
+                if ("emissiveIntensity" in material) {
+                  material.emissiveIntensity = intensity;
+                }
+              });
             });
           }
         });
@@ -2676,6 +2702,8 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             setBgColor={setBgColor}
             useEnvMap={useEnvMap}
             setUseEnvMap={setUseEnvMap}
+            blinkingLights={blinkingLights}
+            setBlinkingLights={setBlinkingLights}
             ambientIntensity={ambientIntensity}
             setAmbientIntensity={setAmbientIntensity}
             directionalIntensity={directionalIntensity}

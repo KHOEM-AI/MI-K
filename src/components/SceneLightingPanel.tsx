@@ -9,6 +9,8 @@ type SceneLightingPanelProps = {
   setBgColor: (color: string) => void;
   useEnvMap: boolean;
   setUseEnvMap: (value: boolean) => void;
+  blinkingLights: boolean;
+  setBlinkingLights: (value: boolean) => void;
   ambientIntensity: number;
   setAmbientIntensity: (value: number) => void;
   directionalIntensity: number;
@@ -23,6 +25,8 @@ export function SceneLightingPanel({
   setBgColor,
   useEnvMap,
   setUseEnvMap,
+  blinkingLights,
+  setBlinkingLights,
   ambientIntensity,
   setAmbientIntensity,
   directionalIntensity,
@@ -90,6 +94,23 @@ export function SceneLightingPanel({
             onChange={(event) => setUseEnvMap(event.target.checked)}
           />
           HDRI Reflections
+        </label>
+
+        <label
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            cursor: "pointer",
+            fontSize: "0.9rem",
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={blinkingLights}
+            onChange={(event) => setBlinkingLights(event.target.checked)}
+          />
+          ✨ Blinking LEDs
         </label>
       </div>
 

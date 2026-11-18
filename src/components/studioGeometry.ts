@@ -607,6 +607,7 @@ export function createHighwayGeometry(
   const lampGeo = new THREE.BoxGeometry(0.6, 0.15, 0.4);
 
   const positions = [-5, -10, -15, 5, 10, 15, 0]; // Spacing along the road
+  const ledLights: import("three").Mesh[] = [];
 
   positions.forEach((z) => {
     // Left side
@@ -619,6 +620,7 @@ export function createHighwayGeometry(
     group.add(leftArm);
 
     const leftLamp = new THREE.Mesh(lampGeo, ledMat);
+    ledLights.push(leftLamp);
     leftLamp.position.set(-3.2, 3.9, z);
     group.add(leftLamp);
 
@@ -632,9 +634,12 @@ export function createHighwayGeometry(
     group.add(rightArm);
 
     const rightLamp = new THREE.Mesh(lampGeo, ledMat);
+    ledLights.push(rightLamp);
     rightLamp.position.set(3.2, 3.9, z);
     group.add(rightLamp);
   });
+
+  group.userData.ledLights = ledLights;
 
   // Enable shadows
   group.traverse((child) => {
