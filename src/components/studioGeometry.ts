@@ -5919,3 +5919,238 @@ export function createStreetGeometry(
   });
   return group;
 }
+
+// ============================================================
+// GARDEN & FARM GEOMETRIES (Playground2, Gnome, Birdhouse, Weather Vane, Sundial, Well, Scarecrow, Hay Bale)
+// ============================================================
+
+export function createGardenGeometry(
+  THREE: typeof import("three"),
+  type: "playground2" | "gnome" | "birdhouse" | "weathervane" | "sundial" | "well" | "scarecrow" | "haybale",
+  color?: string,
+  metalness?: number,
+  roughness?: number
+): import("three").Group {
+  const group = new THREE.Group();
+
+  if (type === "playground2") {
+    const metalMat = new THREE.MeshStandardMaterial({ color: color || "#4a90d9", roughness: roughness ?? 0.5, metalness: metalness ?? 0.6 });
+    const seatMat = new THREE.MeshStandardMaterial({ color: "#ff6b6b", roughness: 0.6 });
+    // Rotating carousel
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 0.1, 16), metalMat);
+    base.position.y = 0.05;
+    group.add(base);
+    const center = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.6, 12), metalMat);
+    center.position.y = 0.4;
+    group.add(center);
+    // 4 seats
+    for (let i = 0; i < 4; i++) {
+      const angle = (i / 4) * Math.PI * 2;
+      const arm = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.06, 0.1), metalMat);
+      arm.position.set(Math.cos(angle) * 0.6, 0.3, Math.sin(angle) * 0.6);
+      arm.rotation.y = -angle;
+      group.add(arm);
+      const seat = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.15, 0.2), seatMat);
+      seat.position.set(Math.cos(angle) * 1.0, 0.3, Math.sin(angle) * 1.0);
+      group.add(seat);
+    }
+    // Roof
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(1.1, 0.4, 12), seatMat);
+    roof.position.y = 0.9;
+    group.add(roof);
+  } else if (type === "gnome") {
+    const hatMat = new THREE.MeshStandardMaterial({ color: color || "#cc0000", roughness: roughness ?? 0.7 });
+    const skinMat = new THREE.MeshStandardMaterial({ color: "#f4c8a0", roughness: 0.7 });
+    const beardMat = new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.8 });
+    const bodyMat = new THREE.MeshStandardMaterial({ color: "#2d6a2d", roughness: 0.7 });
+    // Body
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.25, 0.5, 10), bodyMat);
+    body.position.y = 0.25;
+    group.add(body);
+    // Head
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.15, 12, 8), skinMat);
+    head.position.y = 0.6;
+    group.add(head);
+    // Beard
+    const beard = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.25, 8), beardMat);
+    beard.position.set(0, 0.5, 0.1);
+    beard.rotation.x = -0.2;
+    group.add(beard);
+    // Hat
+    const hat = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.4, 10), hatMat);
+    hat.position.y = 0.85;
+    group.add(hat);
+  } else if (type === "birdhouse") {
+    const woodMat = new THREE.MeshStandardMaterial({ color: color || "#8b4513", roughness: roughness ?? 0.8 });
+    const roofMat = new THREE.MeshStandardMaterial({ color: "#cc0000", roughness: 0.7 });
+    // Post
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 1.5, 8), woodMat);
+    post.position.y = 0.75;
+    group.add(post);
+    // House
+    const house = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.35, 0.3), woodMat);
+    house.position.y = 1.65;
+    group.add(house);
+    // Roof
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(0.35, 0.25, 4), roofMat);
+    roof.position.y = 1.95;
+    roof.rotation.y = Math.PI / 4;
+    group.add(roof);
+    // Hole
+    const hole = new THREE.Mesh(new THREE.CircleGeometry(0.06, 12), new THREE.MeshStandardMaterial({ color: "#1a1a1a" }));
+    hole.position.set(0, 1.65, 0.151);
+    group.add(hole);
+    // Perch
+    const perch = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.1, 6), woodMat);
+    perch.rotation.z = Math.PI / 2;
+    perch.position.set(0, 1.55, 0.15);
+    group.add(perch);
+  } else if (type === "weathervane") {
+    const metalMat = new THREE.MeshStandardMaterial({ color: "#2a2a2a", roughness: 0.5, metalness: 0.9 });
+    const arrowMat = new THREE.MeshStandardMaterial({ color: "#d4a373", roughness: 0.4, metalness: 0.5 });
+    // Post
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.04, 1.2, 8), metalMat);
+    post.position.y = 0.6;
+    group.add(post);
+    // N/S/E/W indicators
+    for (let i = 0; i < 4; i++) {
+      const angle = (i / 4) * Math.PI * 2;
+      const bar = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.02, 0.02), metalMat);
+      bar.position.set(Math.cos(angle) * 0.2, 1.1, Math.sin(angle) * 0.2);
+      bar.rotation.y = -angle;
+      group.add(bar);
+    }
+    // Arrow (rotating)
+    const arrowGroup = new THREE.Group();
+    arrowGroup.userData.weathervaneArrow = true;
+    arrowGroup.position.y = 1.15;
+    const shaft = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.02, 0.02), arrowMat);
+    arrowGroup.add(shaft);
+    const head = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.15, 6), arrowMat);
+    head.rotation.z = -Math.PI / 2;
+    head.position.x = 0.3;
+    arrowGroup.add(head);
+    const tail = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.12, 4), arrowMat);
+    tail.rotation.z = Math.PI / 2;
+    tail.position.x = -0.3;
+    arrowGroup.add(tail);
+    group.add(arrowGroup);
+  } else if (type === "sundial") {
+    const stoneMat = new THREE.MeshStandardMaterial({ color: color || "#c8b8a0", roughness: roughness ?? 0.9 });
+    const metalMat = new THREE.MeshStandardMaterial({ color: "#8a7a5a", metalness: 0.5, roughness: 0.5 });
+    // Base
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.55, 0.15, 16), stoneMat);
+    base.position.y = 0.075;
+    group.add(base);
+    // Dial plate
+    const dial = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.05, 16), stoneMat);
+    dial.position.y = 0.18;
+    group.add(dial);
+    // Roman numerals (approximated as small boxes)
+    for (let i = 0; i < 12; i++) {
+      const angle = (i / 12) * Math.PI * 2;
+      const mark = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.005, 0.06), metalMat);
+      mark.position.set(Math.cos(angle) * 0.35, 0.21, Math.sin(angle) * 0.35);
+      mark.rotation.y = -angle;
+      group.add(mark);
+    }
+    // Gnomon (triangle-shaped pointer)
+    const gnomon = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.5, 4), metalMat);
+    gnomon.position.set(0, 0.4, 0);
+    gnomon.rotation.x = Math.PI / 4;
+    group.add(gnomon);
+  } else if (type === "well") {
+    const stoneMat = new THREE.MeshStandardMaterial({ color: color || "#8a8a8a", roughness: roughness ?? 0.9 });
+    const woodMat = new THREE.MeshStandardMaterial({ color: "#8b4513", roughness: 0.8 });
+    const waterMat = new THREE.MeshStandardMaterial({ color: "#4fc3f7", roughness: 0.1, metalness: 0.4, transparent: true, opacity: 0.9 });
+    // Stone base
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.8, 0.8, 16, 1, true), stoneMat);
+    base.position.y = 0.4;
+    group.add(base);
+    // Water inside
+    const water = new THREE.Mesh(new THREE.CircleGeometry(0.6, 16), waterMat);
+    water.rotation.x = -Math.PI / 2;
+    water.position.y = 0.5;
+    group.add(water);
+    // Wooden posts
+    for (const x of [-0.65, 0.65]) {
+      const post = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.5, 0.08), woodMat);
+      post.position.set(x, 1.15, 0);
+      group.add(post);
+    }
+    // Roof
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(1, 0.6, 4), new THREE.MeshStandardMaterial({ color: "#cc0000", roughness: 0.7 }));
+    roof.position.y = 2.1;
+    roof.rotation.y = Math.PI / 4;
+    group.add(roof);
+    // Bucket
+    const bucket = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.1, 0.15, 10), woodMat);
+    bucket.position.set(0, 1.5, 0);
+    group.add(bucket);
+    // Rope
+    const rope = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.8, 4), new THREE.MeshStandardMaterial({ color: "#3a2a1a" }));
+    rope.position.set(0, 1.5, 0);
+    group.add(rope);
+  } else if (type === "scarecrow") {
+    const woodMat = new THREE.MeshStandardMaterial({ color: color || "#8b4513", roughness: roughness ?? 0.9 });
+    const clothMat = new THREE.MeshStandardMaterial({ color: "#a0a0a0", roughness: 0.8 });
+    const hatMat = new THREE.MeshStandardMaterial({ color: "#5d3a1a", roughness: 0.8 });
+    // Cross post
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.8, 8), woodMat);
+    post.position.y = 0.9;
+    group.add(post);
+    const cross = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.4, 8), woodMat);
+    cross.rotation.z = Math.PI / 2;
+    cross.position.y = 1.5;
+    group.add(cross);
+    // Shirt
+    const shirt = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.2), clothMat);
+    shirt.position.y = 1.3;
+    group.add(shirt);
+    // Head (burlap sack)
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.15, 12, 8), new THREE.MeshStandardMaterial({ color: "#d4a373", roughness: 0.9 }));
+    head.position.y = 1.75;
+    group.add(head);
+    // Hat
+    const hat = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.3, 12), hatMat);
+    hat.position.y = 2.0;
+    group.add(hat);
+    // Straw hands
+    for (const side of [-1, 1]) {
+      const straw = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.15, 6), new THREE.MeshStandardMaterial({ color: "#ffdd44", roughness: 0.8 }));
+      straw.position.set(side * 0.75, 1.5, 0);
+      straw.rotation.z = side * Math.PI / 2;
+      group.add(straw);
+    }
+  } else if (type === "haybale") {
+    const hayMat = new THREE.MeshStandardMaterial({ color: color || "#d4a34a", roughness: roughness ?? 0.95 });
+    const bale = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.8, 16), hayMat);
+    bale.rotation.x = Math.PI / 2;
+    bale.position.y = 0.5;
+    group.add(bale);
+    // Rope bands
+    for (const z of [-0.25, 0.25]) {
+      const band = new THREE.Mesh(new THREE.TorusGeometry(0.51, 0.02, 6, 16), new THREE.MeshStandardMaterial({ color: "#5d3a1a" }));
+      band.rotation.y = Math.PI / 2;
+      band.position.set(0, 0.5, z);
+      group.add(band);
+    }
+    // Straw pieces sticking out
+    for (let i = 0; i < 10; i++) {
+      const straw = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.15, 4), hayMat);
+      const angle = Math.random() * Math.PI * 2;
+      straw.position.set(Math.cos(angle) * 0.5, 0.5 + (Math.random() - 0.5) * 0.6, Math.sin(angle) * 0.5);
+      straw.rotation.x = Math.random() * Math.PI;
+      straw.rotation.z = Math.random() * Math.PI;
+      group.add(straw);
+    }
+  }
+
+  group.traverse((child) => {
+    if ((child as import("three").Mesh).isMesh) {
+      child.castShadow = true;
+      child.receiveShadow = true;
+    }
+  });
+  return group;
+}

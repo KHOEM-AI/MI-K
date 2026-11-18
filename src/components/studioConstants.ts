@@ -166,6 +166,14 @@ export const presets: { name: string; shape: Shape }[] = [
   { name: "Bench2", shape: "bench2" },
   { name: "Picnic Table", shape: "picnictable" },
   { name: "BBQ Grill", shape: "bbqgrill" },
+  { name: "Playground2", shape: "playground2" },
+  { name: "Garden Gnome", shape: "gnome" },
+  { name: "Birdhouse", shape: "birdhouse" },
+  { name: "Weather Vane", shape: "weathervane" },
+  { name: "Sundial", shape: "sundial" },
+  { name: "Well", shape: "well" },
+  { name: "Scarecrow", shape: "scarecrow" },
+  { name: "Hay Bale", shape: "haybale" },
 ];
 
 

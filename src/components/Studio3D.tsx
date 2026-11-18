@@ -3,7 +3,7 @@ import { Eye, EyeOff, Lock, Unlock, Pencil, HelpCircle, X, Camera, Trash2, Copy,
 import { saveAsset } from "../lib/storage.mjs";
 import { UI3DPreview } from "./UI3DPreview";
 import { presets, MATERIAL_PRESETS, PLANT_COLOR_PRESETS, SKY_COLOR_PRESETS, WATER_COLOR_PRESETS, zero, one, createId } from "./studioConstants";
-import { createGeometry, createCarGeometry, createFurnitureGeometry, createPlantGeometry, createPlantGeometry2, createPlantGeometry3, createPlantGeometry4, createEnvironmentGeometry, createEnvironmentGeometry2, createEnvironmentGeometry3, createSkyGeometry, createSpaceGeometry, createSpaceGeometry2, createStructureGeometry, createStructureGeometry2, createStructureGeometry3, createMonumentGeometry, createBuildingGeometry, createBuildingGeometry2, createBuildingGeometry3, createEnergyGeometry, createTransportGeometry, createPersonalTransportGeometry, createFoodGeometry, createNatureGeometry, createFruitGeometry2, createPlantExtraGeometry, createParkGeometry, createStreetGeometry, createLuxuryCarGeometry, createAircraftGeometry, createBoatGeometry, createAnimalGeometry, createCharacterGeometry, createKhoemGeometry, createHighwayGeometry, createBridgeGeometry, createTrafficLightGeometry, createStreetLightGeometry, disposeMesh } from "./studioGeometry";
+import { createGeometry, createCarGeometry, createFurnitureGeometry, createPlantGeometry, createPlantGeometry2, createPlantGeometry3, createPlantGeometry4, createEnvironmentGeometry, createEnvironmentGeometry2, createEnvironmentGeometry3, createSkyGeometry, createSpaceGeometry, createSpaceGeometry2, createStructureGeometry, createStructureGeometry2, createStructureGeometry3, createMonumentGeometry, createBuildingGeometry, createBuildingGeometry2, createBuildingGeometry3, createEnergyGeometry, createTransportGeometry, createPersonalTransportGeometry, createFoodGeometry, createNatureGeometry, createFruitGeometry2, createPlantExtraGeometry, createParkGeometry, createStreetGeometry, createGardenGeometry, createLuxuryCarGeometry, createAircraftGeometry, createBoatGeometry, createAnimalGeometry, createCharacterGeometry, createKhoemGeometry, createHighwayGeometry, createBridgeGeometry, createTrafficLightGeometry, createStreetLightGeometry, disposeMesh } from "./studioGeometry";
 import { CameraPresets } from "./CameraPresets";
 import { SceneLightingPanel } from "./SceneLightingPanel";
 import { MaterialPanel } from "./MaterialPanel";
@@ -831,6 +831,8 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
               obj = createParkGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
             } else if (item.shape === "streetsign" || item.shape === "trafficcone" || item.shape === "barrier" || item.shape === "firehydrant" || item.shape === "trashcan" || item.shape === "bench2" || item.shape === "picnictable" || item.shape === "bbqgrill") {
               obj = createStreetGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            } else if (item.shape === "playground2" || item.shape === "gnome" || item.shape === "birdhouse" || item.shape === "weathervane" || item.shape === "sundial" || item.shape === "well" || item.shape === "scarecrow" || item.shape === "haybale") {
+              obj = createGardenGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
             } else if (item.shape === "khoem") {
               obj = createKhoemGeometry(THREE, item.color, item.metalness, item.roughness);
             } else if (item.shape === "highway") {
@@ -1970,6 +1972,16 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             return;
           }
 
+          if (item.shape === "playground2" || item.shape === "gnome" || item.shape === "birdhouse" || item.shape === "weathervane" || item.shape === "sundial" || item.shape === "well" || item.shape === "scarecrow" || item.shape === "haybale") {
+            const gardenGroup = createGardenGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            gardenGroup.position.set(item.position.x, item.position.y, item.position.z);
+            gardenGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            gardenGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            gardenGroup.name = item.name;
+            exportScene.add(gardenGroup);
+            return;
+          }
+
           if (item.shape === "khoem") {
             const khoemGroup = createKhoemGeometry(THREE, item.color, item.metalness, item.roughness);
             khoemGroup.position.set(item.position.x, item.position.y, item.position.z);
@@ -2964,6 +2976,16 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             return;
           }
 
+          if (item.shape === "playground2" || item.shape === "gnome" || item.shape === "birdhouse" || item.shape === "weathervane" || item.shape === "sundial" || item.shape === "well" || item.shape === "scarecrow" || item.shape === "haybale") {
+            const gardenGroup = createGardenGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            gardenGroup.position.set(item.position.x, item.position.y, item.position.z);
+            gardenGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            gardenGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            gardenGroup.name = item.name;
+            exportScene!.add(gardenGroup);
+            return;
+          }
+
           if (item.shape === "khoem") {
             const khoemGroup = createKhoemGeometry(THREE, item.color, item.metalness, item.roughness);
             khoemGroup.position.set(item.position.x, item.position.y, item.position.z);
@@ -3098,6 +3120,44 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       setExporting(false);
     }
   }
+
+  // Garden animation (carousel rotate, weather vane arrow, scarecrow sway)
+  useEffect(() => {
+    if (!windEnabled || !sceneReady) return;
+
+    const carousels = new Set(["playground2"]);
+    const vanes = new Set(["weathervane"]);
+    const scarecrows = new Set(["scarecrow"]);
+
+    let rafId: number;
+    const animate = () => {
+      windTimeRef.current += 0.016;
+      const t = windTimeRef.current;
+
+      meshesRef.current.forEach((mesh) => {
+        const sceneObj = objects.find(o => o.id === mesh.userData.objectId);
+        if (!sceneObj) return;
+        if (sceneObj.locked) return;
+
+        if (carousels.has(sceneObj.shape)) {
+          mesh.rotation.y = sceneObj.rotation.y + t * 0.5;
+        } else if (vanes.has(sceneObj.shape)) {
+          mesh.traverse((child) => {
+            if (child.userData.weathervaneArrow) {
+              child.rotation.y = Math.sin(t * 0.5) * 0.5;
+            }
+          });
+        } else if (scarecrows.has(sceneObj.shape)) {
+          mesh.rotation.z = sceneObj.rotation.z + Math.sin(t * 1.2 + sceneObj.position.x) * 0.03 * windStrength;
+        }
+      });
+
+      rafId = requestAnimationFrame(animate);
+    };
+
+    rafId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(rafId);
+  }, [windEnabled, windStrength, sceneReady, objects]);
 
   // Street animation (traffic cone bob, bbq fire flicker, street sign swing)
   useEffect(() => {
