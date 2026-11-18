@@ -174,6 +174,14 @@ export const presets: { name: string; shape: Shape }[] = [
   { name: "Well", shape: "well" },
   { name: "Scarecrow", shape: "scarecrow" },
   { name: "Hay Bale", shape: "haybale" },
+  { name: "Crystal", shape: "crystal" },
+  { name: "Geode", shape: "geode" },
+  { name: "Fossil", shape: "fossil" },
+  { name: "Meteorite", shape: "meteorite" },
+  { name: "Gemstone", shape: "gemstone" },
+  { name: "Pearl", shape: "pearl" },
+  { name: "Shell", shape: "shell" },
+  { name: "Coral", shape: "coral" },
 ];
 
 

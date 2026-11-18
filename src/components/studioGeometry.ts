@@ -6154,3 +6154,216 @@ export function createGardenGeometry(
   });
   return group;
 }
+
+// ============================================================
+// MINERAL & OCEAN GEOMETRIES (Crystal, Geode, Fossil, Meteorite, Gemstone, Pearl, Shell, Coral)
+// ============================================================
+
+export function createMineralGeometry(
+  THREE: typeof import("three"),
+  type: "crystal" | "geode" | "fossil" | "meteorite" | "gemstone" | "pearl" | "shell" | "coral",
+  color?: string,
+  metalness?: number,
+  roughness?: number
+): import("three").Group {
+  const group = new THREE.Group();
+
+  if (type === "crystal") {
+    const crystalMat = new THREE.MeshStandardMaterial({
+      color: color || "#a855f7",
+      roughness: roughness ?? 0.1,
+      metalness: metalness ?? 0.3,
+      transparent: true,
+      opacity: 0.85,
+    });
+    // Main crystal cluster
+    const positions: [number, number, number, number, number][] = [
+      [0, 1, 0, 0.3, 1.8],
+      [0.4, 0.6, 0.2, 0.2, 1.2],
+      [-0.3, 0.5, -0.2, 0.18, 1.0],
+      [0.2, 0.4, -0.4, 0.15, 0.8],
+    ];
+    positions.forEach(([x, y, z, r, h]) => {
+      const crystal = new THREE.Mesh(new THREE.ConeGeometry(r, h, 6), crystalMat);
+      crystal.position.set(x, y, z);
+      crystal.rotation.z = (Math.random() - 0.5) * 0.3;
+      crystal.rotation.x = (Math.random() - 0.5) * 0.3;
+      group.add(crystal);
+    });
+  } else if (type === "geode") {
+    const outerMat = new THREE.MeshStandardMaterial({
+      color: color || "#6b6b6b",
+      roughness: roughness ?? 0.9,
+      metalness: metalness ?? 0.1,
+    });
+    const innerMat = new THREE.MeshStandardMaterial({
+      color: "#a855f7",
+      roughness: 0.1,
+      metalness: 0.5,
+      emissive: "#a855f7",
+      emissiveIntensity: 0.3,
+    });
+    // Outer rock (hollow sphere)
+    const outer = new THREE.Mesh(new THREE.SphereGeometry(0.5, 16, 12, 0, Math.PI * 2, 0, Math.PI / 1.5), outerMat);
+    outer.position.y = 0.4;
+    outer.rotation.x = Math.PI;
+    group.add(outer);
+    // Inner crystal lining
+    for (let i = 0; i < 20; i++) {
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.random() * Math.PI / 1.5;
+      const crystal = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.12, 4), innerMat);
+      crystal.position.set(
+        Math.sin(phi) * Math.cos(theta) * 0.35,
+        0.4 + Math.cos(phi) * 0.35,
+        Math.sin(phi) * Math.sin(theta) * 0.35
+      );
+      crystal.lookAt(0, 0.4, 0);
+      group.add(crystal);
+    }
+  } else if (type === "fossil") {
+    const rockMat = new THREE.MeshStandardMaterial({
+      color: color || "#8a7a5a",
+      roughness: roughness ?? 0.95,
+      metalness: metalness ?? 0.1,
+    });
+    // Rock base
+    const base = new THREE.Mesh(new THREE.DodecahedronGeometry(0.5, 0), rockMat);
+    base.position.y = 0.4;
+    base.scale.set(1.2, 0.6, 1);
+    group.add(base);
+    // Fossil spiral (ammonite)
+    const spiralMat = new THREE.MeshStandardMaterial({ color: "#d4c4a0", roughness: 0.8 });
+    for (let i = 0; i < 20; i++) {
+      const angle = (i / 20) * Math.PI * 4;
+      const r = 0.05 + (i / 20) * 0.25;
+      const seg = new THREE.Mesh(new THREE.SphereGeometry(0.04, 6, 4), spiralMat);
+      seg.position.set(Math.cos(angle) * r, 0.55, Math.sin(angle) * r);
+      group.add(seg);
+    }
+  } else if (type === "meteorite") {
+    const rockMat = new THREE.MeshStandardMaterial({
+      color: color || "#3a2a1a",
+      roughness: roughness ?? 0.95,
+      metalness: metalness ?? 0.3,
+    });
+    const meteorite = new THREE.Mesh(new THREE.DodecahedronGeometry(0.5, 1), rockMat);
+    meteorite.position.y = 0.5;
+    group.add(meteorite);
+    // Craters
+    for (let i = 0; i < 6; i++) {
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.random() * Math.PI;
+      const crater = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 6), new THREE.MeshStandardMaterial({ color: "#2a1a0a", roughness: 0.95 }));
+      crater.position.set(
+        Math.sin(phi) * Math.cos(theta) * 0.45,
+        0.5 + Math.cos(phi) * 0.45,
+        Math.sin(phi) * Math.sin(theta) * 0.45
+      );
+      crater.scale.set(1, 1, 0.3);
+      group.add(crater);
+    }
+  } else if (type === "gemstone") {
+    const gemMat = new THREE.MeshStandardMaterial({
+      color: color || "#e63946",
+      roughness: roughness ?? 0.1,
+      metalness: metalness ?? 0.5,
+      transparent: true,
+      opacity: 0.85,
+    });
+    // Diamond-like octahedron
+    const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.4, 0), gemMat);
+    gem.position.y = 0.4;
+    group.add(gem);
+    // Facets (small tetrahedrons on surface)
+    for (let i = 0; i < 6; i++) {
+      const angle = (i / 6) * Math.PI * 2;
+      const facet = new THREE.Mesh(new THREE.TetrahedronGeometry(0.08, 0), gemMat);
+      facet.position.set(Math.cos(angle) * 0.3, 0.4 + Math.sin(i) * 0.2, Math.sin(angle) * 0.3);
+      group.add(facet);
+    }
+  } else if (type === "pearl") {
+    const pearlMat = new THREE.MeshStandardMaterial({
+      color: color || "#f5f0e0",
+      roughness: roughness ?? 0.1,
+      metalness: metalness ?? 0.6,
+    });
+    // Pearl
+    const pearl = new THREE.Mesh(new THREE.SphereGeometry(0.3, 24, 18), pearlMat);
+    pearl.position.y = 0.35;
+    group.add(pearl);
+    // Iridescent shimmer (outer sphere with low opacity)
+    const shimmer = new THREE.Mesh(
+      new THREE.SphereGeometry(0.32, 24, 18),
+      new THREE.MeshStandardMaterial({
+        color: "#ffd1dc",
+        roughness: 0.05,
+        metalness: 0.9,
+        transparent: true,
+        opacity: 0.3,
+      })
+    );
+    shimmer.position.y = 0.35;
+    group.add(shimmer);
+    // Open shell underneath
+    const shellMat = new THREE.MeshStandardMaterial({ color: "#e8d4b0", roughness: 0.7 });
+    const shell = new THREE.Mesh(new THREE.SphereGeometry(0.45, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), shellMat);
+    shell.position.y = 0.1;
+    shell.rotation.x = Math.PI;
+    group.add(shell);
+  } else if (type === "shell") {
+    const shellMat = new THREE.MeshStandardMaterial({
+      color: color || "#ffd1dc",
+      roughness: roughness ?? 0.5,
+      metalness: metalness ?? 0.2,
+    });
+    // Spiral shell (using torus segments)
+    for (let i = 0; i < 20; i++) {
+      const t = i / 20;
+      const angle = t * Math.PI * 6;
+      const r = 0.05 + t * 0.3;
+      const seg = new THREE.Mesh(new THREE.SphereGeometry(0.06 - t * 0.03, 8, 6), shellMat);
+      seg.position.set(Math.cos(angle) * r, 0.15 + t * 0.4, Math.sin(angle) * r);
+      seg.scale.set(1, 1.5, 1);
+      group.add(seg);
+    }
+  } else if (type === "coral") {
+    const coralMat = new THREE.MeshStandardMaterial({
+      color: color || "#ff6b9d",
+      roughness: roughness ?? 0.7,
+      metalness: metalness ?? 0.1,
+    });
+    // Base rock
+    const base = new THREE.Mesh(new THREE.DodecahedronGeometry(0.3, 0), new THREE.MeshStandardMaterial({ color: "#6b5a4a", roughness: 0.95 }));
+    base.position.y = 0.15;
+    group.add(base);
+    // Coral branches
+    for (let i = 0; i < 8; i++) {
+      const angle = (i / 8) * Math.PI * 2;
+      const branch = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.06, 0.5 + Math.random() * 0.3, 6), coralMat);
+      branch.position.set(Math.cos(angle) * 0.2, 0.4, Math.sin(angle) * 0.2);
+      branch.rotation.z = Math.cos(angle) * 0.4;
+      branch.rotation.x = Math.sin(angle) * 0.4;
+      group.add(branch);
+      // Sub-branches
+      for (let j = 0; j < 2; j++) {
+        const sub = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.03, 0.25, 6), coralMat);
+        sub.position.set(
+          Math.cos(angle) * 0.35,
+          0.6 + j * 0.15,
+          Math.sin(angle) * 0.35
+        );
+        sub.rotation.z = Math.cos(angle) * (0.5 + j * 0.3);
+        group.add(sub);
+      }
+    }
+  }
+
+  group.traverse((child) => {
+    if ((child as import("three").Mesh).isMesh) {
+      child.castShadow = true;
+      child.receiveShadow = true;
+    }
+  });
+  return group;
+}
