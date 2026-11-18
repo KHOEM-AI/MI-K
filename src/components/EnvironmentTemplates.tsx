@@ -113,9 +113,17 @@ export function generateTemplate(template: SceneTemplate): SceneObject[] {
   if (template === "highway") {
     return [
       makeObject("highway", "Dual Highway", { x: 0, y: 0, z: 0 }, "#2a2a2a", 0.1, 0.9),
+      makeObject("bridge", "Highway Bridge", { x: 0, y: 0, z: 15 }, "#555555", 0.1, 0.9),
+      makeObject("trafficlight", "Traffic Light", { x: 5, y: 0, z: 0 }, "#333333", 0.1, 0.4),
+      makeObject("streetlight", "Street Light 1", { x: -5, y: 0, z: -5 }, "#fbbf24", 0.1, 0.4),
+      makeObject("streetlight", "Street Light 2", { x: 5, y: 0, z: 10 }, "#fbbf24", 0.1, 0.4),
       makeObject("khoem", "KHOEM-AI", { x: -2, y: 0, z: -5 }, "#a0a0a0", 0.9, 0.2),
       makeObject("car", "Audi Car", { x: 2, y: 0, z: 5 }, "#1e3a8a", 0.9, 0.2),
       makeObject("sportcar", "Sports Car", { x: -2, y: 0, z: 10 }, "#dc2626", 0.9, 0.2),
+      makeObject("suv", "SUV", { x: 2, y: 0, z: 15 }, "#16a34a", 0.9, 0.2),
+      makeObject("pickup", "Pickup Truck", { x: -2, y: 0, z: 20 }, "#d97706", 0.9, 0.2),
+      makeObject("van", "Van / MPV", { x: 2, y: 0, z: 25 }, "#64748b", 0.9, 0.2),
+      makeObject("police", "Police Car", { x: -2, y: 0, z: 30 }, "#2563eb", 0.9, 0.2),
     ];
   }
   // studio

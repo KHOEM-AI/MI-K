@@ -1,4 +1,4 @@
-import { Route, Construction, TrafficCone } from "lucide-react";
+import { Route, Construction, TrafficCone, Lamp } from "lucide-react";
 import type { Shape } from "./studioTypes";
 
 type RoadElementsPanelProps = {
@@ -10,6 +10,7 @@ const ELEMENTS = [
   { shape: "highway" as Shape, name: "Highway", icon: Route },
   { shape: "bridge" as Shape, name: "Bridge", icon: Construction },
   { shape: "trafficlight" as Shape, name: "Traffic Light", icon: TrafficCone },
+  { shape: "streetlight" as Shape, name: "Street Light", icon: Lamp },
 ];
 
 export function RoadElementsPanel({ onAdd, disabled }: RoadElementsPanelProps) {

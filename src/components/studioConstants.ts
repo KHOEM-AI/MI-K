@@ -20,6 +20,11 @@ export const presets: { name: string; shape: Shape }[] = [
   { name: "Dual Highway", shape: "highway" },
   { name: "Bridge", shape: "bridge" },
   { name: "Traffic Light", shape: "trafficlight" },
+  { name: "Street Light", shape: "streetlight" },
+  { name: "SUV", shape: "suv" },
+  { name: "Pickup Truck", shape: "pickup" },
+  { name: "Van / MPV", shape: "van" },
+  { name: "Police Car", shape: "police" },
 ];
 
 export const MATERIAL_PRESETS = [

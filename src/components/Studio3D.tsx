@@ -3,7 +3,7 @@ import { Eye, EyeOff, Lock, Unlock, Pencil, HelpCircle, X, Camera, Trash2, Copy,
 import { saveAsset } from "../lib/storage.mjs";
 import { UI3DPreview } from "./UI3DPreview";
 import { presets, MATERIAL_PRESETS, zero, one, createId } from "./studioConstants";
-import { createGeometry, createCarGeometry, createFurnitureGeometry, createKhoemGeometry, createHighwayGeometry, createBridgeGeometry, createTrafficLightGeometry, disposeMesh } from "./studioGeometry";
+import { createGeometry, createCarGeometry, createFurnitureGeometry, createKhoemGeometry, createHighwayGeometry, createBridgeGeometry, createTrafficLightGeometry, createStreetLightGeometry, disposeMesh } from "./studioGeometry";
 import { CameraPresets } from "./CameraPresets";
 import { SceneLightingPanel } from "./SceneLightingPanel";
 import { MaterialPanel } from "./MaterialPanel";
@@ -761,7 +761,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
               });
             }
 
-            if (item.shape === "car" || item.shape === "sportcar") {
+            if ((item.shape === "car" || item.shape === "sportcar" || item.shape === "suv" || item.shape === "pickup" || item.shape === "van" || item.shape === "police")) {
               obj = createCarGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
             } else if (item.shape === "table" || item.shape === "chair" || item.shape === "sofa" || item.shape === "tree" || item.shape === "house" || item.shape === "lamp") {
               obj = createFurnitureGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
@@ -773,6 +773,8 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
               obj = createBridgeGeometry(THREE, item.color, item.metalness, item.roughness);
             } else if (item.shape === "trafficlight") {
               obj = createTrafficLightGeometry(THREE, item.color, item.metalness, item.roughness);
+            } else if (item.shape === "streetlight") {
+              obj = createStreetLightGeometry(THREE, item.color, item.metalness, item.roughness);
             } else {
               let geo: import("three").BufferGeometry;
               if (item.shape === "text") {
@@ -1573,7 +1575,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             material.map = texture;
           }
 
-          if (item.shape === "car" || item.shape === "sportcar") {
+          if ((item.shape === "car" || item.shape === "sportcar" || item.shape === "suv" || item.shape === "pickup" || item.shape === "van" || item.shape === "police")) {
             const carGroup = createCarGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
             carGroup.position.set(item.position.x, item.position.y, item.position.z);
             carGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
@@ -1613,10 +1615,12 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             return;
           }
 
-          if (item.shape === "bridge" || item.shape === "trafficlight") {
+          if (item.shape === "bridge" || item.shape === "trafficlight" || item.shape === "streetlight") {
             const g = item.shape === "bridge"
               ? createBridgeGeometry(THREE, item.color, item.metalness, item.roughness)
-              : createTrafficLightGeometry(THREE, item.color, item.metalness, item.roughness);
+              : item.shape === "trafficlight"
+                ? createTrafficLightGeometry(THREE, item.color, item.metalness, item.roughness)
+                : createStreetLightGeometry(THREE, item.color, item.metalness, item.roughness);
             g.position.set(item.position.x, item.position.y, item.position.z);
             g.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
             g.scale.set(item.scale.x, item.scale.y, item.scale.z);
@@ -2256,7 +2260,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             material.map = texture;
           }
 
-          if (item.shape === "car" || item.shape === "sportcar") {
+          if ((item.shape === "car" || item.shape === "sportcar" || item.shape === "suv" || item.shape === "pickup" || item.shape === "van" || item.shape === "police")) {
             const carGroup = createCarGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
             carGroup.position.set(item.position.x, item.position.y, item.position.z);
             carGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
@@ -2296,10 +2300,12 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             return;
           }
 
-          if (item.shape === "bridge" || item.shape === "trafficlight") {
+          if (item.shape === "bridge" || item.shape === "trafficlight" || item.shape === "streetlight") {
             const g = item.shape === "bridge"
               ? createBridgeGeometry(THREE, item.color, item.metalness, item.roughness)
-              : createTrafficLightGeometry(THREE, item.color, item.metalness, item.roughness);
+              : item.shape === "trafficlight"
+                ? createTrafficLightGeometry(THREE, item.color, item.metalness, item.roughness)
+                : createStreetLightGeometry(THREE, item.color, item.metalness, item.roughness);
             g.position.set(item.position.x, item.position.y, item.position.z);
             g.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
             g.scale.set(item.scale.x, item.scale.y, item.scale.z);

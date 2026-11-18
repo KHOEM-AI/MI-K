@@ -1,4 +1,4 @@
-export type Shape = "box" | "sphere" | "cone" | "cylinder" | "torus" | "text" | "car" | "sportcar" | "table" | "chair" | "sofa" | "tree" | "house" | "lamp" | "khoem" | "highway" | "bridge" | "trafficlight";
+export type Shape = "box" | "sphere" | "cone" | "cylinder" | "torus" | "text" | "car" | "sportcar" | "suv" | "pickup" | "van" | "police" | "table" | "chair" | "sofa" | "tree" | "house" | "lamp" | "streetlight" | "khoem" | "highway" | "bridge" | "trafficlight";
 export type Vector3 = { x: number; y: number; z: number };
 
 export type SceneObject = {
