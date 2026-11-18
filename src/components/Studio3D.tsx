@@ -3,7 +3,7 @@ import { Eye, EyeOff, Lock, Unlock, Pencil, HelpCircle, X, Camera, Trash2, Copy,
 import { saveAsset } from "../lib/storage.mjs";
 import { UI3DPreview } from "./UI3DPreview";
 import { presets, MATERIAL_PRESETS, PLANT_COLOR_PRESETS, SKY_COLOR_PRESETS, WATER_COLOR_PRESETS, zero, one, createId } from "./studioConstants";
-import { createGeometry, createCarGeometry, createFurnitureGeometry, createPlantGeometry, createPlantGeometry2, createPlantGeometry3, createPlantGeometry4, createEnvironmentGeometry, createEnvironmentGeometry2, createEnvironmentGeometry3, createSkyGeometry, createSpaceGeometry, createSpaceGeometry2, createStructureGeometry, createStructureGeometry2, createStructureGeometry3, createMonumentGeometry, createBuildingGeometry, createBuildingGeometry2, createLuxuryCarGeometry, createAircraftGeometry, createBoatGeometry, createAnimalGeometry, createCharacterGeometry, createKhoemGeometry, createHighwayGeometry, createBridgeGeometry, createTrafficLightGeometry, createStreetLightGeometry, disposeMesh } from "./studioGeometry";
+import { createGeometry, createCarGeometry, createFurnitureGeometry, createPlantGeometry, createPlantGeometry2, createPlantGeometry3, createPlantGeometry4, createEnvironmentGeometry, createEnvironmentGeometry2, createEnvironmentGeometry3, createSkyGeometry, createSpaceGeometry, createSpaceGeometry2, createStructureGeometry, createStructureGeometry2, createStructureGeometry3, createMonumentGeometry, createBuildingGeometry, createBuildingGeometry2, createBuildingGeometry3, createEnergyGeometry, createLuxuryCarGeometry, createAircraftGeometry, createBoatGeometry, createAnimalGeometry, createCharacterGeometry, createKhoemGeometry, createHighwayGeometry, createBridgeGeometry, createTrafficLightGeometry, createStreetLightGeometry, disposeMesh } from "./studioGeometry";
 import { CameraPresets } from "./CameraPresets";
 import { SceneLightingPanel } from "./SceneLightingPanel";
 import { MaterialPanel } from "./MaterialPanel";
@@ -811,6 +811,10 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
               obj = createBuildingGeometry2(THREE, item.shape, item.color, item.metalness, item.roughness);
             } else if (item.shape === "lighthouse2" || item.shape === "windmill2") {
               obj = createStructureGeometry3(THREE, item.shape, item.color, item.metalness, item.roughness);
+            } else if (item.shape === "airport" || item.shape === "trainstation" || item.shape === "skyscraper2") {
+              obj = createBuildingGeometry3(THREE, item.shape, item.color, item.metalness, item.roughness);
+            } else if (item.shape === "windturbine" || item.shape === "solarpanel" || item.shape === "satellite2") {
+              obj = createEnergyGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
             } else if (item.shape === "khoem") {
               obj = createKhoemGeometry(THREE, item.color, item.metalness, item.roughness);
             } else if (item.shape === "highway") {
@@ -1850,6 +1854,26 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             return;
           }
 
+          if (item.shape === "airport" || item.shape === "trainstation" || item.shape === "skyscraper2") {
+            const building3Group = createBuildingGeometry3(THREE, item.shape, item.color, item.metalness, item.roughness);
+            building3Group.position.set(item.position.x, item.position.y, item.position.z);
+            building3Group.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            building3Group.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            building3Group.name = item.name;
+            exportScene.add(building3Group);
+            return;
+          }
+
+          if (item.shape === "windturbine" || item.shape === "solarpanel" || item.shape === "satellite2") {
+            const energyGroup = createEnergyGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            energyGroup.position.set(item.position.x, item.position.y, item.position.z);
+            energyGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            energyGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            energyGroup.name = item.name;
+            exportScene.add(energyGroup);
+            return;
+          }
+
           if (item.shape === "khoem") {
             const khoemGroup = createKhoemGeometry(THREE, item.color, item.metalness, item.roughness);
             khoemGroup.position.set(item.position.x, item.position.y, item.position.z);
@@ -2744,6 +2768,26 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             return;
           }
 
+          if (item.shape === "airport" || item.shape === "trainstation" || item.shape === "skyscraper2") {
+            const building3Group = createBuildingGeometry3(THREE, item.shape, item.color, item.metalness, item.roughness);
+            building3Group.position.set(item.position.x, item.position.y, item.position.z);
+            building3Group.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            building3Group.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            building3Group.name = item.name;
+            exportScene!.add(building3Group);
+            return;
+          }
+
+          if (item.shape === "windturbine" || item.shape === "solarpanel" || item.shape === "satellite2") {
+            const energyGroup = createEnergyGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            energyGroup.position.set(item.position.x, item.position.y, item.position.z);
+            energyGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            energyGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            energyGroup.name = item.name;
+            exportScene!.add(energyGroup);
+            return;
+          }
+
           if (item.shape === "khoem") {
             const khoemGroup = createKhoemGeometry(THREE, item.color, item.metalness, item.roughness);
             khoemGroup.position.set(item.position.x, item.position.y, item.position.z);
@@ -2878,6 +2922,52 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       setExporting(false);
     }
   }
+
+  // Energy animation (wind turbine blades, solar panel shimmer, satellite2 rotation)
+  useEffect(() => {
+    if (!windEnabled || !sceneReady) return;
+
+    const turbines = new Set(["windturbine"]);
+    const solarPanels = new Set(["solarpanel"]);
+    const satellites = new Set(["satellite2"]);
+
+    let rafId: number;
+    const animate = () => {
+      windTimeRef.current += 0.016;
+      const t = windTimeRef.current;
+
+      meshesRef.current.forEach((mesh) => {
+        const sceneObj = objects.find(o => o.id === mesh.userData.objectId);
+        if (!sceneObj) return;
+        if (sceneObj.locked) return;
+
+        if (turbines.has(sceneObj.shape)) {
+          // Rotate blades
+          mesh.traverse((child) => {
+            if (child.userData.turbineBlades) {
+              child.rotation.x = t * 3;
+            }
+          });
+        } else if (solarPanels.has(sceneObj.shape)) {
+          // Shimmer effect on glass cells
+          mesh.traverse((child) => {
+            const mat = (child as import("three").Mesh).material as import("three").MeshStandardMaterial;
+            if (mat && mat.opacity !== undefined && mat.opacity < 1) {
+              mat.opacity = 0.85 + Math.sin(t * 2 + sceneObj.position.x) * 0.1;
+            }
+          });
+        } else if (satellites.has(sceneObj.shape)) {
+          // Slow rotation
+          mesh.rotation.y = sceneObj.rotation.y + t * 0.5;
+        }
+      });
+
+      rafId = requestAnimationFrame(animate);
+    };
+
+    rafId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(rafId);
+  }, [windEnabled, sceneReady, objects]);
 
   // Structure V3 animation (lighthouse2 beacon, stadium lights, windmill2 blades)
   useEffect(() => {

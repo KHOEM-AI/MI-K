@@ -3852,3 +3852,290 @@ export function createStructureGeometry3(
   });
   return group;
 }
+
+// ============================================================
+// BUILDING GEOMETRIES V3 (Airport, Train Station, Skyscraper2)
+// ============================================================
+
+export function createBuildingGeometry3(
+  THREE: typeof import("three"),
+  type: "airport" | "trainstation" | "skyscraper2",
+  color?: string,
+  metalness?: number,
+  roughness?: number
+): import("three").Group {
+  const group = new THREE.Group();
+
+  if (type === "airport") {
+    const glassMat = new THREE.MeshStandardMaterial({
+      color: color || "#88ccff",
+      metalness: metalness ?? 0.6,
+      roughness: roughness ?? 0.2,
+      transparent: true,
+      opacity: 0.8,
+    });
+    const concreteMat = new THREE.MeshStandardMaterial({ color: "#a0a0a0", roughness: 0.9 });
+
+    // Main terminal building
+    const terminal = new THREE.Mesh(new THREE.BoxGeometry(5, 1.5, 2.5), glassMat);
+    terminal.position.y = 0.75;
+    group.add(terminal);
+
+    // Roof
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.15, 2.7), concreteMat);
+    roof.position.y = 1.55;
+    group.add(roof);
+
+    // Control tower
+    const towerBase = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.5, 2, 12), concreteMat);
+    towerBase.position.set(-2, 1, 0);
+    group.add(towerBase);
+
+    const towerTop = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.6, 12), glassMat);
+    towerTop.position.set(-2, 2.3, 0);
+    group.add(towerTop);
+
+    const towerRoof = new THREE.Mesh(new THREE.ConeGeometry(0.4, 0.4, 12), concreteMat);
+    towerRoof.position.set(-2, 2.8, 0);
+    group.add(towerRoof);
+
+    // Runway
+    const runway = new THREE.Mesh(new THREE.BoxGeometry(6, 0.05, 0.8), new THREE.MeshStandardMaterial({ color: "#2a2a2a", roughness: 0.9 }));
+    runway.position.set(0, 0.025, 1.8);
+    group.add(runway);
+
+    // Runway markings
+    for (let i = 0; i < 6; i++) {
+      const mark = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.02, 0.1), new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.9 }));
+      mark.position.set(-2 + i * 0.8, 0.06, 1.8);
+      group.add(mark);
+    }
+
+    // Small plane on runway
+    const planeMat = new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.4 });
+    const plane = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.8, 8), planeMat);
+    plane.rotation.z = Math.PI / 2;
+    plane.position.set(1.5, 0.15, 1.8);
+    group.add(plane);
+
+    const wing = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.03, 0.6), planeMat);
+    wing.position.set(1.5, 0.15, 1.8);
+    group.add(wing);
+  } else if (type === "trainstation") {
+    const brickMat = new THREE.MeshStandardMaterial({
+      color: color || "#a0503a",
+      roughness: roughness ?? 0.8,
+      metalness: metalness ?? 0.1,
+    });
+    const roofMat = new THREE.MeshStandardMaterial({ color: "#3a2a2a", roughness: 0.8 });
+
+    // Main building
+    const main = new THREE.Mesh(new THREE.BoxGeometry(3, 1.8, 1.5), brickMat);
+    main.position.y = 0.9;
+    group.add(main);
+
+    // Roof
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(2, 0.8, 4), roofMat);
+    roof.position.y = 2.2;
+    roof.rotation.y = Math.PI / 4;
+    roof.scale.set(1.2, 1, 0.8);
+    group.add(roof);
+
+    // Clock tower
+    const tower = new THREE.Mesh(new THREE.BoxGeometry(0.5, 2.8, 0.5), brickMat);
+    tower.position.set(1, 1.4, 0);
+    group.add(tower);
+
+    const clockFace = new THREE.Mesh(new THREE.CircleGeometry(0.2, 16), new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.5 }));
+    clockFace.position.set(1, 2.2, 0.26);
+    group.add(clockFace);
+
+    // Platform
+    const platform = new THREE.Mesh(new THREE.BoxGeometry(5, 0.1, 1), new THREE.MeshStandardMaterial({ color: "#8a8a8a", roughness: 0.9 }));
+    platform.position.set(0, 0.05, 1.5);
+    group.add(platform);
+
+    // Train tracks
+    for (const z of [1.2, 1.8]) {
+      const rail = new THREE.Mesh(new THREE.BoxGeometry(5, 0.05, 0.05), new THREE.MeshStandardMaterial({ color: "#5a5a5a", metalness: 0.9, roughness: 0.3 }));
+      rail.position.set(0, 0.03, z);
+      group.add(rail);
+    }
+
+    // Train
+    const trainMat = new THREE.MeshStandardMaterial({ color: "#4a4a4a", metalness: 0.7, roughness: 0.4 });
+    const train = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.5, 0.4), trainMat);
+    train.position.set(-1, 0.3, 1.5);
+    group.add(train);
+  } else if (type === "skyscraper2") {
+    const glassMat = new THREE.MeshStandardMaterial({
+      color: color || "#4a90d9",
+      roughness: roughness ?? 0.1,
+      metalness: metalness ?? 0.8,
+      transparent: true,
+      opacity: 0.85,
+    });
+    const frameMat = new THREE.MeshStandardMaterial({ color: "#2a2a2a", roughness: 0.6, metalness: 0.9 });
+
+    // Twisted tower (stacked boxes rotating)
+    for (let i = 0; i < 6; i++) {
+      const seg = new THREE.Mesh(new THREE.BoxGeometry(1.4 - i * 0.1, 1, 1.4 - i * 0.1), glassMat);
+      seg.position.y = 0.5 + i * 1;
+      seg.rotation.y = i * 0.15;
+      group.add(seg);
+
+      // Floor line
+      const line = new THREE.Mesh(new THREE.BoxGeometry(1.5 - i * 0.1, 0.05, 1.5 - i * 0.1), frameMat);
+      line.position.y = 0.5 + i * 1;
+      group.add(line);
+    }
+
+    // Spire
+    const spire = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.05, 2, 8), frameMat);
+    spire.position.y = 7;
+    group.add(spire);
+
+    // Red light
+    const light = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 6), new THREE.MeshStandardMaterial({ color: "#ff0000", emissive: "#ff0000", emissiveIntensity: 2 }));
+    light.position.y = 8;
+    group.add(light);
+  }
+
+  group.traverse((child) => {
+    if ((child as import("three").Mesh).isMesh) {
+      child.castShadow = true;
+      child.receiveShadow = true;
+    }
+  });
+  return group;
+}
+
+// ============================================================
+// ENERGY GEOMETRIES (Wind Turbine, Solar Panel, Satellite2)
+// ============================================================
+
+export function createEnergyGeometry(
+  THREE: typeof import("three"),
+  type: "windturbine" | "solarpanel" | "satellite2",
+  color?: string,
+  metalness?: number,
+  roughness?: number
+): import("three").Group {
+  const group = new THREE.Group();
+
+  if (type === "windturbine") {
+    const whiteMat = new THREE.MeshStandardMaterial({
+      color: color || "#ffffff",
+      roughness: roughness ?? 0.5,
+      metalness: metalness ?? 0.2,
+    });
+
+    // Base
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.5, 0.3, 12), new THREE.MeshStandardMaterial({ color: "#8a8a8a", roughness: 0.9 }));
+    base.position.y = 0.15;
+    group.add(base);
+
+    // Tower (tall tapered)
+    const tower = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.25, 5, 12), whiteMat);
+    tower.position.y = 2.65;
+    group.add(tower);
+
+    // Nacelle
+    const nacelle = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.3, 0.3), whiteMat);
+    nacelle.position.set(0, 5.2, 0);
+    group.add(nacelle);
+
+    // Hub
+    const hub = new THREE.Mesh(new THREE.SphereGeometry(0.15, 12, 8), whiteMat);
+    hub.position.set(0.35, 5.2, 0);
+    group.add(hub);
+
+    // Rotating blade assembly centered on the hub
+    const bladeGroup = new THREE.Group();
+    bladeGroup.position.set(0.35, 5.2, 0);
+    bladeGroup.userData.turbineBlades = true;
+    group.add(bladeGroup);
+
+    for (let i = 0; i < 3; i++) {
+      const angle = (i / 3) * Math.PI * 2;
+      const blade = new THREE.Mesh(new THREE.BoxGeometry(0.05, 1.8, 0.1), whiteMat);
+      blade.position.set(0, Math.sin(angle) * 0.9, Math.cos(angle) * 0.9);
+      blade.rotation.x = angle;
+      bladeGroup.add(blade);
+    }
+  } else if (type === "solarpanel") {
+    const frameMat = new THREE.MeshStandardMaterial({
+      color: color || "#2a2a3a",
+      metalness: metalness ?? 0.7,
+      roughness: roughness ?? 0.3,
+    });
+    const glassMat = new THREE.MeshStandardMaterial({
+      color: "#1a3a6a",
+      metalness: 0.9,
+      roughness: 0.1,
+      transparent: true,
+      opacity: 0.9,
+    });
+
+    // Support legs
+    for (const [x, z] of [[-0.6, -0.4], [-0.6, 0.4], [0.6, -0.4], [0.6, 0.4]]) {
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.5, 6), new THREE.MeshStandardMaterial({ color: "#5a5a5a", metalness: 0.8, roughness: 0.3 }));
+      leg.position.set(x, 0.25, z);
+      group.add(leg);
+    }
+
+    // Tilted panel
+    const panel = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.05, 1), frameMat);
+    panel.position.y = 0.6;
+    panel.rotation.x = -0.4;
+    group.add(panel);
+
+    // Solar cells grid
+    for (let i = 0; i < 3; i++) {
+      for (let j = 0; j < 2; j++) {
+        const cell = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.02, 0.4), glassMat);
+        cell.position.set(-0.5 + i * 0.5, 0.63, -0.25 + j * 0.5);
+        cell.rotation.x = -0.4;
+        group.add(cell);
+      }
+    }
+  } else if (type === "satellite2") {
+    const metalMat = new THREE.MeshStandardMaterial({
+      color: color || "#d0d0d0",
+      metalness: metalness ?? 0.9,
+      roughness: roughness ?? 0.2,
+    });
+    const goldMat = new THREE.MeshStandardMaterial({ color: "#ffd700", metalness: 1, roughness: 0.3 });
+    const solarMat = new THREE.MeshStandardMaterial({ color: "#1a3a8a", metalness: 0.8, roughness: 0.3 });
+
+    // Main body
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.6), goldMat);
+    group.add(body);
+
+    // Solar panels (larger, 4 sides)
+    for (const side of [-1, 1]) {
+      const panel = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.05, 0.8), solarMat);
+      panel.position.set(side * 1.1, 0, 0);
+      group.add(panel);
+    }
+
+    // Dish
+    const dish = new THREE.Mesh(new THREE.SphereGeometry(0.3, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), metalMat);
+    dish.position.y = 0.5;
+    dish.rotation.x = Math.PI;
+    group.add(dish);
+
+    // Antenna
+    const antenna = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.4, 6), metalMat);
+    antenna.position.y = 0.8;
+    group.add(antenna);
+  }
+
+  group.traverse((child) => {
+    if ((child as import("three").Mesh).isMesh) {
+      child.castShadow = true;
+      child.receiveShadow = true;
+    }
+  });
+  return group;
+}

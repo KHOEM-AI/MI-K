@@ -97,6 +97,12 @@ export const presets: { name: string; shape: Shape }[] = [
   { name: "Stadium", shape: "stadium" },
   { name: "Lighthouse2", shape: "lighthouse2" },
   { name: "Windmill2", shape: "windmill2" },
+  { name: "Airport", shape: "airport" },
+  { name: "Train Station", shape: "trainstation" },
+  { name: "Skyscraper2", shape: "skyscraper2" },
+  { name: "Wind Turbine", shape: "windturbine" },
+  { name: "Solar Panel", shape: "solarpanel" },
+  { name: "Satellite2", shape: "satellite2" },
 ];
 
 
