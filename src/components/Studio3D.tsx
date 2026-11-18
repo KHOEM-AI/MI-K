@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Eye, EyeOff, Lock, Unlock, Pencil, HelpCircle, X, Camera, Trash2, Copy, RotateCcw } from "lucide-react";
 import { saveAsset } from "../lib/storage.mjs";
 import { UI3DPreview } from "./UI3DPreview";
-import { presets, MATERIAL_PRESETS, PLANT_COLOR_PRESETS, zero, one, createId } from "./studioConstants";
+import { presets, MATERIAL_PRESETS, PLANT_COLOR_PRESETS, SKY_COLOR_PRESETS, WATER_COLOR_PRESETS, zero, one, createId } from "./studioConstants";
 import { createGeometry, createCarGeometry, createFurnitureGeometry, createPlantGeometry, createPlantGeometry2, createPlantGeometry3, createPlantGeometry4, createEnvironmentGeometry, createEnvironmentGeometry2, createSkyGeometry, createSpaceGeometry, createBuildingGeometry, createLuxuryCarGeometry, createAircraftGeometry, createBoatGeometry, createAnimalGeometry, createCharacterGeometry, createKhoemGeometry, createHighwayGeometry, createBridgeGeometry, createTrafficLightGeometry, createStreetLightGeometry, disposeMesh } from "./studioGeometry";
 import { CameraPresets } from "./CameraPresets";
 import { SceneLightingPanel } from "./SceneLightingPanel";
@@ -2725,6 +2725,40 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
     }
   }
 
+  // Wheel rotation animation for cars
+  useEffect(() => {
+    if (!sceneReady) return;
+
+    const carShapes = new Set([
+      "car", "sportcar", "suv", "pickup", "van", "police",
+      "lamborghini", "ferrari", "tesla"
+    ]);
+
+    let rafId: number;
+    const animate = () => {
+      windTimeRef.current += 0.016;
+      const t = windTimeRef.current;
+
+      meshesRef.current.forEach((mesh) => {
+        const sceneObj = objects.find(o => o.id === mesh.userData.objectId);
+        if (!sceneObj || !carShapes.has(sceneObj.shape)) return;
+        if (sceneObj.locked) return;
+
+        // Rotate wheels if the mesh has wheel data
+        mesh.traverse((child) => {
+          if (child.userData.wheel) {
+            child.rotation.x += 0.05;
+          }
+        });
+      });
+
+      rafId = requestAnimationFrame(animate);
+    };
+
+    rafId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(rafId);
+  }, [sceneReady, objects]);
+
   // Water, cloud, star animation
   useEffect(() => {
     if (!windEnabled || !sceneReady) return;
@@ -3204,6 +3238,54 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
               </p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                 {PLANT_COLOR_PRESETS.map((preset) => (
+                  <button
+                    key={preset.name}
+                    type="button"
+                    title={preset.name}
+                    onClick={() => updateSelectedColor(preset.color)}
+                    disabled={!selectedId}
+                    style={{
+                      width: "28px",
+                      height: "28px",
+                      borderRadius: "50%",
+                      backgroundColor: preset.color,
+                      border: "2px solid #31516e",
+                      cursor: selectedId ? "pointer" : "not-allowed",
+                      opacity: selectedId ? 1 : 0.4,
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div style={{ marginTop: "12px", padding: "12px", backgroundColor: "#0a1420", borderRadius: "8px", border: "1px solid #31516e" }}>
+              <h4 style={{ margin: "0 0 8px", fontSize: "0.9rem", color: "#4a90d9" }}>🌌 Sky Colors</h4>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                {SKY_COLOR_PRESETS.map((preset) => (
+                  <button
+                    key={preset.name}
+                    type="button"
+                    title={preset.name}
+                    onClick={() => updateSelectedColor(preset.color)}
+                    disabled={!selectedId}
+                    style={{
+                      width: "28px",
+                      height: "28px",
+                      borderRadius: "50%",
+                      backgroundColor: preset.color,
+                      border: "2px solid #31516e",
+                      cursor: selectedId ? "pointer" : "not-allowed",
+                      opacity: selectedId ? 1 : 0.4,
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div style={{ marginTop: "12px", padding: "12px", backgroundColor: "#0a1420", borderRadius: "8px", border: "1px solid #31516e" }}>
+              <h4 style={{ margin: "0 0 8px", fontSize: "0.9rem", color: "#4a90d9" }}>💧 Water Colors</h4>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                {WATER_COLOR_PRESETS.map((preset) => (
                   <button
                     key={preset.name}
                     type="button"
