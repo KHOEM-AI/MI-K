@@ -2520,7 +2520,14 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
 
           <EnvironmentTemplates onLoadTemplate={handleLoadTemplate} />
           <RoadElementsPanel onAdd={handleQuickAdd} />
-          <KiPanel objects={objects} />
+          <KiPanel
+            objects={objects}
+            onApplyColor={(c) => {
+              const ids = selectedIds.length ? selectedIds : selectedId ? [selectedId] : [];
+              if (!ids.length) return;
+              commitObjects(objects.map((o) => (ids.includes(o.id) && !o.locked ? { ...o, color: c } : o)));
+            }}
+          />
 
           <div className="studio-history-controls">
             <button type="button" className="upload-button" onClick={undo} disabled={!history.past.length}>
