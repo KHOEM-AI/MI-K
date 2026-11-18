@@ -3,7 +3,7 @@ import { Eye, EyeOff, Lock, Unlock, Pencil, HelpCircle, X, Camera, Trash2, Copy,
 import { saveAsset } from "../lib/storage.mjs";
 import { UI3DPreview } from "./UI3DPreview";
 import { presets, MATERIAL_PRESETS, PLANT_COLOR_PRESETS, SKY_COLOR_PRESETS, WATER_COLOR_PRESETS, zero, one, createId } from "./studioConstants";
-import { createGeometry, createCarGeometry, createFurnitureGeometry, createPlantGeometry, createPlantGeometry2, createPlantGeometry3, createPlantGeometry4, createEnvironmentGeometry, createEnvironmentGeometry2, createSkyGeometry, createSpaceGeometry, createBuildingGeometry, createLuxuryCarGeometry, createAircraftGeometry, createBoatGeometry, createAnimalGeometry, createCharacterGeometry, createKhoemGeometry, createHighwayGeometry, createBridgeGeometry, createTrafficLightGeometry, createStreetLightGeometry, disposeMesh } from "./studioGeometry";
+import { createGeometry, createCarGeometry, createFurnitureGeometry, createPlantGeometry, createPlantGeometry2, createPlantGeometry3, createPlantGeometry4, createEnvironmentGeometry, createEnvironmentGeometry2, createSkyGeometry, createSpaceGeometry, createSpaceGeometry2, createStructureGeometry, createBuildingGeometry, createLuxuryCarGeometry, createAircraftGeometry, createBoatGeometry, createAnimalGeometry, createCharacterGeometry, createKhoemGeometry, createHighwayGeometry, createBridgeGeometry, createTrafficLightGeometry, createStreetLightGeometry, disposeMesh } from "./studioGeometry";
 import { CameraPresets } from "./CameraPresets";
 import { SceneLightingPanel } from "./SceneLightingPanel";
 import { MaterialPanel } from "./MaterialPanel";
@@ -797,6 +797,10 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
               obj = createAnimalGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
             } else if (item.shape === "dragon" || item.shape === "robot") {
               obj = createCharacterGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            } else if (item.shape === "meteor" || item.shape === "comet" || item.shape === "ufo") {
+              obj = createSpaceGeometry2(THREE, item.shape, item.color, item.metalness, item.roughness);
+            } else if (item.shape === "lighthouse" || item.shape === "windmill" || item.shape === "statue") {
+              obj = createStructureGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
             } else if (item.shape === "khoem") {
               obj = createKhoemGeometry(THREE, item.color, item.metalness, item.roughness);
             } else if (item.shape === "highway") {
@@ -1766,6 +1770,26 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             return;
           }
 
+          if (item.shape === "meteor" || item.shape === "comet" || item.shape === "ufo") {
+            const space2Group = createSpaceGeometry2(THREE, item.shape, item.color, item.metalness, item.roughness);
+            space2Group.position.set(item.position.x, item.position.y, item.position.z);
+            space2Group.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            space2Group.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            space2Group.name = item.name;
+            exportScene.add(space2Group);
+            return;
+          }
+
+          if (item.shape === "lighthouse" || item.shape === "windmill" || item.shape === "statue") {
+            const structGroup = createStructureGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            structGroup.position.set(item.position.x, item.position.y, item.position.z);
+            structGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            structGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            structGroup.name = item.name;
+            exportScene.add(structGroup);
+            return;
+          }
+
           if (item.shape === "khoem") {
             const khoemGroup = createKhoemGeometry(THREE, item.color, item.metalness, item.roughness);
             khoemGroup.position.set(item.position.x, item.position.y, item.position.z);
@@ -2590,6 +2614,26 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             return;
           }
 
+          if (item.shape === "meteor" || item.shape === "comet" || item.shape === "ufo") {
+            const space2Group = createSpaceGeometry2(THREE, item.shape, item.color, item.metalness, item.roughness);
+            space2Group.position.set(item.position.x, item.position.y, item.position.z);
+            space2Group.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            space2Group.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            space2Group.name = item.name;
+            exportScene!.add(space2Group);
+            return;
+          }
+
+          if (item.shape === "lighthouse" || item.shape === "windmill" || item.shape === "statue") {
+            const structGroup = createStructureGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            structGroup.position.set(item.position.x, item.position.y, item.position.z);
+            structGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            structGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            structGroup.name = item.name;
+            exportScene!.add(structGroup);
+            return;
+          }
+
           if (item.shape === "khoem") {
             const khoemGroup = createKhoemGeometry(THREE, item.color, item.metalness, item.roughness);
             khoemGroup.position.set(item.position.x, item.position.y, item.position.z);
@@ -2724,6 +2768,42 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       setExporting(false);
     }
   }
+
+  // Space object animation (UFO, meteor, comet)
+  useEffect(() => {
+    if (!windEnabled || !sceneReady) return;
+
+    const spaceShapes = new Set(["ufo", "meteor", "comet", "spaceship", "satellite"]);
+
+    let rafId: number;
+    const animate = () => {
+      windTimeRef.current += 0.016;
+      const t = windTimeRef.current;
+
+      meshesRef.current.forEach((mesh) => {
+        const sceneObj = objects.find(o => o.id === mesh.userData.objectId);
+        if (!sceneObj || !spaceShapes.has(sceneObj.shape)) return;
+        if (sceneObj.locked) return;
+
+        if (sceneObj.shape === "ufo") {
+          mesh.rotation.y = sceneObj.rotation.y + t * 0.5;
+          mesh.position.y = sceneObj.position.y + Math.sin(t * 1.5) * 0.1;
+        } else if (sceneObj.shape === "meteor") {
+          mesh.rotation.z = sceneObj.rotation.z + t * 0.8;
+          mesh.rotation.x = sceneObj.rotation.x + t * 0.3;
+        } else if (sceneObj.shape === "comet") {
+          mesh.position.x = sceneObj.position.x + Math.sin(t * 0.5) * 0.3;
+        } else if (sceneObj.shape === "spaceship" || sceneObj.shape === "satellite") {
+          mesh.rotation.y = sceneObj.rotation.y + t * 0.3;
+        }
+      });
+
+      rafId = requestAnimationFrame(animate);
+    };
+
+    rafId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(rafId);
+  }, [windEnabled, sceneReady, objects]);
 
   // Wheel rotation animation for cars
   useEffect(() => {
