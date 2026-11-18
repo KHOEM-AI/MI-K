@@ -3,7 +3,7 @@ import { Eye, EyeOff, Lock, Unlock, Pencil, HelpCircle, X, Camera, Trash2, Copy,
 import { saveAsset } from "../lib/storage.mjs";
 import { UI3DPreview } from "./UI3DPreview";
 import { presets, MATERIAL_PRESETS, PLANT_COLOR_PRESETS, SKY_COLOR_PRESETS, WATER_COLOR_PRESETS, zero, one, createId } from "./studioConstants";
-import { createGeometry, createCarGeometry, createFurnitureGeometry, createPlantGeometry, createPlantGeometry2, createPlantGeometry3, createPlantGeometry4, createEnvironmentGeometry, createEnvironmentGeometry2, createEnvironmentGeometry3, createSkyGeometry, createSpaceGeometry, createSpaceGeometry2, createStructureGeometry, createStructureGeometry2, createStructureGeometry3, createMonumentGeometry, createBuildingGeometry, createBuildingGeometry2, createBuildingGeometry3, createEnergyGeometry, createTransportGeometry, createPersonalTransportGeometry, createFoodGeometry, createLuxuryCarGeometry, createAircraftGeometry, createBoatGeometry, createAnimalGeometry, createCharacterGeometry, createKhoemGeometry, createHighwayGeometry, createBridgeGeometry, createTrafficLightGeometry, createStreetLightGeometry, disposeMesh } from "./studioGeometry";
+import { createGeometry, createCarGeometry, createFurnitureGeometry, createPlantGeometry, createPlantGeometry2, createPlantGeometry3, createPlantGeometry4, createEnvironmentGeometry, createEnvironmentGeometry2, createEnvironmentGeometry3, createSkyGeometry, createSpaceGeometry, createSpaceGeometry2, createStructureGeometry, createStructureGeometry2, createStructureGeometry3, createMonumentGeometry, createBuildingGeometry, createBuildingGeometry2, createBuildingGeometry3, createEnergyGeometry, createTransportGeometry, createPersonalTransportGeometry, createFoodGeometry, createNatureGeometry, createLuxuryCarGeometry, createAircraftGeometry, createBoatGeometry, createAnimalGeometry, createCharacterGeometry, createKhoemGeometry, createHighwayGeometry, createBridgeGeometry, createTrafficLightGeometry, createStreetLightGeometry, disposeMesh } from "./studioGeometry";
 import { CameraPresets } from "./CameraPresets";
 import { SceneLightingPanel } from "./SceneLightingPanel";
 import { MaterialPanel } from "./MaterialPanel";
@@ -821,6 +821,8 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
               obj = createPersonalTransportGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
             } else if (item.shape === "donut" || item.shape === "cake" || item.shape === "pizza" || item.shape === "icecream" || item.shape === "coffeecup" || item.shape === "hamburger") {
               obj = createFoodGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            } else if (item.shape === "grass_short" || item.shape === "grass_tall" || item.shape === "tree_small" || item.shape === "tree_large" || item.shape === "tree_low" || item.shape === "tree_high" || item.shape === "butterfly" || item.shape === "bee" || item.shape === "ladybug" || item.shape === "dragonfly" || item.shape === "ant" || item.shape === "apple" || item.shape === "orange" || item.shape === "banana" || item.shape === "grape" || item.shape === "mango" || item.shape === "watermelon" || item.shape === "daisy" || item.shape === "orchid" || item.shape === "hibiscus" || item.shape === "bougainvillea") {
+              obj = createNatureGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
             } else if (item.shape === "khoem") {
               obj = createKhoemGeometry(THREE, item.color, item.metalness, item.roughness);
             } else if (item.shape === "highway") {
@@ -1910,6 +1912,16 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             return;
           }
 
+          if (item.shape === "grass_short" || item.shape === "grass_tall" || item.shape === "tree_small" || item.shape === "tree_large" || item.shape === "tree_low" || item.shape === "tree_high" || item.shape === "butterfly" || item.shape === "bee" || item.shape === "ladybug" || item.shape === "dragonfly" || item.shape === "ant" || item.shape === "apple" || item.shape === "orange" || item.shape === "banana" || item.shape === "grape" || item.shape === "mango" || item.shape === "watermelon" || item.shape === "daisy" || item.shape === "orchid" || item.shape === "hibiscus" || item.shape === "bougainvillea") {
+            const natureGroup = createNatureGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            natureGroup.position.set(item.position.x, item.position.y, item.position.z);
+            natureGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            natureGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            natureGroup.name = item.name;
+            exportScene.add(natureGroup);
+            return;
+          }
+
           if (item.shape === "khoem") {
             const khoemGroup = createKhoemGeometry(THREE, item.color, item.metalness, item.roughness);
             khoemGroup.position.set(item.position.x, item.position.y, item.position.z);
@@ -2854,6 +2866,16 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             return;
           }
 
+          if (item.shape === "grass_short" || item.shape === "grass_tall" || item.shape === "tree_small" || item.shape === "tree_large" || item.shape === "tree_low" || item.shape === "tree_high" || item.shape === "butterfly" || item.shape === "bee" || item.shape === "ladybug" || item.shape === "dragonfly" || item.shape === "ant" || item.shape === "apple" || item.shape === "orange" || item.shape === "banana" || item.shape === "grape" || item.shape === "mango" || item.shape === "watermelon" || item.shape === "daisy" || item.shape === "orchid" || item.shape === "hibiscus" || item.shape === "bougainvillea") {
+            const natureGroup = createNatureGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            natureGroup.position.set(item.position.x, item.position.y, item.position.z);
+            natureGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            natureGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            natureGroup.name = item.name;
+            exportScene!.add(natureGroup);
+            return;
+          }
+
           if (item.shape === "khoem") {
             const khoemGroup = createKhoemGeometry(THREE, item.color, item.metalness, item.roughness);
             khoemGroup.position.set(item.position.x, item.position.y, item.position.z);
@@ -2988,6 +3010,49 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       setExporting(false);
     }
   }
+
+  // Nature animation (butterfly flutter, bee hover, grass sway)
+  useEffect(() => {
+    if (!windEnabled || !sceneReady) return;
+
+    const butterflies = new Set(["butterfly"]);
+    const bees = new Set(["bee"]);
+    const ladybugs = new Set(["ladybug"]);
+    const dragonflies = new Set(["dragonfly"]);
+    const grasses = new Set(["grass_short", "grass_tall"]);
+
+    let rafId: number;
+    const animate = () => {
+      windTimeRef.current += 0.016;
+      const t = windTimeRef.current;
+
+      meshesRef.current.forEach((mesh) => {
+        const sceneObj = objects.find(o => o.id === mesh.userData.objectId);
+        if (!sceneObj) return;
+        if (sceneObj.locked) return;
+
+        if (butterflies.has(sceneObj.shape)) {
+          mesh.position.y = sceneObj.position.y + Math.sin(t * 2 + sceneObj.position.x) * 0.15;
+          mesh.rotation.z = sceneObj.rotation.z + Math.sin(t * 3) * 0.1;
+        } else if (bees.has(sceneObj.shape)) {
+          mesh.position.y = sceneObj.position.y + Math.sin(t * 4 + sceneObj.position.x) * 0.1;
+          mesh.rotation.y = sceneObj.rotation.y + t * 1.5;
+        } else if (ladybugs.has(sceneObj.shape)) {
+          mesh.position.x = sceneObj.position.x + Math.sin(t * 0.5) * 0.3;
+        } else if (dragonflies.has(sceneObj.shape)) {
+          mesh.position.y = sceneObj.position.y + Math.sin(t * 3) * 0.12;
+          mesh.rotation.z = sceneObj.rotation.z + Math.sin(t * 2) * 0.08;
+        } else if (grasses.has(sceneObj.shape)) {
+          mesh.rotation.z = sceneObj.rotation.z + Math.sin(t * 1.5 + sceneObj.position.x) * 0.05 * windStrength;
+        }
+      });
+
+      rafId = requestAnimationFrame(animate);
+    };
+
+    rafId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(rafId);
+  }, [windEnabled, windStrength, sceneReady, objects]);
 
   // Food animation (coffee steam, donut sprinkles subtle motion)
   useEffect(() => {
