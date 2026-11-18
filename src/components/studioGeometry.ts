@@ -4754,3 +4754,272 @@ export function createPersonalTransportGeometry(
   });
   return group;
 }
+
+// ============================================================
+// FOOD GEOMETRIES (Donut, Cake, Pizza, Ice Cream, Coffee Cup, Hamburger)
+// ============================================================
+
+export function createFoodGeometry(
+  THREE: typeof import("three"),
+  type: "donut" | "cake" | "pizza" | "icecream" | "coffeecup" | "hamburger",
+  color?: string,
+  metalness?: number,
+  roughness?: number
+): import("three").Group {
+  const group = new THREE.Group();
+
+  if (type === "donut") {
+    const doughMat = new THREE.MeshStandardMaterial({
+      color: color || "#d4a373",
+      roughness: roughness ?? 0.8,
+      metalness: metalness ?? 0.1,
+    });
+    const glazeMat = new THREE.MeshStandardMaterial({ color: "#ff69b4", roughness: 0.3 });
+    const sprinkleColors = ["#ff0000", "#00ff00", "#0000ff", "#ffff00", "#ff00ff"];
+
+    // Donut ring (torus)
+    const donut = new THREE.Mesh(new THREE.TorusGeometry(0.6, 0.3, 16, 32), doughMat);
+    donut.position.y = 0.3;
+    donut.rotation.x = Math.PI / 2;
+    group.add(donut);
+
+    // Glaze on top (half torus)
+    const glaze = new THREE.Mesh(new THREE.TorusGeometry(0.6, 0.31, 16, 32, Math.PI), glazeMat);
+    glaze.position.y = 0.32;
+    glaze.rotation.x = Math.PI / 2;
+    glaze.rotation.z = Math.PI;
+    group.add(glaze);
+
+    // Sprinkles
+    for (let i = 0; i < 15; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const r = 0.5 + Math.random() * 0.2;
+      const sprinkle = new THREE.Mesh(
+        new THREE.BoxGeometry(0.08, 0.02, 0.02),
+        new THREE.MeshStandardMaterial({ color: sprinkleColors[Math.floor(Math.random() * 5)], roughness: 0.5 })
+      );
+      sprinkle.position.set(Math.cos(angle) * r, 0.6, Math.sin(angle) * r);
+      sprinkle.rotation.y = Math.random() * Math.PI;
+      group.add(sprinkle);
+    }
+  } else if (type === "cake") {
+    const cakeMat = new THREE.MeshStandardMaterial({
+      color: color || "#ffb6c1",
+      roughness: roughness ?? 0.7,
+    });
+    const icingMat = new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.4 });
+    const cherryMat = new THREE.MeshStandardMaterial({ color: "#cc0000", roughness: 0.3 });
+    const candleMat = new THREE.MeshStandardMaterial({ color: "#ffdd00", roughness: 0.5 });
+
+    // Base cake
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.9, 0.6, 24), cakeMat);
+    base.position.y = 0.3;
+    group.add(base);
+
+    // Icing on top
+    const icing = new THREE.Mesh(new THREE.CylinderGeometry(0.82, 0.82, 0.1, 24), icingMat);
+    icing.position.y = 0.65;
+    group.add(icing);
+
+    // Second layer
+    const layer2 = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.7, 0.5, 24), cakeMat);
+    layer2.position.y = 1;
+    group.add(layer2);
+
+    const icing2 = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.62, 0.08, 24), icingMat);
+    icing2.position.y = 1.3;
+    group.add(icing2);
+
+    // Cherries
+    for (let i = 0; i < 6; i++) {
+      const angle = (i / 6) * Math.PI * 2;
+      const cherry = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 6), cherryMat);
+      cherry.position.set(Math.cos(angle) * 0.5, 1.38, Math.sin(angle) * 0.5);
+      group.add(cherry);
+    }
+
+    // Candles
+    for (let i = 0; i < 3; i++) {
+      const candle = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.3, 6), candleMat);
+      candle.position.set(-0.2 + i * 0.2, 1.5, 0);
+      group.add(candle);
+
+      // Flame
+      const flame = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.1, 6), new THREE.MeshStandardMaterial({ color: "#ff6600", emissive: "#ff4400", emissiveIntensity: 2 }));
+      flame.position.set(-0.2 + i * 0.2, 1.7, 0);
+      group.add(flame);
+    }
+  } else if (type === "pizza") {
+    const crustMat = new THREE.MeshStandardMaterial({
+      color: color || "#d4a373",
+      roughness: roughness ?? 0.8,
+    });
+    const cheeseMat = new THREE.MeshStandardMaterial({ color: "#ffdd66", roughness: 0.6 });
+    const pepperoniMat = new THREE.MeshStandardMaterial({ color: "#cc0000", roughness: 0.5 });
+
+    // Pizza base (flat cylinder)
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, 0.08, 32), crustMat);
+    base.position.y = 0.04;
+    group.add(base);
+
+    // Cheese layer
+    const cheese = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.85, 0.05, 32), cheeseMat);
+    cheese.position.y = 0.1;
+    group.add(cheese);
+
+    // Pepperoni
+    for (let i = 0; i < 8; i++) {
+      const angle = (i / 8) * Math.PI * 2;
+      const r = 0.4 + Math.random() * 0.3;
+      const pep = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.02, 12), pepperoniMat);
+      pep.position.set(Math.cos(angle) * r, 0.13, Math.sin(angle) * r);
+      group.add(pep);
+    }
+
+    // Slices cut lines
+    for (let i = 0; i < 8; i++) {
+      const angle = (i / 8) * Math.PI * 2;
+      const cut = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.01, 0.85), new THREE.MeshStandardMaterial({ color: "#8a5a3a" }));
+      cut.position.set(Math.cos(angle) * 0.4, 0.14, Math.sin(angle) * 0.4);
+      cut.rotation.y = angle;
+      group.add(cut);
+    }
+  } else if (type === "icecream") {
+    const coneMat = new THREE.MeshStandardMaterial({
+      color: color || "#d4a373",
+      roughness: roughness ?? 0.9,
+    });
+    const scoopMat = new THREE.MeshStandardMaterial({ color: "#ffb6c1", roughness: 0.6 });
+    const scoop2Mat = new THREE.MeshStandardMaterial({ color: "#87ceeb", roughness: 0.6 });
+    const scoop3Mat = new THREE.MeshStandardMaterial({ color: "#98fb98", roughness: 0.6 });
+
+    // Cone (inverted)
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(0.25, 0.9, 16), coneMat);
+    cone.position.y = 0.45;
+    cone.rotation.x = Math.PI;
+    group.add(cone);
+
+    // 3 scoops
+    const scoop1 = new THREE.Mesh(new THREE.SphereGeometry(0.28, 16, 12), scoopMat);
+    scoop1.position.y = 1.1;
+    group.add(scoop1);
+
+    const scoop2 = new THREE.Mesh(new THREE.SphereGeometry(0.25, 16, 12), scoop2Mat);
+    scoop2.position.set(0, 1.5, 0);
+    group.add(scoop2);
+
+    const scoop3 = new THREE.Mesh(new THREE.SphereGeometry(0.22, 16, 12), scoop3Mat);
+    scoop3.position.set(0, 1.85, 0);
+    group.add(scoop3);
+
+    // Cherry on top
+    const cherry = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 6), new THREE.MeshStandardMaterial({ color: "#cc0000", roughness: 0.3 }));
+    cherry.position.y = 2.1;
+    group.add(cherry);
+
+    // Sprinkles
+    for (let i = 0; i < 10; i++) {
+      const sprinkle = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.02, 0.02), new THREE.MeshStandardMaterial({ color: Math.random() > 0.5 ? "#ffdd00" : "#ff69b4", roughness: 0.5 }));
+      const angle = Math.random() * Math.PI * 2;
+      sprinkle.position.set(Math.cos(angle) * 0.22, 1.7 + Math.random() * 0.2, Math.sin(angle) * 0.22);
+      group.add(sprinkle);
+    }
+  } else if (type === "coffeecup") {
+    const cupMat = new THREE.MeshStandardMaterial({
+      color: color || "#ffffff",
+      roughness: roughness ?? 0.5,
+      metalness: metalness ?? 0.1,
+    });
+    const coffeeMat = new THREE.MeshStandardMaterial({ color: "#3a1a0a", roughness: 0.2, metalness: 0.3 });
+    const saucerMat = new THREE.MeshStandardMaterial({ color: "#f0f0f0", roughness: 0.5 });
+
+    // Saucer
+    const saucer = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 0.05, 24), saucerMat);
+    saucer.position.y = 0.025;
+    group.add(saucer);
+
+    // Cup
+    const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.28, 0.5, 20), cupMat);
+    cup.position.y = 0.3;
+    group.add(cup);
+
+    // Handle
+    const handle = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.03, 8, 16), cupMat);
+    handle.position.set(0.35, 0.3, 0);
+    handle.rotation.y = Math.PI / 2;
+    group.add(handle);
+
+    // Coffee surface
+    const coffee = new THREE.Mesh(new THREE.CircleGeometry(0.33, 20), coffeeMat);
+    coffee.rotation.x = -Math.PI / 2;
+    coffee.position.y = 0.53;
+    group.add(coffee);
+
+    // Steam
+    const steamMat = new THREE.MeshStandardMaterial({ color: "#ffffff", transparent: true, opacity: 0.4, roughness: 0.9 });
+    for (let i = 0; i < 3; i++) {
+      const steam = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 6), steamMat);
+      steam.position.set(-0.1 + i * 0.1, 0.65 + i * 0.08, 0);
+      steam.scale.set(1, 1.5, 1);
+      group.add(steam);
+    }
+  } else if (type === "hamburger") {
+    const bunMat = new THREE.MeshStandardMaterial({
+      color: color || "#d4a373",
+      roughness: roughness ?? 0.7,
+    });
+    const pattyMat = new THREE.MeshStandardMaterial({ color: "#5a2a1a", roughness: 0.8 });
+    const cheeseMat = new THREE.MeshStandardMaterial({ color: "#ffcc00", roughness: 0.5 });
+    const lettuceMat = new THREE.MeshStandardMaterial({ color: "#4a8a2d", roughness: 0.9 });
+    const tomatoMat = new THREE.MeshStandardMaterial({ color: "#cc0000", roughness: 0.5 });
+
+    // Bottom bun
+    const bottomBun = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.5, 0.2, 20), bunMat);
+    bottomBun.position.y = 0.1;
+    group.add(bottomBun);
+
+    // Patty
+    const patty = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.15, 20), pattyMat);
+    patty.position.y = 0.28;
+    group.add(patty);
+
+    // Cheese (slightly melted)
+    const cheese = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.05, 0.9), cheeseMat);
+    cheese.position.y = 0.38;
+    group.add(cheese);
+
+    // Lettuce
+    const lettuce = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.55, 0.08, 20), lettuceMat);
+    lettuce.position.y = 0.44;
+    group.add(lettuce);
+
+    // Tomato
+    const tomato = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.08, 20), tomatoMat);
+    tomato.position.y = 0.5;
+    group.add(tomato);
+
+    // Top bun (dome)
+    const topBun = new THREE.Mesh(new THREE.SphereGeometry(0.6, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2), bunMat);
+    topBun.position.y = 0.55;
+    topBun.scale.set(1, 0.6, 1);
+    group.add(topBun);
+
+    // Sesame seeds
+    for (let i = 0; i < 10; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const r = Math.random() * 0.4;
+      const seed = new THREE.Mesh(new THREE.SphereGeometry(0.02, 6, 4), new THREE.MeshStandardMaterial({ color: "#f0e0c0" }));
+      seed.position.set(Math.cos(angle) * r, 0.9 + Math.random() * 0.05, Math.sin(angle) * r);
+      seed.scale.set(1, 0.5, 1);
+      group.add(seed);
+    }
+  }
+
+  group.traverse((child) => {
+    if ((child as import("three").Mesh).isMesh) {
+      child.castShadow = true;
+      child.receiveShadow = true;
+    }
+  });
+  return group;
+}

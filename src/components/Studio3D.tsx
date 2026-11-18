@@ -3,7 +3,7 @@ import { Eye, EyeOff, Lock, Unlock, Pencil, HelpCircle, X, Camera, Trash2, Copy,
 import { saveAsset } from "../lib/storage.mjs";
 import { UI3DPreview } from "./UI3DPreview";
 import { presets, MATERIAL_PRESETS, PLANT_COLOR_PRESETS, SKY_COLOR_PRESETS, WATER_COLOR_PRESETS, zero, one, createId } from "./studioConstants";
-import { createGeometry, createCarGeometry, createFurnitureGeometry, createPlantGeometry, createPlantGeometry2, createPlantGeometry3, createPlantGeometry4, createEnvironmentGeometry, createEnvironmentGeometry2, createEnvironmentGeometry3, createSkyGeometry, createSpaceGeometry, createSpaceGeometry2, createStructureGeometry, createStructureGeometry2, createStructureGeometry3, createMonumentGeometry, createBuildingGeometry, createBuildingGeometry2, createBuildingGeometry3, createEnergyGeometry, createTransportGeometry, createPersonalTransportGeometry, createLuxuryCarGeometry, createAircraftGeometry, createBoatGeometry, createAnimalGeometry, createCharacterGeometry, createKhoemGeometry, createHighwayGeometry, createBridgeGeometry, createTrafficLightGeometry, createStreetLightGeometry, disposeMesh } from "./studioGeometry";
+import { createGeometry, createCarGeometry, createFurnitureGeometry, createPlantGeometry, createPlantGeometry2, createPlantGeometry3, createPlantGeometry4, createEnvironmentGeometry, createEnvironmentGeometry2, createEnvironmentGeometry3, createSkyGeometry, createSpaceGeometry, createSpaceGeometry2, createStructureGeometry, createStructureGeometry2, createStructureGeometry3, createMonumentGeometry, createBuildingGeometry, createBuildingGeometry2, createBuildingGeometry3, createEnergyGeometry, createTransportGeometry, createPersonalTransportGeometry, createFoodGeometry, createLuxuryCarGeometry, createAircraftGeometry, createBoatGeometry, createAnimalGeometry, createCharacterGeometry, createKhoemGeometry, createHighwayGeometry, createBridgeGeometry, createTrafficLightGeometry, createStreetLightGeometry, disposeMesh } from "./studioGeometry";
 import { CameraPresets } from "./CameraPresets";
 import { SceneLightingPanel } from "./SceneLightingPanel";
 import { MaterialPanel } from "./MaterialPanel";
@@ -819,6 +819,8 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
               obj = createTransportGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
             } else if (item.shape === "motorcycle" || item.shape === "bicycle" || item.shape === "skateboard" || item.shape === "surfboard" || item.shape === "kayak" || item.shape === "paraglider") {
               obj = createPersonalTransportGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            } else if (item.shape === "donut" || item.shape === "cake" || item.shape === "pizza" || item.shape === "icecream" || item.shape === "coffeecup" || item.shape === "hamburger") {
+              obj = createFoodGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
             } else if (item.shape === "khoem") {
               obj = createKhoemGeometry(THREE, item.color, item.metalness, item.roughness);
             } else if (item.shape === "highway") {
@@ -1898,6 +1900,16 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             return;
           }
 
+          if (item.shape === "donut" || item.shape === "cake" || item.shape === "pizza" || item.shape === "icecream" || item.shape === "coffeecup" || item.shape === "hamburger") {
+            const foodGroup = createFoodGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            foodGroup.position.set(item.position.x, item.position.y, item.position.z);
+            foodGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            foodGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            foodGroup.name = item.name;
+            exportScene.add(foodGroup);
+            return;
+          }
+
           if (item.shape === "khoem") {
             const khoemGroup = createKhoemGeometry(THREE, item.color, item.metalness, item.roughness);
             khoemGroup.position.set(item.position.x, item.position.y, item.position.z);
@@ -2832,6 +2844,16 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             return;
           }
 
+          if (item.shape === "donut" || item.shape === "cake" || item.shape === "pizza" || item.shape === "icecream" || item.shape === "coffeecup" || item.shape === "hamburger") {
+            const foodGroup = createFoodGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            foodGroup.position.set(item.position.x, item.position.y, item.position.z);
+            foodGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            foodGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            foodGroup.name = item.name;
+            exportScene!.add(foodGroup);
+            return;
+          }
+
           if (item.shape === "khoem") {
             const khoemGroup = createKhoemGeometry(THREE, item.color, item.metalness, item.roughness);
             khoemGroup.position.set(item.position.x, item.position.y, item.position.z);
@@ -2966,6 +2988,40 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       setExporting(false);
     }
   }
+
+  // Food animation (coffee steam, donut sprinkles subtle motion)
+  useEffect(() => {
+    if (!windEnabled || !sceneReady) return;
+
+    const coffeeCups = new Set(["coffeecup"]);
+
+    let rafId: number;
+    const animate = () => {
+      windTimeRef.current += 0.016;
+      const t = windTimeRef.current;
+
+      meshesRef.current.forEach((mesh) => {
+        const sceneObj = objects.find(o => o.id === mesh.userData.objectId);
+        if (!sceneObj) return;
+        if (sceneObj.locked) return;
+
+        if (coffeeCups.has(sceneObj.shape)) {
+          // Steam rising
+          mesh.traverse((child) => {
+            if ((child as import("three").Mesh).isMesh && (child as any).material?.opacity !== undefined && (child as any).material.opacity < 0.5) {
+              child.position.y = 0.65 + Math.sin(t * 2 + child.position.x) * 0.08;
+              child.rotation.y = t * 0.5;
+            }
+          });
+        }
+      });
+
+      rafId = requestAnimationFrame(animate);
+    };
+
+    rafId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(rafId);
+  }, [windEnabled, sceneReady, objects]);
 
   // Personal transport animation (motorcycle/bicycle wheels, paraglider float)
   useEffect(() => {

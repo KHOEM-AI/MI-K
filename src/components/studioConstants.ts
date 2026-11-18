@@ -115,6 +115,12 @@ export const presets: { name: string; shape: Shape }[] = [
   { name: "Surfboard", shape: "surfboard" },
   { name: "Kayak", shape: "kayak" },
   { name: "Paraglider", shape: "paraglider" },
+  { name: "Donut", shape: "donut" },
+  { name: "Cake", shape: "cake" },
+  { name: "Pizza", shape: "pizza" },
+  { name: "Ice Cream", shape: "icecream" },
+  { name: "Coffee Cup", shape: "coffeecup" },
+  { name: "Hamburger", shape: "hamburger" },
 ];
 
 
