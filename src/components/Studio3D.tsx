@@ -3,7 +3,7 @@ import { Eye, EyeOff, Lock, Unlock, Pencil, HelpCircle, X, Camera, Trash2, Copy,
 import { saveAsset } from "../lib/storage.mjs";
 import { UI3DPreview } from "./UI3DPreview";
 import { presets, MATERIAL_PRESETS, PLANT_COLOR_PRESETS, SKY_COLOR_PRESETS, WATER_COLOR_PRESETS, zero, one, createId } from "./studioConstants";
-import { createGeometry, createCarGeometry, createFurnitureGeometry, createPlantGeometry, createPlantGeometry2, createPlantGeometry3, createPlantGeometry4, createEnvironmentGeometry, createEnvironmentGeometry2, createSkyGeometry, createSpaceGeometry, createSpaceGeometry2, createStructureGeometry, createStructureGeometry2, createBuildingGeometry, createLuxuryCarGeometry, createAircraftGeometry, createBoatGeometry, createAnimalGeometry, createCharacterGeometry, createKhoemGeometry, createHighwayGeometry, createBridgeGeometry, createTrafficLightGeometry, createStreetLightGeometry, disposeMesh } from "./studioGeometry";
+import { createGeometry, createCarGeometry, createFurnitureGeometry, createPlantGeometry, createPlantGeometry2, createPlantGeometry3, createPlantGeometry4, createEnvironmentGeometry, createEnvironmentGeometry2, createEnvironmentGeometry3, createSkyGeometry, createSpaceGeometry, createSpaceGeometry2, createStructureGeometry, createStructureGeometry2, createMonumentGeometry, createBuildingGeometry, createLuxuryCarGeometry, createAircraftGeometry, createBoatGeometry, createAnimalGeometry, createCharacterGeometry, createKhoemGeometry, createHighwayGeometry, createBridgeGeometry, createTrafficLightGeometry, createStreetLightGeometry, disposeMesh } from "./studioGeometry";
 import { CameraPresets } from "./CameraPresets";
 import { SceneLightingPanel } from "./SceneLightingPanel";
 import { MaterialPanel } from "./MaterialPanel";
@@ -803,6 +803,10 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
               obj = createStructureGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
             } else if (item.shape === "satellitedish" || item.shape === "telescope" || item.shape === "fountain" || item.shape === "bridge2" || item.shape === "tower" || item.shape === "pyramid") {
               obj = createStructureGeometry2(THREE, item.shape, item.color, item.metalness, item.roughness);
+            } else if (item.shape === "volcano2" || item.shape === "glacier" || item.shape === "canyon" || item.shape === "oasis") {
+              obj = createEnvironmentGeometry3(THREE, item.shape, item.color, item.metalness, item.roughness);
+            } else if (item.shape === "totem" || item.shape === "obelisk") {
+              obj = createMonumentGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
             } else if (item.shape === "khoem") {
               obj = createKhoemGeometry(THREE, item.color, item.metalness, item.roughness);
             } else if (item.shape === "highway") {
@@ -1802,6 +1806,26 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             return;
           }
 
+          if (item.shape === "volcano2" || item.shape === "glacier" || item.shape === "canyon" || item.shape === "oasis") {
+            const env3Group = createEnvironmentGeometry3(THREE, item.shape, item.color, item.metalness, item.roughness);
+            env3Group.position.set(item.position.x, item.position.y, item.position.z);
+            env3Group.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            env3Group.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            env3Group.name = item.name;
+            exportScene.add(env3Group);
+            return;
+          }
+
+          if (item.shape === "totem" || item.shape === "obelisk") {
+            const monumentGroup = createMonumentGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            monumentGroup.position.set(item.position.x, item.position.y, item.position.z);
+            monumentGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            monumentGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            monumentGroup.name = item.name;
+            exportScene.add(monumentGroup);
+            return;
+          }
+
           if (item.shape === "khoem") {
             const khoemGroup = createKhoemGeometry(THREE, item.color, item.metalness, item.roughness);
             khoemGroup.position.set(item.position.x, item.position.y, item.position.z);
@@ -2656,6 +2680,26 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             return;
           }
 
+          if (item.shape === "volcano2" || item.shape === "glacier" || item.shape === "canyon" || item.shape === "oasis") {
+            const env3Group = createEnvironmentGeometry3(THREE, item.shape, item.color, item.metalness, item.roughness);
+            env3Group.position.set(item.position.x, item.position.y, item.position.z);
+            env3Group.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            env3Group.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            env3Group.name = item.name;
+            exportScene!.add(env3Group);
+            return;
+          }
+
+          if (item.shape === "totem" || item.shape === "obelisk") {
+            const monumentGroup = createMonumentGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            monumentGroup.position.set(item.position.x, item.position.y, item.position.z);
+            monumentGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            monumentGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            monumentGroup.name = item.name;
+            exportScene!.add(monumentGroup);
+            return;
+          }
+
           if (item.shape === "khoem") {
             const khoemGroup = createKhoemGeometry(THREE, item.color, item.metalness, item.roughness);
             khoemGroup.position.set(item.position.x, item.position.y, item.position.z);
@@ -2790,6 +2834,56 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       setExporting(false);
     }
   }
+
+  // Environment V3 animation (volcano2 lava, glacier shimmer, obelisk glow)
+  useEffect(() => {
+    if (!windEnabled || !sceneReady) return;
+
+    const volcanos = new Set(["volcano2"]);
+    const glaciers = new Set(["glacier"]);
+    const obelisks = new Set(["obelisk"]);
+
+    let rafId: number;
+    const animate = () => {
+      windTimeRef.current += 0.016;
+      const t = windTimeRef.current;
+
+      meshesRef.current.forEach((mesh) => {
+        const sceneObj = objects.find(o => o.id === mesh.userData.objectId);
+        if (!sceneObj) return;
+        if (sceneObj.locked) return;
+
+        if (volcanos.has(sceneObj.shape)) {
+          mesh.traverse((child) => {
+            const mat = (child as import("three").Mesh).material as import("three").MeshStandardMaterial;
+            if (mat && mat.emissiveIntensity !== undefined && mat.emissive && (mat.emissive as any).r > 0.5) {
+              mat.emissiveIntensity = 1.5 + Math.sin(t * 2 + sceneObj.position.x) * 0.5;
+            }
+          });
+        } else if (glaciers.has(sceneObj.shape)) {
+          mesh.traverse((child) => {
+            const mat = (child as import("three").Mesh).material as import("three").MeshStandardMaterial;
+            if (mat && mat.opacity !== undefined && mat.opacity < 1) {
+              mat.opacity = 0.75 + Math.sin(t * 1.5 + sceneObj.position.x) * 0.1;
+            }
+          });
+        } else if (obelisks.has(sceneObj.shape)) {
+          mesh.traverse((child) => {
+            const mat = (child as import("three").Mesh).material as import("three").MeshStandardMaterial;
+            if (mat && mat.metalness === 1 && mat.color && (mat.color as any).getHex() === 0xffd700) {
+              mat.emissive.set("#ffaa00");
+              mat.emissiveIntensity = 0.3 + Math.sin(t * 2.5) * 0.3;
+            }
+          });
+        }
+      });
+
+      rafId = requestAnimationFrame(animate);
+    };
+
+    rafId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(rafId);
+  }, [windEnabled, sceneReady, objects]);
 
   // Fountain and tower light animation
   useEffect(() => {

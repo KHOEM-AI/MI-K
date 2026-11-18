@@ -3260,3 +3260,266 @@ export function createStructureGeometry2(
   });
   return group;
 }
+
+// ============================================================
+// ENVIRONMENT GEOMETRIES V3 (Volcano2, Glacier, Canyon, Oasis)
+// ============================================================
+
+export function createEnvironmentGeometry3(
+  THREE: typeof import("three"),
+  type: "volcano2" | "glacier" | "canyon" | "oasis",
+  color?: string,
+  metalness?: number,
+  roughness?: number
+): import("three").Group {
+  const group = new THREE.Group();
+
+  if (type === "volcano2") {
+    const rockMat = new THREE.MeshStandardMaterial({
+      color: color || "#4a3a2a",
+      roughness: roughness ?? 0.95,
+      metalness: metalness ?? 0.05,
+    });
+    const lavaMat = new THREE.MeshStandardMaterial({
+      color: "#ff4400",
+      emissive: "#ff2200",
+      emissiveIntensity: 2,
+      roughness: 0.5,
+    });
+
+    // Main volcano (larger, more detailed)
+    const volcano = new THREE.Mesh(new THREE.ConeGeometry(2, 3, 20, 3), rockMat);
+    volcano.position.y = 1.5;
+    group.add(volcano);
+
+    // Crater rim
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.6, 0.15, 8, 20), rockMat);
+    rim.rotation.x = Math.PI / 2;
+    rim.position.y = 3;
+    group.add(rim);
+
+    // Glowing lava lake
+    const lavaLake = new THREE.Mesh(new THREE.CircleGeometry(0.55, 20), lavaMat);
+    lavaLake.rotation.x = -Math.PI / 2;
+    lavaLake.position.y = 2.95;
+    group.add(lavaLake);
+
+    // Lava flows (4 rivers down the sides)
+    for (let i = 0; i < 4; i++) {
+      const angle = (i / 4) * Math.PI * 2;
+      const flow = new THREE.Mesh(new THREE.BoxGeometry(0.2, 2.5, 0.2), lavaMat);
+      flow.position.set(Math.cos(angle) * 1.2, 1.5, Math.sin(angle) * 1.2);
+      flow.rotation.z = Math.cos(angle) * 0.3;
+      flow.rotation.x = Math.sin(angle) * 0.3;
+      group.add(flow);
+    }
+
+    // Smoke clouds
+    const smokeMat = new THREE.MeshStandardMaterial({ color: "#3a3a3a", transparent: true, opacity: 0.6, roughness: 0.9 });
+    for (let i = 0; i < 3; i++) {
+      const smoke = new THREE.Mesh(new THREE.SphereGeometry(0.5 + i * 0.2, 12, 8), smokeMat);
+      smoke.position.set(0, 3.5 + i * 0.5, 0);
+      group.add(smoke);
+    }
+  } else if (type === "glacier") {
+    const iceMat = new THREE.MeshStandardMaterial({
+      color: color || "#a8e0ff",
+      roughness: roughness ?? 0.1,
+      metalness: metalness ?? 0.2,
+      transparent: true,
+      opacity: 0.85,
+    });
+
+    // Large ice chunks
+    const positions: [number, number, number, number][] = [
+      [0, 1.2, 0, 1.2],
+      [1.2, 0.8, 0.3, 0.9],
+      [-1.0, 1.0, -0.4, 1.0],
+      [0.5, 1.8, -0.3, 0.7],
+      [-0.6, 1.5, 0.5, 0.8],
+    ];
+    positions.forEach(([x, y, z, r]) => {
+      const ice = new THREE.Mesh(new THREE.OctahedronGeometry(r, 0), iceMat);
+      ice.position.set(x, y, z);
+      ice.rotation.set(Math.random() * 0.5, Math.random() * Math.PI, Math.random() * 0.5);
+      group.add(ice);
+    });
+
+    // Snow base
+    const snowMat = new THREE.MeshStandardMaterial({ color: "#f0f8ff", roughness: 0.9 });
+    const snow = new THREE.Mesh(new THREE.CircleGeometry(2.5, 24), snowMat);
+    snow.rotation.x = -Math.PI / 2;
+    snow.position.y = 0.01;
+    group.add(snow);
+  } else if (type === "canyon") {
+    const rockMat = new THREE.MeshStandardMaterial({
+      color: color || "#c87a4a",
+      roughness: roughness ?? 0.9,
+      metalness: metalness ?? 0.1,
+    });
+
+    // Two canyon walls
+    for (const side of [-1, 1]) {
+      const wall = new THREE.Mesh(new THREE.BoxGeometry(0.8, 2.5, 5), rockMat);
+      wall.position.set(side * 1.5, 1.25, 0);
+      group.add(wall);
+
+      // Layered rock stripes
+      for (let i = 0; i < 4; i++) {
+        const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.2, 5.05), new THREE.MeshStandardMaterial({ color: i % 2 === 0 ? "#a85a3a" : "#d88a5a", roughness: 0.9 }));
+        stripe.position.set(side * 1.5, 0.3 + i * 0.55, 0);
+        group.add(stripe);
+      }
+    }
+
+    // River at bottom
+    const riverMat = new THREE.MeshStandardMaterial({ color: "#3a8ac8", roughness: 0.1, metalness: 0.3, transparent: true, opacity: 0.8 });
+    const river = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.05, 5), riverMat);
+    river.position.y = 0.03;
+    group.add(river);
+
+    // Rocks in river
+    for (let i = 0; i < 6; i++) {
+      const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(0.2 + Math.random() * 0.15, 0), rockMat);
+      rock.position.set((Math.random() - 0.5) * 1.8, 0.15, (Math.random() - 0.5) * 4.5);
+      group.add(rock);
+    }
+  } else if (type === "oasis") {
+    // Sand base
+    const sandMat = new THREE.MeshStandardMaterial({ color: "#e8c88a", roughness: 0.95 });
+    const sand = new THREE.Mesh(new THREE.CircleGeometry(2.5, 24), sandMat);
+    sand.rotation.x = -Math.PI / 2;
+    sand.position.y = 0.01;
+    group.add(sand);
+
+    // Water pond
+    const waterMat = new THREE.MeshStandardMaterial({ color: "#29b6f6", roughness: 0.1, metalness: 0.3, transparent: true, opacity: 0.85 });
+    const water = new THREE.Mesh(new THREE.CircleGeometry(1, 20), waterMat);
+    water.rotation.x = -Math.PI / 2;
+    water.position.y = 0.05;
+    group.add(water);
+
+    // Palm trees around pond
+    const trunkMat = new THREE.MeshStandardMaterial({ color: "#6b4423", roughness: 0.9 });
+    const leafMat = new THREE.MeshStandardMaterial({ color: "#2d6a2d", roughness: 0.8 });
+    for (let i = 0; i < 3; i++) {
+      const angle = (i / 3) * Math.PI * 2;
+      const x = Math.cos(angle) * 1.5;
+      const z = Math.sin(angle) * 1.5;
+
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.15, 1.5, 8), trunkMat);
+      trunk.position.set(x, 0.75, z);
+      group.add(trunk);
+
+      const crown = new THREE.Mesh(new THREE.SphereGeometry(0.5, 10, 8), leafMat);
+      crown.position.set(x, 1.6, z);
+      crown.scale.set(1.3, 0.5, 1.3);
+      group.add(crown);
+    }
+  }
+
+  group.traverse((child) => {
+    if ((child as import("three").Mesh).isMesh) {
+      child.castShadow = true;
+      child.receiveShadow = true;
+    }
+  });
+  return group;
+}
+
+// ============================================================
+// MONUMENT GEOMETRIES (Totem, Obelisk)
+// ============================================================
+
+export function createMonumentGeometry(
+  THREE: typeof import("three"),
+  type: "totem" | "obelisk",
+  color?: string,
+  metalness?: number,
+  roughness?: number
+): import("three").Group {
+  const group = new THREE.Group();
+
+  if (type === "totem") {
+    const woodMat = new THREE.MeshStandardMaterial({
+      color: color || "#8b4513",
+      roughness: roughness ?? 0.9,
+      metalness: metalness ?? 0.05,
+    });
+    const paintColors = ["#e63946", "#f4a261", "#2a9d8f", "#e9c46a", "#264653"];
+
+    // 4 stacked totem heads
+    for (let i = 0; i < 4; i++) {
+      const headMat = new THREE.MeshStandardMaterial({ color: paintColors[i % paintColors.length], roughness: 0.7 });
+      const head = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.7, 0.5), woodMat);
+      head.position.y = 0.5 + i * 0.75;
+      group.add(head);
+
+      // Painted face details
+      // Eyes
+      for (const side of [-0.15, 0.15]) {
+        const eye = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), headMat);
+        eye.position.set(side, 0.5 + i * 0.75 + 0.15, 0.26);
+        group.add(eye);
+      }
+
+      // Beak/nose
+      const beak = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.3, 4), headMat);
+      beak.position.set(0, 0.5 + i * 0.75, 0.3);
+      beak.rotation.x = Math.PI / 2;
+      group.add(beak);
+
+      // Wings (on sides)
+      for (const side of [-1, 1]) {
+        const wing = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.5, 0.4), headMat);
+        wing.position.set(side * 0.35, 0.5 + i * 0.75, 0);
+        wing.rotation.z = side * 0.2;
+        group.add(wing);
+      }
+    }
+
+    // Base
+    const base = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.3, 0.7), woodMat);
+    base.position.y = 0.15;
+    group.add(base);
+  } else if (type === "obelisk") {
+    const stoneMat = new THREE.MeshStandardMaterial({
+      color: color || "#d4c4a4",
+      roughness: roughness ?? 0.7,
+      metalness: metalness ?? 0.1,
+    });
+    const goldMat = new THREE.MeshStandardMaterial({ color: "#ffd700", metalness: 1, roughness: 0.2 });
+
+    // Base
+    const base = new THREE.Mesh(new THREE.BoxGeometry(1, 0.3, 1), stoneMat);
+    base.position.y = 0.15;
+    group.add(base);
+
+    // Obelisk body (tapered)
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.35, 4, 4), stoneMat);
+    body.position.y = 2.3;
+    body.rotation.y = Math.PI / 4;
+    group.add(body);
+
+    // Pyramid top (gold)
+    const top = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.5, 4), goldMat);
+    top.position.y = 4.6;
+    top.rotation.y = Math.PI / 4;
+    group.add(top);
+
+    // Hieroglyphic carvings (dark boxes)
+    for (let i = 0; i < 5; i++) {
+      const carving = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.2, 0.02), new THREE.MeshStandardMaterial({ color: "#5a4a3a" }));
+      carving.position.set(0, 0.8 + i * 0.6, 0.25);
+      group.add(carving);
+    }
+  }
+
+  group.traverse((child) => {
+    if ((child as import("three").Mesh).isMesh) {
+      child.castShadow = true;
+      child.receiveShadow = true;
+    }
+  });
+  return group;
+}
