@@ -7118,3 +7118,261 @@ export function createCommercialGeometry(
   });
   return group;
 }
+
+// ============================================================
+// RELIGIOUS GEOMETRIES (Temple2, Shrine, Pagoda, Mosque, Church, Cathedral, Synagogue, Monastery)
+// ============================================================
+
+export function createReligiousGeometry(
+  THREE: typeof import("three"),
+  type: "temple2" | "shrine" | "pagoda" | "mosque" | "church" | "cathedral" | "synagogue" | "monastery",
+  color?: string,
+  metalness?: number,
+  roughness?: number
+): import("three").Group {
+  const group = new THREE.Group();
+  const wallMat = new THREE.MeshStandardMaterial({
+    color: color || "#e8d8b0",
+    roughness: roughness ?? 0.7,
+    metalness: metalness ?? 0.1,
+  });
+  const goldMat = new THREE.MeshStandardMaterial({ color: "#ffd700", metalness: 1, roughness: 0.2, emissive: "#ffaa00", emissiveIntensity: 0.2 });
+  const redMat = new THREE.MeshStandardMaterial({ color: "#cc0000", roughness: 0.6 });
+
+  if (type === "temple2") {
+    // Thai-style temple
+    const base = new THREE.Mesh(new THREE.BoxGeometry(3, 0.3, 2.5), wallMat);
+    base.position.y = 0.15;
+    group.add(base);
+    const body = new THREE.Mesh(new THREE.BoxGeometry(2.5, 1.5, 2), wallMat);
+    body.position.y = 1.05;
+    group.add(body);
+    // Multiple tiered roofs
+    for (let i = 0; i < 3; i++) {
+      const roof = new THREE.Mesh(new THREE.ConeGeometry(1.8 - i * 0.3, 0.6, 4), redMat);
+      roof.position.y = 2 + i * 0.5;
+      roof.rotation.y = Math.PI / 4;
+      roof.scale.set(1.3, 1, 0.9);
+      group.add(roof);
+    }
+    // Golden spire
+    const spire = new THREE.Mesh(new THREE.ConeGeometry(0.15, 1, 8), goldMat);
+    spire.position.y = 3.8;
+    group.add(spire);
+    // Columns
+    for (let i = 0; i < 4; i++) {
+      const col = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1.5, 8), goldMat);
+      col.position.set(-1 + (i % 2) * 2, 1.05, -0.7 + Math.floor(i / 2) * 1.4);
+      group.add(col);
+    }
+  } else if (type === "shrine") {
+    // Small Japanese shrine
+    const base = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.2, 1.2), wallMat);
+    base.position.y = 0.1;
+    group.add(base);
+    const body = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1, 1), wallMat);
+    body.position.y = 0.7;
+    group.add(body);
+    // Torii gate
+    for (const side of [-1, 1]) {
+      const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 1.5, 8), redMat);
+      pillar.position.set(side * 0.6, 0.75, 0.7);
+      group.add(pillar);
+    }
+    const topBar = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.15, 0.15), redMat);
+    topBar.position.set(0, 1.5, 0.7);
+    group.add(topBar);
+    const topBar2 = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.1, 0.12), redMat);
+    topBar2.position.set(0, 1.3, 0.7);
+    group.add(topBar2);
+    // Curved roof
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.15, 1.3), redMat);
+    roof.position.y = 1.3;
+    group.add(roof);
+    const roofPeak = new THREE.Mesh(new THREE.ConeGeometry(0.8, 0.3, 4), new THREE.MeshStandardMaterial({ color: "#2a2a2a", roughness: 0.8 }));
+    roofPeak.position.y = 1.5;
+    roofPeak.rotation.y = Math.PI / 4;
+    group.add(roofPeak);
+  } else if (type === "pagoda") {
+    // Multi-tiered pagoda
+    const base = new THREE.Mesh(new THREE.BoxGeometry(2, 0.3, 2), wallMat);
+    base.position.y = 0.15;
+    group.add(base);
+    for (let i = 0; i < 5; i++) {
+      const tier = new THREE.Mesh(new THREE.BoxGeometry(1.8 - i * 0.25, 0.6, 1.8 - i * 0.25), wallMat);
+      tier.position.y = 0.6 + i * 0.7;
+      group.add(tier);
+      const roof = new THREE.Mesh(new THREE.ConeGeometry(1.3 - i * 0.18, 0.4, 4), redMat);
+      roof.position.y = 0.95 + i * 0.7;
+      roof.rotation.y = Math.PI / 4;
+      group.add(roof);
+    }
+    // Golden spire on top
+    const spire = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.8, 8), goldMat);
+    spire.position.y = 4.3;
+    group.add(spire);
+  } else if (type === "mosque") {
+    // Main building
+    const building = new THREE.Mesh(new THREE.BoxGeometry(3, 2, 3), wallMat);
+    building.position.y = 1;
+    group.add(building);
+    // Large dome
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(1.3, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ color: "#2a7a4a", roughness: 0.4, metalness: 0.3 }));
+    dome.position.y = 2;
+    group.add(dome);
+    // Crescent on top
+    const crescent = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.04, 8, 16, Math.PI * 1.5), goldMat);
+    crescent.position.y = 3.4;
+    crescent.rotation.z = Math.PI / 4;
+    group.add(crescent);
+    // Minarets (2)
+    for (const side of [-1, 1]) {
+      const minaret = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.25, 3.5, 10), wallMat);
+      minaret.position.set(side * 1.6, 1.75, 1.2);
+      group.add(minaret);
+      const minaretDome = new THREE.Mesh(new THREE.SphereGeometry(0.25, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ color: "#2a7a4a", roughness: 0.4 }));
+      minaretDome.position.set(side * 1.6, 3.5, 1.2);
+      group.add(minaretDome);
+    }
+    // Arched entrance
+    const arch = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.05, 12, 1, false, 0, Math.PI), new THREE.MeshStandardMaterial({ color: "#1a1a1a", roughness: 0.9 }));
+    arch.rotation.x = Math.PI / 2;
+    arch.position.set(0, 1, 1.51);
+    group.add(arch);
+  } else if (type === "church") {
+    // Main nave
+    const nave = new THREE.Mesh(new THREE.BoxGeometry(2, 1.8, 4), wallMat);
+    nave.position.y = 0.9;
+    group.add(nave);
+    // Steeple
+    const steeple = new THREE.Mesh(new THREE.BoxGeometry(0.8, 3, 0.8), wallMat);
+    steeple.position.set(0, 1.5, 2.4);
+    group.add(steeple);
+    // Pointed spire
+    const spire = new THREE.Mesh(new THREE.ConeGeometry(0.6, 1.5, 8), new THREE.MeshStandardMaterial({ color: "#4a4a4a", roughness: 0.6 }));
+    spire.position.set(0, 3.75, 2.4);
+    group.add(spire);
+    // Cross on top
+    const crossV = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.5, 0.08), goldMat);
+    crossV.position.set(0, 4.75, 2.4);
+    group.add(crossV);
+    const crossH = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.08, 0.08), goldMat);
+    crossH.position.set(0, 4.85, 2.4);
+    group.add(crossH);
+    // Rose window
+    const window = new THREE.Mesh(new THREE.CircleGeometry(0.35, 16), new THREE.MeshStandardMaterial({ color: "#4a3a8a", roughness: 0.3, emissive: "#4a3a8a", emissiveIntensity: 0.3 }));
+    window.position.set(0, 1.2, 2.01);
+    group.add(window);
+    // Arched door
+    const door = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1, 0.05), new THREE.MeshStandardMaterial({ color: "#5d3a1a", roughness: 0.8 }));
+    door.position.set(0, 0.5, 2.01);
+    group.add(door);
+  } else if (type === "cathedral") {
+    // Grand cathedral
+    const nave = new THREE.Mesh(new THREE.BoxGeometry(3, 2.5, 6), wallMat);
+    nave.position.y = 1.25;
+    group.add(nave);
+    // Two towers
+    for (const side of [-1, 1]) {
+      const tower = new THREE.Mesh(new THREE.BoxGeometry(1, 4, 1), wallMat);
+      tower.position.set(side * 1.5, 2, 3);
+      group.add(tower);
+      const towerSpire = new THREE.Mesh(new THREE.ConeGeometry(0.7, 1.5, 8), new THREE.MeshStandardMaterial({ color: "#4a4a4a", roughness: 0.5 }));
+      towerSpire.position.set(side * 1.5, 4.75, 3);
+      group.add(towerSpire);
+      // Cross on each tower
+      const cross = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.4, 0.06), goldMat);
+      cross.position.set(side * 1.5, 5.6, 3);
+      group.add(cross);
+    }
+    // Central rose window
+    const roseWindow = new THREE.Mesh(new THREE.CircleGeometry(0.6, 20), new THREE.MeshStandardMaterial({ color: "#8a3a5a", roughness: 0.3, emissive: "#8a3a5a", emissiveIntensity: 0.4 }));
+    roseWindow.position.set(0, 2, 3.01);
+    group.add(roseWindow);
+    // Buttresses
+    for (let i = 0; i < 3; i++) {
+      for (const side of [-1, 1]) {
+        const buttress = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1.8, 0.4), wallMat);
+        buttress.position.set(side * 1.65, 0.9, -2 + i * 2);
+        group.add(buttress);
+      }
+    }
+    // Steps
+    for (let i = 0; i < 3; i++) {
+      const step = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.1, 0.4 + i * 0.3), wallMat);
+      step.position.set(0, 0.05 + i * 0.1, 3.5 + i * 0.15);
+      group.add(step);
+    }
+  } else if (type === "synagogue") {
+    // Main building
+    const building = new THREE.Mesh(new THREE.BoxGeometry(2.5, 2, 3), wallMat);
+    building.position.y = 1;
+    group.add(building);
+    // Dome (small)
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(0.8, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ color: "#6a5a3a", roughness: 0.5, metalness: 0.4 }));
+    dome.position.y = 2;
+    group.add(dome);
+    // Star of David on top
+    const starMat = new THREE.MeshStandardMaterial({ color: "#4a90d9", metalness: 0.5, roughness: 0.3 });
+    const tri1 = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.5, 3), starMat);
+    tri1.position.y = 3;
+    group.add(tri1);
+    const tri2 = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.5, 3), starMat);
+    tri2.position.y = 3;
+    tri2.rotation.x = Math.PI;
+    group.add(tri2);
+    // Arched windows (3)
+    for (let i = 0; i < 3; i++) {
+      const win = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.8, 0.05), new THREE.MeshStandardMaterial({ color: "#4a3a8a", roughness: 0.3 }));
+      win.position.set(-0.7 + i * 0.7, 1.3, 1.51);
+      group.add(win);
+    }
+    // Entrance
+    const door = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1.1, 0.05), new THREE.MeshStandardMaterial({ color: "#5d3a1a", roughness: 0.8 }));
+    door.position.set(0, 0.55, 1.51);
+    group.add(door);
+  } else if (type === "monastery") {
+    // Main building
+    const building = new THREE.Mesh(new THREE.BoxGeometry(3, 2, 3), wallMat);
+    building.position.y = 1;
+    group.add(building);
+    // Bell tower
+    const tower = new THREE.Mesh(new THREE.BoxGeometry(0.8, 3.5, 0.8), wallMat);
+    tower.position.set(1.2, 1.75, 1);
+    group.add(tower);
+    const towerRoof = new THREE.Mesh(new THREE.ConeGeometry(0.6, 0.8, 8), redMat);
+    towerRoof.position.set(1.2, 3.9, 1);
+    group.add(towerRoof);
+    // Bell
+    const bell = new THREE.Mesh(new THREE.SphereGeometry(0.15, 10, 8), goldMat);
+    bell.position.set(1.2, 3.3, 1);
+    group.add(bell);
+    // Windows
+    for (let i = 0; i < 3; i++) {
+      for (const side of [-1, 1]) {
+        const win = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.6, 0.05), new THREE.MeshStandardMaterial({ color: "#4a3a8a", roughness: 0.3 }));
+        win.position.set(-0.8 + i * 0.8, 1.2, side * 1.51);
+        group.add(win);
+      }
+    }
+    // Cross on top of tower
+    const crossV = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.3, 0.06), goldMat);
+    crossV.position.set(1.2, 4.5, 1);
+    group.add(crossV);
+    const crossH = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.06, 0.06), goldMat);
+    crossH.position.set(1.2, 4.55, 1);
+    group.add(crossH);
+    // Garden walls
+    const wall = new THREE.Mesh(new THREE.BoxGeometry(4, 0.5, 0.1), new THREE.MeshStandardMaterial({ color: "#8a7a6a", roughness: 0.9 }));
+    wall.position.set(0, 0.25, 2);
+    group.add(wall);
+  }
+
+  group.traverse((child) => {
+    if ((child as import("three").Mesh).isMesh) {
+      child.castShadow = true;
+      child.receiveShadow = true;
+    }
+  });
+  return group;
+}
