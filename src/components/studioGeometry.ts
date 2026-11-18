@@ -4139,3 +4139,327 @@ export function createEnergyGeometry(
   });
   return group;
 }
+
+// ============================================================
+// TRANSPORT GEOMETRIES (Cruise Ship, Submarine, Hot Air Balloon, Helicopter2, Train, Bus)
+// ============================================================
+
+export function createTransportGeometry(
+  THREE: typeof import("three"),
+  type: "cruiseship" | "submarine" | "hotairballoon" | "helicopter2" | "train" | "bus",
+  color?: string,
+  metalness?: number,
+  roughness?: number
+): import("three").Group {
+  const group = new THREE.Group();
+
+  if (type === "cruiseship") {
+    const hullMat = new THREE.MeshStandardMaterial({
+      color: color || "#f0f0f0",
+      roughness: roughness ?? 0.5,
+      metalness: metalness ?? 0.3,
+    });
+    const glassMat = new THREE.MeshStandardMaterial({ color: "#88ccff", metalness: 0.5, roughness: 0.1, transparent: true, opacity: 0.7 });
+
+    // Long hull
+    const hull = new THREE.Mesh(new THREE.BoxGeometry(8, 0.8, 2), hullMat);
+    hull.position.y = 0.4;
+    group.add(hull);
+
+    // Pointed bow
+    const bow = new THREE.Mesh(new THREE.ConeGeometry(1, 1.5, 6), hullMat);
+    bow.rotation.z = -Math.PI / 2;
+    bow.position.set(4.5, 0.4, 0);
+    group.add(bow);
+
+    // Multi-level decks
+    for (let i = 0; i < 3; i++) {
+      const deck = new THREE.Mesh(new THREE.BoxGeometry(7 - i * 0.5, 0.6, 1.8 - i * 0.1), hullMat);
+      deck.position.set(-0.3, 1.1 + i * 0.65, 0);
+      group.add(deck);
+
+      // Windows on each deck
+      for (let j = 0; j < 12; j++) {
+        for (const side of [-1, 1]) {
+          const win = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.15, 0.02), glassMat);
+          win.position.set(-3 + j * 0.55, 1.1 + i * 0.65, side * (0.9 - i * 0.05));
+          group.add(win);
+        }
+      }
+    }
+
+    // Funnel (smokestack)
+    const funnel = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.3, 0.8, 10), new THREE.MeshStandardMaterial({ color: "#cc0000", roughness: 0.5 }));
+    funnel.position.set(-1.5, 3.1, 0);
+    group.add(funnel);
+
+    // Pool on top deck
+    const pool = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.15, 0.8), new THREE.MeshStandardMaterial({ color: "#4fc3f7", roughness: 0.1, metalness: 0.3 }));
+    pool.position.set(1.5, 2.35, 0);
+    group.add(pool);
+  } else if (type === "submarine") {
+    const hullMat = new THREE.MeshStandardMaterial({
+      color: color || "#4a4a4a",
+      roughness: roughness ?? 0.5,
+      metalness: metalness ?? 0.6,
+    });
+    const glassMat = new THREE.MeshStandardMaterial({ color: "#88ccff", metalness: 0.5, roughness: 0.1, transparent: true, opacity: 0.6 });
+
+    // Main cylindrical body
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 4, 16), hullMat);
+    body.rotation.z = Math.PI / 2;
+    body.position.y = 0.8;
+    group.add(body);
+
+    // Nose (rounded)
+    const nose = new THREE.Mesh(new THREE.SphereGeometry(0.7, 16, 12), hullMat);
+    nose.position.set(2, 0.8, 0);
+    nose.scale.set(0.8, 1, 1);
+    group.add(nose);
+
+    // Tail (tapered)
+    const tail = new THREE.Mesh(new THREE.ConeGeometry(0.7, 1.2, 16), hullMat);
+    tail.rotation.z = Math.PI / 2;
+    tail.position.set(-2.6, 0.8, 0);
+    group.add(tail);
+
+    // Conning tower (sail)
+    const sail = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.8, 0.5), hullMat);
+    sail.position.set(0, 1.6, 0);
+    group.add(sail);
+
+    // Periscope
+    const periscope = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.6, 6), new THREE.MeshStandardMaterial({ color: "#2a2a2a", metalness: 0.9, roughness: 0.2 }));
+    periscope.position.set(0, 2.2, 0);
+    group.add(periscope);
+
+    // Portholes
+    for (let i = 0; i < 4; i++) {
+      const porthole = new THREE.Mesh(new THREE.CircleGeometry(0.1, 12), glassMat);
+      porthole.position.set(1.5 - i * 1, 0.8, 0.71);
+      group.add(porthole);
+    }
+
+    // Propeller
+    const prop = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.2, 6), new THREE.MeshStandardMaterial({ color: "#d0d0d0", metalness: 0.9, roughness: 0.2 }));
+    prop.rotation.z = Math.PI / 2;
+    prop.position.set(-3.2, 0.8, 0);
+    group.add(prop);
+
+    for (let i = 0; i < 3; i++) {
+      const blade = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.6, 0.1), new THREE.MeshStandardMaterial({ color: "#d0d0d0", metalness: 0.9, roughness: 0.2 }));
+      blade.position.set(-3.2, 0.8, 0);
+      blade.rotation.x = (i / 3) * Math.PI * 2;
+      group.add(blade);
+    }
+  } else if (type === "hotairballoon") {
+    const balloonMat = new THREE.MeshStandardMaterial({
+      color: color || "#e63946",
+      roughness: roughness ?? 0.5,
+      metalness: metalness ?? 0.1,
+    });
+    const basketMat = new THREE.MeshStandardMaterial({ color: "#8b4513", roughness: 0.9 });
+
+    // Balloon (large sphere)
+    const balloon = new THREE.Mesh(new THREE.SphereGeometry(1.2, 24, 16), balloonMat);
+    balloon.position.y = 3.5;
+    balloon.scale.set(1, 1.2, 1);
+    group.add(balloon);
+
+    // Stripes on balloon
+    for (let i = 0; i < 4; i++) {
+      const angle = (i / 4) * Math.PI * 2;
+      const stripe = new THREE.Mesh(new THREE.SphereGeometry(1.21, 24, 16, angle, Math.PI / 8), new THREE.MeshStandardMaterial({ color: "#ffd700", roughness: 0.5 }));
+      stripe.position.y = 3.5;
+      stripe.scale.set(1, 1.2, 1);
+      group.add(stripe);
+    }
+
+    // Basket
+    const basket = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.5, 0.6), basketMat);
+    basket.position.y = 1.5;
+    group.add(basket);
+
+    // Ropes
+    for (const [x, z] of [[-0.25, -0.25], [-0.25, 0.25], [0.25, -0.25], [0.25, 0.25]]) {
+      const rope = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 1.2, 4), new THREE.MeshStandardMaterial({ color: "#3a2a1a" }));
+      rope.position.set(x, 2.4, z);
+      group.add(rope);
+    }
+
+    // Burner flame
+    const flame = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.4, 8), new THREE.MeshStandardMaterial({ color: "#ffaa00", emissive: "#ff6600", emissiveIntensity: 2 }));
+    flame.position.y = 2.1;
+    group.add(flame);
+  } else if (type === "helicopter2") {
+    const bodyMat = new THREE.MeshStandardMaterial({
+      color: color || "#2a5a8a",
+      roughness: roughness ?? 0.5,
+      metalness: metalness ?? 0.5,
+    });
+    const glassMat = new THREE.MeshStandardMaterial({ color: "#88ccff", metalness: 0.5, roughness: 0.1, transparent: true, opacity: 0.6 });
+
+    // Body
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.7, 16, 12), bodyMat);
+    body.position.y = 1;
+    body.scale.set(1.4, 0.8, 1);
+    group.add(body);
+
+    // Cockpit glass
+    const cockpit = new THREE.Mesh(new THREE.SphereGeometry(0.5, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), glassMat);
+    cockpit.position.set(0.6, 1.1, 0);
+    cockpit.rotation.z = Math.PI / 2;
+    group.add(cockpit);
+
+    // Tail boom
+    const tail = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.08, 2, 10), bodyMat);
+    tail.rotation.z = Math.PI / 2;
+    tail.position.set(-1.5, 1.1, 0);
+    group.add(tail);
+
+    // Tail fin
+    const fin = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.5, 0.3), bodyMat);
+    fin.position.set(-2.4, 1.3, 0);
+    group.add(fin);
+
+    // Tail rotor
+    const tailRotor = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.6, 0.06), bodyMat);
+    tailRotor.position.set(-2.5, 1.1, 0);
+    group.add(tailRotor);
+
+    // Main rotor mast
+    const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.3, 8), new THREE.MeshStandardMaterial({ color: "#2a2a2a" }));
+    mast.position.y = 1.7;
+    group.add(mast);
+
+    // Main rotor blades
+    const bladeGroup = new THREE.Group();
+    bladeGroup.userData.helicopterBlades = true;
+    bladeGroup.position.y = 1.9;
+    for (let i = 0; i < 2; i++) {
+      const blade = new THREE.Mesh(new THREE.BoxGeometry(3, 0.03, 0.15), new THREE.MeshStandardMaterial({ color: "#2a2a2a" }));
+      blade.rotation.y = i * Math.PI / 2;
+      bladeGroup.add(blade);
+    }
+    group.add(bladeGroup);
+
+    // Skids
+    for (const side of [-0.4, 0.4]) {
+      const skid = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.5, 6), new THREE.MeshStandardMaterial({ color: "#2a2a2a" }));
+      skid.rotation.z = Math.PI / 2;
+      skid.position.set(0, 0.2, side);
+      group.add(skid);
+    }
+  } else if (type === "train") {
+    const bodyMat = new THREE.MeshStandardMaterial({
+      color: color || "#4a4a4a",
+      roughness: roughness ?? 0.4,
+      metalness: metalness ?? 0.7,
+    });
+    const glassMat = new THREE.MeshStandardMaterial({ color: "#88ccff", metalness: 0.5, roughness: 0.1, transparent: true, opacity: 0.7 });
+
+    // Locomotive
+    const loco = new THREE.Mesh(new THREE.BoxGeometry(3, 1.2, 1.4), bodyMat);
+    loco.position.y = 0.8;
+    group.add(loco);
+
+    // Engine hood (angled front)
+    const hood = new THREE.Mesh(new THREE.BoxGeometry(1, 0.8, 1.3), bodyMat);
+    hood.position.set(1.9, 0.9, 0);
+    group.add(hood);
+
+    // Cab
+    const cab = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1.4), bodyMat);
+    cab.position.set(-0.8, 1.2, 0);
+    group.add(cab);
+
+    // Cab windows
+    for (const side of [-1, 1]) {
+      const win = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.3, 0.02), glassMat);
+      win.position.set(-0.8, 1.4, side * 0.71);
+      group.add(win);
+    }
+
+    // Chimney
+    const chimney = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.2, 0.5, 8), new THREE.MeshStandardMaterial({ color: "#2a2a2a" }));
+    chimney.position.set(1.5, 1.65, 0);
+    group.add(chimney);
+
+    // Wheels
+    const wheelMat = new THREE.MeshStandardMaterial({ color: "#1a1a1a", roughness: 0.7 });
+    for (const [x, z] of [[-1, -0.7], [-1, 0.7], [1, -0.7], [1, 0.7], [2, -0.7], [2, 0.7]]) {
+      const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.15, 16), wheelMat);
+      wheel.rotation.x = Math.PI / 2;
+      wheel.position.set(x, 0.3, z);
+      group.add(wheel);
+    }
+
+    // Cowcatcher
+    const cowcatcher = new THREE.Mesh(new THREE.ConeGeometry(0.6, 0.5, 4), bodyMat);
+    cowcatcher.rotation.z = -Math.PI / 2;
+    cowcatcher.position.set(2.6, 0.3, 0);
+    cowcatcher.scale.set(1, 1, 1.2);
+    group.add(cowcatcher);
+  } else if (type === "bus") {
+    const bodyMat = new THREE.MeshStandardMaterial({
+      color: color || "#f0c040",
+      roughness: roughness ?? 0.5,
+      metalness: metalness ?? 0.4,
+    });
+    const glassMat = new THREE.MeshStandardMaterial({ color: "#88ccff", metalness: 0.5, roughness: 0.1, transparent: true, opacity: 0.7 });
+
+    // Main body
+    const body = new THREE.Mesh(new THREE.BoxGeometry(4.5, 1.5, 1.8), bodyMat);
+    body.position.y = 1;
+    group.add(body);
+
+    // Roof
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.1, 1.8), bodyMat);
+    roof.position.y = 1.8;
+    group.add(roof);
+
+    // Windshield
+    const windshield = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.7, 1.6), glassMat);
+    windshield.position.set(2.26, 1.2, 0);
+    group.add(windshield);
+
+    // Side windows
+    for (let i = 0; i < 6; i++) {
+      for (const side of [-1, 1]) {
+        const win = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.4, 0.02), glassMat);
+        win.position.set(-1.8 + i * 0.65, 1.3, side * 0.91);
+        group.add(win);
+      }
+    }
+
+    // Door (front side)
+    const door = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1, 0.02), new THREE.MeshStandardMaterial({ color: "#2a2a2a", roughness: 0.5 }));
+    door.position.set(1.5, 0.8, 0.91);
+    group.add(door);
+
+    // Wheels
+    const wheelMat = new THREE.MeshStandardMaterial({ color: "#1a1a1a", roughness: 0.7 });
+    for (const [x, z] of [[-1.5, -0.9], [-1.5, 0.9], [1.5, -0.9], [1.5, 0.9]]) {
+      const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.2, 16), wheelMat);
+      wheel.rotation.x = Math.PI / 2;
+      wheel.position.set(x, 0.35, z);
+      wheel.userData.wheel = true;
+      group.add(wheel);
+    }
+
+    // Headlights
+    for (const side of [-0.6, 0.6]) {
+      const light = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.15, 0.3), new THREE.MeshStandardMaterial({ color: "#ffffaa", emissive: "#ffff66", emissiveIntensity: 0.8 }));
+      light.position.set(2.26, 0.7, side);
+      group.add(light);
+    }
+  }
+
+  group.traverse((child) => {
+    if ((child as import("three").Mesh).isMesh) {
+      child.castShadow = true;
+      child.receiveShadow = true;
+    }
+  });
+  return group;
+}
