@@ -150,6 +150,14 @@ export const presets: { name: string; shape: Shape }[] = [
   { name: "Cherry", shape: "cherry" },
   { name: "Lemon", shape: "lemon" },
   { name: "Peach", shape: "peach" },
+  { name: "Book", shape: "book" },
+  { name: "Lamp Post", shape: "lamppost" },
+  { name: "Bench", shape: "bench" },
+  { name: "Mailbox", shape: "mailbox" },
+  { name: "Fountain2", shape: "fountain2" },
+  { name: "Swing", shape: "swing" },
+  { name: "Slide", shape: "slide" },
+  { name: "Sandbox", shape: "sandbox" },
 ];
 
 
