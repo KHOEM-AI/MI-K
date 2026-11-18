@@ -109,6 +109,12 @@ export const presets: { name: string; shape: Shape }[] = [
   { name: "Helicopter2", shape: "helicopter2" },
   { name: "Train", shape: "train" },
   { name: "Bus", shape: "bus" },
+  { name: "Motorcycle", shape: "motorcycle" },
+  { name: "Bicycle", shape: "bicycle" },
+  { name: "Skateboard", shape: "skateboard" },
+  { name: "Surfboard", shape: "surfboard" },
+  { name: "Kayak", shape: "kayak" },
+  { name: "Paraglider", shape: "paraglider" },
 ];
 
 

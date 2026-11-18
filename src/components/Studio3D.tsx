@@ -3,7 +3,7 @@ import { Eye, EyeOff, Lock, Unlock, Pencil, HelpCircle, X, Camera, Trash2, Copy,
 import { saveAsset } from "../lib/storage.mjs";
 import { UI3DPreview } from "./UI3DPreview";
 import { presets, MATERIAL_PRESETS, PLANT_COLOR_PRESETS, SKY_COLOR_PRESETS, WATER_COLOR_PRESETS, zero, one, createId } from "./studioConstants";
-import { createGeometry, createCarGeometry, createFurnitureGeometry, createPlantGeometry, createPlantGeometry2, createPlantGeometry3, createPlantGeometry4, createEnvironmentGeometry, createEnvironmentGeometry2, createEnvironmentGeometry3, createSkyGeometry, createSpaceGeometry, createSpaceGeometry2, createStructureGeometry, createStructureGeometry2, createStructureGeometry3, createMonumentGeometry, createBuildingGeometry, createBuildingGeometry2, createBuildingGeometry3, createEnergyGeometry, createTransportGeometry, createLuxuryCarGeometry, createAircraftGeometry, createBoatGeometry, createAnimalGeometry, createCharacterGeometry, createKhoemGeometry, createHighwayGeometry, createBridgeGeometry, createTrafficLightGeometry, createStreetLightGeometry, disposeMesh } from "./studioGeometry";
+import { createGeometry, createCarGeometry, createFurnitureGeometry, createPlantGeometry, createPlantGeometry2, createPlantGeometry3, createPlantGeometry4, createEnvironmentGeometry, createEnvironmentGeometry2, createEnvironmentGeometry3, createSkyGeometry, createSpaceGeometry, createSpaceGeometry2, createStructureGeometry, createStructureGeometry2, createStructureGeometry3, createMonumentGeometry, createBuildingGeometry, createBuildingGeometry2, createBuildingGeometry3, createEnergyGeometry, createTransportGeometry, createPersonalTransportGeometry, createLuxuryCarGeometry, createAircraftGeometry, createBoatGeometry, createAnimalGeometry, createCharacterGeometry, createKhoemGeometry, createHighwayGeometry, createBridgeGeometry, createTrafficLightGeometry, createStreetLightGeometry, disposeMesh } from "./studioGeometry";
 import { CameraPresets } from "./CameraPresets";
 import { SceneLightingPanel } from "./SceneLightingPanel";
 import { MaterialPanel } from "./MaterialPanel";
@@ -817,6 +817,8 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
               obj = createEnergyGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
             } else if (item.shape === "cruiseship" || item.shape === "submarine" || item.shape === "hotairballoon" || item.shape === "helicopter2" || item.shape === "train" || item.shape === "bus") {
               obj = createTransportGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            } else if (item.shape === "motorcycle" || item.shape === "bicycle" || item.shape === "skateboard" || item.shape === "surfboard" || item.shape === "kayak" || item.shape === "paraglider") {
+              obj = createPersonalTransportGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
             } else if (item.shape === "khoem") {
               obj = createKhoemGeometry(THREE, item.color, item.metalness, item.roughness);
             } else if (item.shape === "highway") {
@@ -1886,6 +1888,16 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             return;
           }
 
+          if (item.shape === "motorcycle" || item.shape === "bicycle" || item.shape === "skateboard" || item.shape === "surfboard" || item.shape === "kayak" || item.shape === "paraglider") {
+            const personalGroup = createPersonalTransportGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            personalGroup.position.set(item.position.x, item.position.y, item.position.z);
+            personalGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            personalGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            personalGroup.name = item.name;
+            exportScene.add(personalGroup);
+            return;
+          }
+
           if (item.shape === "khoem") {
             const khoemGroup = createKhoemGeometry(THREE, item.color, item.metalness, item.roughness);
             khoemGroup.position.set(item.position.x, item.position.y, item.position.z);
@@ -2810,6 +2822,16 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             return;
           }
 
+          if (item.shape === "motorcycle" || item.shape === "bicycle" || item.shape === "skateboard" || item.shape === "surfboard" || item.shape === "kayak" || item.shape === "paraglider") {
+            const personalGroup = createPersonalTransportGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            personalGroup.position.set(item.position.x, item.position.y, item.position.z);
+            personalGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            personalGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            personalGroup.name = item.name;
+            exportScene!.add(personalGroup);
+            return;
+          }
+
           if (item.shape === "khoem") {
             const khoemGroup = createKhoemGeometry(THREE, item.color, item.metalness, item.roughness);
             khoemGroup.position.set(item.position.x, item.position.y, item.position.z);
@@ -2944,6 +2966,44 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       setExporting(false);
     }
   }
+
+  // Personal transport animation (motorcycle/bicycle wheels, paraglider float)
+  useEffect(() => {
+    if (!windEnabled || !sceneReady) return;
+
+    const bikes = new Set(["motorcycle", "bicycle"]);
+    const paragliders = new Set(["paraglider"]);
+
+    let rafId: number;
+    const animate = () => {
+      windTimeRef.current += 0.016;
+      const t = windTimeRef.current;
+
+      meshesRef.current.forEach((mesh) => {
+        const sceneObj = objects.find(o => o.id === mesh.userData.objectId);
+        if (!sceneObj) return;
+        if (sceneObj.locked) return;
+
+        if (bikes.has(sceneObj.shape)) {
+          // Rotate wheels
+          mesh.traverse((child) => {
+            if (child.userData.wheel) {
+              child.rotation.x += 0.05;
+            }
+          });
+        } else if (paragliders.has(sceneObj.shape)) {
+          // Float and sway
+          mesh.position.y = sceneObj.position.y + Math.sin(t * 1.2 + sceneObj.position.x) * 0.3;
+          mesh.rotation.z = sceneObj.rotation.z + Math.sin(t * 0.8) * 0.05;
+        }
+      });
+
+      rafId = requestAnimationFrame(animate);
+    };
+
+    rafId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(rafId);
+  }, [windEnabled, sceneReady, objects]);
 
   // Transport animation (hot air balloon float, helicopter2 rotor, train wheels, bus wheels)
   useEffect(() => {

@@ -4463,3 +4463,294 @@ export function createTransportGeometry(
   });
   return group;
 }
+
+// ============================================================
+// PERSONAL TRANSPORT GEOMETRIES (Motorcycle, Bicycle, Skateboard, Surfboard, Kayak, Paraglider)
+// ============================================================
+
+export function createPersonalTransportGeometry(
+  THREE: typeof import("three"),
+  type: "motorcycle" | "bicycle" | "skateboard" | "surfboard" | "kayak" | "paraglider",
+  color?: string,
+  metalness?: number,
+  roughness?: number
+): import("three").Group {
+  const group = new THREE.Group();
+
+  if (type === "motorcycle") {
+    const bodyMat = new THREE.MeshStandardMaterial({
+      color: color || "#cc0000",
+      roughness: roughness ?? 0.3,
+      metalness: metalness ?? 0.7,
+    });
+    const blackMat = new THREE.MeshStandardMaterial({ color: "#1a1a1a", roughness: 0.7 });
+    const chromeMat = new THREE.MeshStandardMaterial({ color: "#e0e0e0", metalness: 1, roughness: 0.1 });
+
+    // Body
+    const body = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.4, 0.5), bodyMat);
+    body.position.y = 0.7;
+    group.add(body);
+
+    // Fuel tank
+    const tank = new THREE.Mesh(new THREE.SphereGeometry(0.3, 12, 8), bodyMat);
+    tank.position.set(0.2, 0.9, 0);
+    tank.scale.set(1.2, 0.7, 0.9);
+    group.add(tank);
+
+    // Seat
+    const seat = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.15, 0.4), blackMat);
+    seat.position.set(-0.4, 0.95, 0);
+    group.add(seat);
+
+    // Handlebars
+    const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.7, 8), chromeMat);
+    bar.rotation.x = Math.PI / 2;
+    bar.position.set(0.65, 1.1, 0);
+    group.add(bar);
+
+    // Front fork
+    const fork = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.7, 8), chromeMat);
+    fork.position.set(0.7, 0.5, 0);
+    fork.rotation.z = -0.3;
+    group.add(fork);
+
+    // 2 wheels
+    for (const x of [-0.6, 0.7]) {
+      const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.12, 20), blackMat);
+      wheel.rotation.x = Math.PI / 2;
+      wheel.position.set(x, 0.3, 0);
+      wheel.userData.wheel = true;
+      group.add(wheel);
+
+      const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.14, 16), chromeMat);
+      rim.rotation.x = Math.PI / 2;
+      rim.position.set(x, 0.3, 0);
+      group.add(rim);
+    }
+
+    // Headlight
+    const headlight = new THREE.Mesh(new THREE.SphereGeometry(0.1, 12, 8), new THREE.MeshStandardMaterial({ color: "#ffffaa", emissive: "#ffff66", emissiveIntensity: 1 }));
+    headlight.position.set(0.85, 0.9, 0);
+    group.add(headlight);
+
+    // Exhaust pipe
+    const exhaust = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.8, 8), chromeMat);
+    exhaust.rotation.z = Math.PI / 2;
+    exhaust.position.set(-0.4, 0.4, 0.3);
+    group.add(exhaust);
+  } else if (type === "bicycle") {
+    const frameMat = new THREE.MeshStandardMaterial({
+      color: color || "#1e88e5",
+      roughness: roughness ?? 0.4,
+      metalness: metalness ?? 0.6,
+    });
+    const blackMat = new THREE.MeshStandardMaterial({ color: "#1a1a1a", roughness: 0.7 });
+
+    // Frame (triangular)
+    const frame1 = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.9, 8), frameMat);
+    frame1.position.set(0, 0.7, 0);
+    frame1.rotation.z = 0.3;
+    group.add(frame1);
+
+    const frame2 = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.7, 8), frameMat);
+    frame2.position.set(-0.2, 0.55, 0);
+    frame2.rotation.z = -0.6;
+    group.add(frame2);
+
+    const frame3 = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.7, 8), frameMat);
+    frame3.position.set(0.3, 0.55, 0);
+    frame3.rotation.z = 0.5;
+    group.add(frame3);
+
+    // Handlebars
+    const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.5, 8), blackMat);
+    bar.rotation.x = Math.PI / 2;
+    bar.position.set(0.5, 1.0, 0);
+    group.add(bar);
+
+    // Seat
+    const seat = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.1, 0.15), blackMat);
+    seat.position.set(-0.35, 1.0, 0);
+    group.add(seat);
+
+    // 2 wheels
+    for (const x of [-0.5, 0.5]) {
+      const wheel = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.03, 8, 24), blackMat);
+      wheel.position.set(x, 0.3, 0);
+      wheel.userData.wheel = true;
+      group.add(wheel);
+
+      // Spokes
+      for (let i = 0; i < 6; i++) {
+        const angle = (i / 6) * Math.PI * 2;
+        const spoke = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.6, 4), new THREE.MeshStandardMaterial({ color: "#d0d0d0", metalness: 0.9, roughness: 0.2 }));
+        spoke.position.set(x, 0.3, 0);
+        spoke.rotation.z = angle;
+        group.add(spoke);
+      }
+    }
+  } else if (type === "skateboard") {
+    const deckMat = new THREE.MeshStandardMaterial({
+      color: color || "#8b4513",
+      roughness: roughness ?? 0.7,
+      metalness: metalness ?? 0.1,
+    });
+    const wheelMat = new THREE.MeshStandardMaterial({ color: "#ffdd44", roughness: 0.4 });
+    const truckMat = new THREE.MeshStandardMaterial({ color: "#d0d0d0", metalness: 0.9, roughness: 0.2 });
+
+    // Deck
+    const deck = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.05, 0.4), deckMat);
+    deck.position.y = 0.2;
+    group.add(deck);
+
+    // Trucks (metal axles)
+    for (const x of [-0.5, 0.5]) {
+      const truck = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.1, 0.3), truckMat);
+      truck.position.set(x, 0.15, 0);
+      group.add(truck);
+
+      // Wheels (4)
+      for (const z of [-0.15, 0.15]) {
+        const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.06, 12), wheelMat);
+        wheel.rotation.x = Math.PI / 2;
+        wheel.position.set(x, 0.08, z);
+        wheel.userData.wheel = true;
+        group.add(wheel);
+      }
+    }
+  } else if (type === "surfboard") {
+    const boardMat = new THREE.MeshStandardMaterial({
+      color: color || "#ffdd44",
+      roughness: roughness ?? 0.3,
+      metalness: metalness ?? 0.1,
+    });
+    const stripeMat = new THREE.MeshStandardMaterial({ color: "#ff6600", roughness: 0.3 });
+
+    // Main board (long, pointed)
+    const board = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.05, 2.5), boardMat);
+    board.position.y = 0.1;
+    group.add(board);
+
+    // Pointed front
+    const nose = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.5, 4), boardMat);
+    nose.rotation.x = -Math.PI / 2;
+    nose.rotation.z = Math.PI / 4;
+    nose.position.set(0, 0.1, 1.5);
+    nose.scale.set(1, 1, 0.15);
+    group.add(nose);
+
+    // Tail (slightly pointed)
+    const tail = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.3, 4), boardMat);
+    tail.rotation.x = Math.PI / 2;
+    tail.rotation.z = Math.PI / 4;
+    tail.position.set(0, 0.1, -1.4);
+    tail.scale.set(1, 1, 0.1);
+    group.add(tail);
+
+    // Stripe
+    const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.06, 2.3), stripeMat);
+    stripe.position.y = 0.1;
+    group.add(stripe);
+
+    // Fin on tail
+    const fin = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.2, 0.15), boardMat);
+    fin.position.set(0, -0.05, -1.2);
+    group.add(fin);
+  } else if (type === "kayak") {
+    const hullMat = new THREE.MeshStandardMaterial({
+      color: color || "#ff8800",
+      roughness: roughness ?? 0.5,
+      metalness: metalness ?? 0.2,
+    });
+    const seatMat = new THREE.MeshStandardMaterial({ color: "#2a2a2a", roughness: 0.7 });
+
+    // Long narrow hull (rounded)
+    const hull = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 2.5, 16), hullMat);
+    hull.rotation.z = Math.PI / 2;
+    hull.position.y = 0.25;
+    group.add(hull);
+
+    // Pointed nose
+    const nose = new THREE.Mesh(new THREE.ConeGeometry(0.25, 0.5, 12), hullMat);
+    nose.rotation.z = -Math.PI / 2;
+    nose.position.set(1.5, 0.25, 0);
+    group.add(nose);
+
+    // Pointed tail
+    const tail = new THREE.Mesh(new THREE.ConeGeometry(0.25, 0.4, 12), hullMat);
+    tail.rotation.z = Math.PI / 2;
+    tail.position.set(-1.5, 0.25, 0);
+    group.add(tail);
+
+    // Cockpit opening
+    const cockpit = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.6, 12), new THREE.MeshStandardMaterial({ color: "#2a2a2a", roughness: 0.9 }));
+    cockpit.position.set(0, 0.4, 0);
+    cockpit.scale.set(2, 1, 1);
+    group.add(cockpit);
+
+    // Seat
+    const seat = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.05, 0.3), seatMat);
+    seat.position.set(-0.2, 0.42, 0);
+    group.add(seat);
+  } else if (type === "paraglider") {
+    const canopyMat = new THREE.MeshStandardMaterial({
+      color: color || "#e63946",
+      roughness: roughness ?? 0.4,
+      metalness: metalness ?? 0.1,
+      side: THREE.DoubleSide,
+    });
+    const lineMat = new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.8 });
+    const harnessMat = new THREE.MeshStandardMaterial({ color: "#2a2a2a", roughness: 0.7 });
+
+    // Canopy (curved airfoil shape using half sphere)
+    const canopy = new THREE.Mesh(
+      new THREE.SphereGeometry(2, 24, 12, 0, Math.PI * 2, 0, Math.PI / 4),
+      canopyMat
+    );
+    canopy.position.y = 4;
+    canopy.scale.set(1, 0.4, 0.6);
+    group.add(canopy);
+
+    // Canopy stripes
+    for (let i = 0; i < 5; i++) {
+      const stripe = new THREE.Mesh(
+        new THREE.SphereGeometry(2.02, 24, 12, (i / 5) * Math.PI * 2, Math.PI / 10, 0, Math.PI / 4),
+        new THREE.MeshStandardMaterial({ color: "#ffdd00", roughness: 0.4, side: THREE.DoubleSide })
+      );
+      stripe.position.y = 4;
+      stripe.scale.set(1, 0.4, 0.6);
+      group.add(stripe);
+    }
+
+    // Harness (pilot seat)
+    const harness = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.3, 0.3), harnessMat);
+    harness.position.y = 1.5;
+    group.add(harness);
+
+    // Pilot (simple figure)
+    const pilotBody = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.4, 8), new THREE.MeshStandardMaterial({ color: "#4a90d9", roughness: 0.7 }));
+    pilotBody.position.y = 1.85;
+    group.add(pilotBody);
+
+    const pilotHead = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 8), new THREE.MeshStandardMaterial({ color: "#f4c8a0", roughness: 0.7 }));
+    pilotHead.position.y = 2.15;
+    group.add(pilotHead);
+
+    // Lines (from harness to canopy)
+    for (const [x, z] of [[-0.3, -0.2], [-0.3, 0.2], [0.3, -0.2], [0.3, 0.2]]) {
+      const line = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 2.3, 4), lineMat);
+      line.position.set(x * 3, 3.1, z * 3);
+      line.rotation.z = x * 0.3;
+      line.rotation.x = z * 0.3;
+      group.add(line);
+    }
+  }
+
+  group.traverse((child) => {
+    if ((child as import("three").Mesh).isMesh) {
+      child.castShadow = true;
+      child.receiveShadow = true;
+    }
+  });
+  return group;
+}
