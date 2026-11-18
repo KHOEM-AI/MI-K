@@ -91,6 +91,12 @@ export const presets: { name: string; shape: Shape }[] = [
   { name: "Oasis", shape: "oasis" },
   { name: "Totem", shape: "totem" },
   { name: "Obelisk", shape: "obelisk" },
+  { name: "Castle2", shape: "castle2" },
+  { name: "Temple", shape: "temple" },
+  { name: "Colosseum", shape: "colosseum" },
+  { name: "Stadium", shape: "stadium" },
+  { name: "Lighthouse2", shape: "lighthouse2" },
+  { name: "Windmill2", shape: "windmill2" },
 ];
 
 

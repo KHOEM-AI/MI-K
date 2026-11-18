@@ -3523,3 +3523,332 @@ export function createMonumentGeometry(
   });
   return group;
 }
+
+// ============================================================
+// BUILDING GEOMETRIES V2 (Castle2, Temple, Colosseum, Stadium)
+// ============================================================
+
+export function createBuildingGeometry2(
+  THREE: typeof import("three"),
+  type: "castle2" | "temple" | "colosseum" | "stadium",
+  color?: string,
+  metalness?: number,
+  roughness?: number
+): import("three").Group {
+  const group = new THREE.Group();
+
+  if (type === "castle2") {
+    const stoneMat = new THREE.MeshStandardMaterial({
+      color: color || "#8a8a8a",
+      roughness: roughness ?? 0.9,
+      metalness: metalness ?? 0.1,
+    });
+    const roofMat = new THREE.MeshStandardMaterial({ color: "#8b0000", roughness: 0.7 });
+
+    // Central keep
+    const keep = new THREE.Mesh(new THREE.BoxGeometry(2, 2.5, 2), stoneMat);
+    keep.position.y = 1.25;
+    group.add(keep);
+
+    // Central roof
+    const keepRoof = new THREE.Mesh(new THREE.ConeGeometry(1.6, 1.5, 4), roofMat);
+    keepRoof.position.y = 3.25;
+    keepRoof.rotation.y = Math.PI / 4;
+    group.add(keepRoof);
+
+    // 4 corner towers (taller)
+    const towerPositions: [number, number][] = [
+      [-1.2, -1.2], [-1.2, 1.2], [1.2, -1.2], [1.2, 1.2],
+    ];
+    towerPositions.forEach(([x, z]) => {
+      const tower = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.4, 3.5, 8), stoneMat);
+      tower.position.set(x, 1.75, z);
+      group.add(tower);
+
+      const towerRoof = new THREE.Mesh(new THREE.ConeGeometry(0.5, 0.7, 8), roofMat);
+      towerRoof.position.set(x, 3.85, z);
+      group.add(towerRoof);
+    });
+
+    // Front gate
+    const gateMat = new THREE.MeshStandardMaterial({ color: "#3a2a1a", roughness: 0.9 });
+    const gate = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1.2, 0.1), gateMat);
+    gate.position.set(0, 0.6, 1.01);
+    group.add(gate);
+
+    // Battlements on keep
+    for (let i = 0; i < 4; i++) {
+      const angle = (i / 4) * Math.PI * 2;
+      const merlon = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.3, 0.2), stoneMat);
+      merlon.position.set(Math.cos(angle) * 0.8, 2.65, Math.sin(angle) * 0.8);
+      group.add(merlon);
+    }
+  } else if (type === "temple") {
+    const marbleMat = new THREE.MeshStandardMaterial({
+      color: color || "#f0e8d8",
+      roughness: roughness ?? 0.5,
+      metalness: metalness ?? 0.1,
+    });
+    const roofMat = new THREE.MeshStandardMaterial({ color: "#d4a373", roughness: 0.7 });
+
+    // Base platform
+    const base = new THREE.Mesh(new THREE.BoxGeometry(3, 0.3, 2), marbleMat);
+    base.position.y = 0.15;
+    group.add(base);
+
+    // Steps
+    for (let i = 0; i < 3; i++) {
+      const step = new THREE.Mesh(new THREE.BoxGeometry(3 - i * 0.2, 0.15, 0.4), marbleMat);
+      step.position.set(0, 0.3 + i * 0.15, 1.2 - i * 0.2);
+      group.add(step);
+    }
+
+    // 6 columns
+    for (let i = 0; i < 6; i++) {
+      const x = -1.2 + i * 0.5;
+      for (const z of [-0.7, 0.7]) {
+        const column = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.18, 2.5, 12), marbleMat);
+        column.position.set(x, 1.6, z);
+        group.add(column);
+
+        // Column capital
+        const capital = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.15, 0.4), marbleMat);
+        capital.position.set(x, 2.9, z);
+        group.add(capital);
+      }
+    }
+
+    // Roof (triangular prism)
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(1.8, 1, 4), roofMat);
+    roof.position.y = 3.5;
+    roof.rotation.y = Math.PI / 4;
+    roof.scale.set(1.2, 0.8, 1);
+    group.add(roof);
+  } else if (type === "colosseum") {
+    const stoneMat = new THREE.MeshStandardMaterial({
+      color: color || "#c8b8a0",
+      roughness: roughness ?? 0.9,
+      metalness: metalness ?? 0.1,
+    });
+
+    // Main circular wall (3 tiers)
+    for (let tier = 0; tier < 3; tier++) {
+      const radius = 2 - tier * 0.15;
+      const wall = new THREE.Mesh(
+        new THREE.CylinderGeometry(radius, radius, 1, 24, 1, true),
+        stoneMat
+      );
+      wall.position.y = 0.5 + tier * 1;
+      group.add(wall);
+
+      // Arch openings (dark boxes around)
+      for (let i = 0; i < 12; i++) {
+        const angle = (i / 12) * Math.PI * 2;
+        const arch = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.5, 0.1), new THREE.MeshStandardMaterial({ color: "#4a3a2a", roughness: 0.9 }));
+        arch.position.set(Math.cos(angle) * radius, 0.5 + tier * 1, Math.sin(angle) * radius);
+        arch.rotation.y = -angle + Math.PI / 2;
+        group.add(arch);
+      }
+    }
+
+    // Arena floor
+    const floor = new THREE.Mesh(new THREE.CircleGeometry(1.7, 24), new THREE.MeshStandardMaterial({ color: "#e8c88a", roughness: 0.9 }));
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = 0.05;
+    group.add(floor);
+  } else if (type === "stadium") {
+    const metalMat = new THREE.MeshStandardMaterial({
+      color: color || "#4a90d9",
+      roughness: roughness ?? 0.6,
+      metalness: metalness ?? 0.3,
+    });
+    const fieldMat = new THREE.MeshStandardMaterial({ color: "#2d7a2d", roughness: 0.9 });
+
+    // Field
+    const field = new THREE.Mesh(new THREE.CircleGeometry(1.5, 24), fieldMat);
+    field.rotation.x = -Math.PI / 2;
+    field.position.y = 0.05;
+    group.add(field);
+
+    // Stadium seating (ring around field)
+    for (let i = 0; i < 3; i++) {
+      const radius = 1.6 + i * 0.3;
+      const ring = new THREE.Mesh(
+        new THREE.TorusGeometry(radius, 0.2, 8, 24),
+        metalMat
+      );
+      ring.rotation.x = Math.PI / 2;
+      ring.position.y = 0.2 + i * 0.3;
+      group.add(ring);
+    }
+
+    // Stadium lights (4 corners)
+    for (let i = 0; i < 4; i++) {
+      const angle = (i / 4) * Math.PI * 2 + Math.PI / 4;
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 3, 8), new THREE.MeshStandardMaterial({ color: "#2a2a2a" }));
+      pole.position.set(Math.cos(angle) * 2.2, 1.5, Math.sin(angle) * 2.2);
+      group.add(pole);
+
+      const light = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 6), new THREE.MeshStandardMaterial({ color: "#ffff88", emissive: "#ffff44", emissiveIntensity: 1.5 }));
+      light.position.set(Math.cos(angle) * 2.2, 3.1, Math.sin(angle) * 2.2);
+      group.add(light);
+    }
+  }
+
+  group.traverse((child) => {
+    if ((child as import("three").Mesh).isMesh) {
+      child.castShadow = true;
+      child.receiveShadow = true;
+    }
+  });
+  return group;
+}
+
+// ============================================================
+// STRUCTURE GEOMETRIES V3 (Lighthouse2, Windmill2)
+// ============================================================
+
+export function createStructureGeometry3(
+  THREE: typeof import("three"),
+  type: "lighthouse2" | "windmill2",
+  color?: string,
+  metalness?: number,
+  roughness?: number
+): import("three").Group {
+  const group = new THREE.Group();
+
+  if (type === "lighthouse2") {
+    const towerMat = new THREE.MeshStandardMaterial({
+      color: color || "#ffffff",
+      roughness: roughness ?? 0.7,
+    });
+    const redMat = new THREE.MeshStandardMaterial({ color: "#cc0000", roughness: 0.6 });
+    const lightMat = new THREE.MeshStandardMaterial({
+      color: "#ffff88",
+      emissive: "#ffff44",
+      emissiveIntensity: 3,
+      roughness: 0.2,
+    });
+
+    // Tall tapered tower
+    for (let i = 0; i < 6; i++) {
+      const seg = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.7 - i * 0.07, 0.75 - i * 0.07, 0.8, 12),
+        i % 2 === 0 ? towerMat : redMat
+      );
+      seg.position.y = 0.8 + i * 0.8;
+      group.add(seg);
+    }
+
+    // Light room at top
+    const lightRoom = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.35, 0.35, 0.6, 12),
+      new THREE.MeshStandardMaterial({ color: "#88ccff", transparent: true, opacity: 0.6, roughness: 0.1 })
+    );
+    lightRoom.position.y = 5.3;
+    group.add(lightRoom);
+
+    // Glowing light
+    const light = new THREE.Mesh(new THREE.SphereGeometry(0.25, 12, 8), lightMat);
+    light.position.y = 5.3;
+    group.add(light);
+
+    // Roof
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(0.45, 0.5, 12), redMat);
+    roof.position.y = 5.85;
+    group.add(roof);
+
+    // Rotating lighthouse beam pivot
+    const beaconPivot = new THREE.Group();
+    beaconPivot.position.set(0, 5.3, 0);
+    beaconPivot.userData.beacon = true;
+
+    const beamMat = new THREE.MeshStandardMaterial({
+      color: "#ffff66",
+      emissive: "#ffff22",
+      emissiveIntensity: 1.5,
+      transparent: true,
+      opacity: 0.28,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
+
+    const beam = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.03, 0.38, 2, 16, 1, true),
+      beamMat
+    );
+    beam.rotation.x = Math.PI / 2;
+    beam.position.z = 1;
+    beaconPivot.add(beam);
+
+    const beacon = new THREE.Mesh(
+      new THREE.SphereGeometry(0.08, 8, 6),
+      lightMat
+    );
+    beacon.position.y = 0.9;
+    beaconPivot.add(beacon);
+    group.add(beaconPivot);
+  } else if (type === "windmill2") {
+    const towerMat = new THREE.MeshStandardMaterial({
+      color: color || "#d4a373",
+      roughness: roughness ?? 0.8,
+    });
+    const bladeMat = new THREE.MeshStandardMaterial({ color: "#f0f0f0", roughness: 0.7 });
+    const hubMat = new THREE.MeshStandardMaterial({ color: "#2a2a2a", metalness: 0.9, roughness: 0.2 });
+
+    // Base
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(1, 1.2, 0.3, 12), new THREE.MeshStandardMaterial({ color: "#8a7a6a", roughness: 0.9 }));
+    base.position.y = 0.15;
+    group.add(base);
+
+    // Tall tower (tapered)
+    const tower = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 1.1, 4, 12), towerMat);
+    tower.position.y = 2.3;
+    group.add(tower);
+
+    // Roof cap
+    const cap = new THREE.Mesh(new THREE.ConeGeometry(0.6, 0.8, 12), new THREE.MeshStandardMaterial({ color: "#8b4513", roughness: 0.8 }));
+    cap.position.y = 4.7;
+    group.add(cap);
+
+    // Hub
+    const hub = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 8), hubMat);
+    hub.position.set(0, 4, 1);
+    group.add(hub);
+
+    // Rotating blade group centered on the hub
+    const bladeGroup = new THREE.Group();
+    bladeGroup.position.set(0, 4, 1);
+    bladeGroup.userData.windmillBlades = true;
+
+    for (let i = 0; i < 6; i++) {
+      const angle = (i / 6) * Math.PI * 2;
+      const blade = new THREE.Mesh(
+        new THREE.BoxGeometry(0.2, 2.2, 0.05),
+        bladeMat
+      );
+      blade.position.set(
+        Math.cos(angle) * 1.1,
+        Math.sin(angle) * 1.1,
+        0
+      );
+      blade.rotation.z = angle;
+      bladeGroup.add(blade);
+    }
+
+    group.add(bladeGroup);
+
+    // Door
+    const door = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.5, 0.05), new THREE.MeshStandardMaterial({ color: "#3a2a1a" }));
+    door.position.set(0, 0.4, 1.05);
+    group.add(door);
+  }
+
+  group.traverse((child) => {
+    if ((child as import("three").Mesh).isMesh) {
+      child.castShadow = true;
+      child.receiveShadow = true;
+    }
+  });
+  return group;
+}
