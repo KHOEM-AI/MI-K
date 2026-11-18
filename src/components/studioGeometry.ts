@@ -3014,3 +3014,249 @@ export function createStructureGeometry(
   });
   return group;
 }
+
+// ============================================================
+// STRUCTURE GEOMETRIES V2 (Satellite Dish, Telescope, Fountain, Bridge2, Tower, Pyramid)
+// ============================================================
+
+export function createStructureGeometry2(
+  THREE: typeof import("three"),
+  type: "satellitedish" | "telescope" | "fountain" | "bridge2" | "tower" | "pyramid",
+  color?: string,
+  metalness?: number,
+  roughness?: number
+): import("three").Group {
+  const group = new THREE.Group();
+
+  if (type === "satellitedish") {
+    const metalMat = new THREE.MeshStandardMaterial({
+      color: color || "#d0d0d0",
+      metalness: metalness ?? 0.8,
+      roughness: roughness ?? 0.3,
+    });
+    const baseMat = new THREE.MeshStandardMaterial({ color: "#5a5a5a", roughness: 0.8, metalness: 0.5 });
+
+    // Base
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.8, 0.3, 12), baseMat);
+    base.position.y = 0.15;
+    group.add(base);
+
+    // Pole
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.12, 1.5, 10), metalMat);
+    pole.position.y = 1.05;
+    group.add(pole);
+
+    // Dish (half sphere)
+    const dish = new THREE.Mesh(
+      new THREE.SphereGeometry(0.9, 24, 12, 0, Math.PI * 2, 0, Math.PI / 3),
+      metalMat
+    );
+    dish.position.y = 2.1;
+    dish.rotation.x = Math.PI / 3;
+    dish.scale.set(1, 0.6, 1);
+    group.add(dish);
+
+    // Antenna receiver
+    const receiver = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 6), new THREE.MeshStandardMaterial({ color: "#ffaa00", emissive: "#ff8800", emissiveIntensity: 0.5 }));
+    receiver.position.set(0, 2.3, 0.4);
+    group.add(receiver);
+
+    // Support struts
+    for (let i = 0; i < 3; i++) {
+      const angle = (i / 3) * Math.PI * 2;
+      const strut = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.6, 6), metalMat);
+      strut.position.set(Math.cos(angle) * 0.3, 2.3, Math.sin(angle) * 0.3);
+      strut.rotation.z = Math.cos(angle) * 0.3;
+      strut.rotation.x = Math.sin(angle) * 0.3;
+      group.add(strut);
+    }
+  } else if (type === "telescope") {
+    const metalMat = new THREE.MeshStandardMaterial({
+      color: color || "#2a2a2a",
+      metalness: metalness ?? 0.9,
+      roughness: roughness ?? 0.2,
+    });
+    const tubeMat = new THREE.MeshStandardMaterial({ color: "#a0a0a0", metalness: 0.9, roughness: 0.2 });
+
+    // Tripod base
+    for (let i = 0; i < 3; i++) {
+      const angle = (i / 3) * Math.PI * 2;
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.5, 8), metalMat);
+      leg.position.set(Math.cos(angle) * 0.6, 0.75, Math.sin(angle) * 0.6);
+      leg.rotation.z = Math.cos(angle) * 0.4;
+      leg.rotation.x = Math.sin(angle) * 0.4;
+      group.add(leg);
+    }
+
+    // Main tube
+    const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.35, 2, 16), tubeMat);
+    tube.position.set(0, 2, 0);
+    tube.rotation.z = -0.5;
+    group.add(tube);
+
+    // Eyepiece
+    const eyepiece = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.15, 0.3, 10), metalMat);
+    eyepiece.position.set(-0.7, 1.4, 0);
+    eyepiece.rotation.z = -0.5;
+    group.add(eyepiece);
+
+    // Front lens (glass)
+    const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.05, 16), new THREE.MeshStandardMaterial({ color: "#88ccff", transparent: true, opacity: 0.7, roughness: 0.1 }));
+    lens.position.set(0.6, 2.5, 0);
+    lens.rotation.z = -0.5;
+    group.add(lens);
+  } else if (type === "fountain") {
+    const stoneMat = new THREE.MeshStandardMaterial({
+      color: color || "#d0d0d0",
+      roughness: roughness ?? 0.9,
+      metalness: metalness ?? 0.1,
+    });
+    const waterMat = new THREE.MeshStandardMaterial({
+      color: "#4fc3f7",
+      roughness: 0.1,
+      metalness: 0.5,
+      transparent: true,
+      opacity: 0.8,
+    });
+
+    // Base pool
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.7, 0.3, 24), stoneMat);
+    base.position.y = 0.15;
+    group.add(base);
+
+    // Water in pool
+    const water = new THREE.Mesh(new THREE.CircleGeometry(1.4, 24), waterMat);
+    water.rotation.x = -Math.PI / 2;
+    water.position.y = 0.32;
+    group.add(water);
+
+    // Center pillar
+    const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 1, 12), stoneMat);
+    pillar.position.y = 0.8;
+    group.add(pillar);
+
+    // Upper basin
+    const upperBasin = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.5, 0.2, 16), stoneMat);
+    upperBasin.position.y = 1.3;
+    group.add(upperBasin);
+
+    // Upper water
+    const upperWater = new THREE.Mesh(new THREE.CircleGeometry(0.7, 16), waterMat);
+    upperWater.rotation.x = -Math.PI / 2;
+    upperWater.position.y = 1.42;
+    group.add(upperWater);
+
+    // Top spout
+    const spout = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.5, 10), stoneMat);
+    spout.position.y = 1.6;
+    group.add(spout);
+
+    // Water spray (particles)
+    for (let i = 0; i < 8; i++) {
+      const angle = (i / 8) * Math.PI * 2;
+      const drop = new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 5), waterMat);
+      drop.position.set(Math.cos(angle) * 0.5, 1.85, Math.sin(angle) * 0.5);
+      group.add(drop);
+    }
+  } else if (type === "bridge2") {
+    const stoneMat = new THREE.MeshStandardMaterial({
+      color: color || "#8a7a5a",
+      roughness: roughness ?? 0.9,
+      metalness: metalness ?? 0.1,
+    });
+
+    // Arch bridge
+    const archGeo = new THREE.TorusGeometry(1.5, 0.2, 8, 24, Math.PI);
+    const arch = new THREE.Mesh(archGeo, stoneMat);
+    arch.position.y = 1.5;
+    group.add(arch);
+
+    // Road deck
+    const deck = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.2, 1.5), stoneMat);
+    deck.position.y = 1.5;
+    group.add(deck);
+
+    // Side railings
+    for (const side of [-0.75, 0.75]) {
+      const rail = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.3, 0.1), stoneMat);
+      rail.position.set(0, 1.75, side);
+      group.add(rail);
+    }
+  } else if (type === "tower") {
+    const stoneMat = new THREE.MeshStandardMaterial({
+      color: color || "#a0a0a0",
+      roughness: roughness ?? 0.8,
+      metalness: metalness ?? 0.2,
+    });
+
+    // Base (wider)
+    const base = new THREE.Mesh(new THREE.BoxGeometry(2, 0.5, 2), stoneMat);
+    base.position.y = 0.25;
+    group.add(base);
+
+    // Middle section
+    const middle = new THREE.Mesh(new THREE.BoxGeometry(1.5, 3, 1.5), stoneMat);
+    middle.position.y = 2;
+    group.add(middle);
+
+    // Top section (narrower)
+    const top = new THREE.Mesh(new THREE.BoxGeometry(1, 2, 1), stoneMat);
+    top.position.y = 4.5;
+    group.add(top);
+
+    // Crown (pyramid roof)
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(0.8, 1, 4), new THREE.MeshStandardMaterial({ color: "#c0392b", roughness: 0.7 }));
+    roof.position.y = 6;
+    roof.rotation.y = Math.PI / 4;
+    group.add(roof);
+
+    // Windows
+    const windowMat = new THREE.MeshStandardMaterial({ color: "#ffdd44", emissive: "#ffaa00", emissiveIntensity: 0.6 });
+    for (let floor = 0; floor < 4; floor++) {
+      for (const side of [-0.76, 0.76]) {
+        const win = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.3, 0.05), windowMat);
+        win.position.set(side, 0.8 + floor * 0.7, 0);
+        win.rotation.y = Math.PI / 2;
+        group.add(win);
+      }
+    }
+  } else if (type === "pyramid") {
+    const stoneMat = new THREE.MeshStandardMaterial({
+      color: color || "#d4a373",
+      roughness: roughness ?? 0.9,
+      metalness: metalness ?? 0.1,
+    });
+    const goldMat = new THREE.MeshStandardMaterial({
+      color: "#ffd700",
+      metalness: 1,
+      roughness: 0.2,
+      emissive: "#ffaa00",
+      emissiveIntensity: 0.3,
+    });
+
+    // Main pyramid (square base, 4 sides)
+    const pyramid = new THREE.Mesh(new THREE.ConeGeometry(1.8, 2.5, 4), stoneMat);
+    pyramid.position.y = 1.25;
+    pyramid.rotation.y = Math.PI / 4;
+    group.add(pyramid);
+
+    // Gold cap on top
+    const cap = new THREE.Mesh(new THREE.ConeGeometry(0.35, 0.4, 4), goldMat);
+    cap.position.y = 2.6;
+    cap.rotation.y = Math.PI / 4;
+    group.add(cap);
+
+    // Entrance
+    const entrance = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.8, 0.1), new THREE.MeshStandardMaterial({ color: "#1a1a1a", roughness: 0.9 }));
+    entrance.position.set(0, 0.4, 1.3);
+    group.add(entrance);
+  }
+
+  group.traverse((child) => {
+    if ((child as import("three").Mesh).isMesh) {
+      child.castShadow = true;
+      child.receiveShadow = true;
+    }
+  });
+  return group;
+}
