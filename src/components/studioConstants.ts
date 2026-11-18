@@ -142,6 +142,14 @@ export const presets: { name: string; shape: Shape }[] = [
   { name: "Orchid", shape: "orchid" },
   { name: "Hibiscus", shape: "hibiscus" },
   { name: "Bougainvillea", shape: "bougainvillea" },
+  { name: "Mushroom2", shape: "mushroom2" },
+  { name: "Cactus2", shape: "cactus2" },
+  { name: "Pineapple", shape: "pineapple" },
+  { name: "Coconut", shape: "coconut" },
+  { name: "Strawberry", shape: "strawberry" },
+  { name: "Cherry", shape: "cherry" },
+  { name: "Lemon", shape: "lemon" },
+  { name: "Peach", shape: "peach" },
 ];
 
 

@@ -5313,3 +5313,217 @@ export function createNatureGeometry(
   });
   return group;
 }
+
+// ============================================================
+// FRUIT GEOMETRIES V2 (Pineapple, Coconut, Strawberry, Cherry, Lemon, Peach)
+// ============================================================
+
+export function createFruitGeometry2(
+  THREE: typeof import("three"),
+  type: "pineapple" | "coconut" | "strawberry" | "cherry" | "lemon" | "peach",
+  color?: string,
+  metalness?: number,
+  roughness?: number
+): import("three").Group {
+  const group = new THREE.Group();
+
+  if (type === "pineapple") {
+    const bodyMat = new THREE.MeshStandardMaterial({ color: color || "#e8b04a", roughness: roughness ?? 0.7 });
+    const leafMat = new THREE.MeshStandardMaterial({ color: "#2d7a2d", roughness: 0.8 });
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.25, 0.7, 12), bodyMat);
+    body.position.y = 0.35;
+    group.add(body);
+    for (let i = 0; i < 8; i++) {
+      const angle = (i / 8) * Math.PI * 2;
+      const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.4, 4), leafMat);
+      leaf.position.set(Math.cos(angle) * 0.15, 0.8, Math.sin(angle) * 0.15);
+      leaf.rotation.z = Math.cos(angle) * 0.3;
+      leaf.rotation.x = Math.sin(angle) * 0.3;
+      group.add(leaf);
+    }
+    // Crosshatch pattern (diamond texture approximation)
+    for (let i = 0; i < 5; i++) {
+      for (let j = 0; j < 3; j++) {
+        const diamond = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.02), new THREE.MeshStandardMaterial({ color: "#a87a2a", roughness: 0.9 }));
+        diamond.position.set(-0.15 + i * 0.075, 0.15 + j * 0.15, 0.31);
+        diamond.rotation.z = Math.PI / 4;
+        group.add(diamond);
+      }
+    }
+  } else if (type === "coconut") {
+    const shellMat = new THREE.MeshStandardMaterial({ color: color || "#6b4423", roughness: roughness ?? 0.9 });
+    const meatMat = new THREE.MeshStandardMaterial({ color: "#f5f0e0", roughness: 0.7 });
+    const shell = new THREE.Mesh(new THREE.SphereGeometry(0.3, 16, 12), shellMat);
+    shell.position.y = 0.3;
+    group.add(shell);
+    // Coconut face (3 holes)
+    for (const [x, y] of [[-0.1, 0.15], [0.1, 0.15], [0, 0]]) {
+      const hole = new THREE.Mesh(new THREE.CircleGeometry(0.03, 8), new THREE.MeshStandardMaterial({ color: "#2a1a0a" }));
+      hole.position.set(x, 0.3 + y, 0.29);
+      group.add(hole);
+    }
+    // Cracked open half
+    const half = new THREE.Mesh(new THREE.SphereGeometry(0.28, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), meatMat);
+    half.position.set(0.5, 0.28, 0);
+    half.rotation.x = Math.PI;
+    half.scale.set(1, 0.6, 1);
+    group.add(half);
+  } else if (type === "strawberry") {
+    const berryMat = new THREE.MeshStandardMaterial({ color: color || "#e63946", roughness: roughness ?? 0.4 });
+    const seedMat = new THREE.MeshStandardMaterial({ color: "#ffdd44", roughness: 0.5 });
+    const leafMat = new THREE.MeshStandardMaterial({ color: "#2d7a2d", roughness: 0.8 });
+    const berry = new THREE.Mesh(new THREE.SphereGeometry(0.25, 16, 12), berryMat);
+    berry.position.y = 0.25;
+    berry.scale.set(1, 1.2, 1);
+    group.add(berry);
+    // Seeds
+    for (let i = 0; i < 20; i++) {
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.random() * Math.PI;
+      const seed = new THREE.Mesh(new THREE.SphereGeometry(0.02, 6, 4), seedMat);
+      seed.position.set(
+        Math.sin(phi) * Math.cos(theta) * 0.24,
+        0.25 + Math.cos(phi) * 0.28,
+        Math.sin(phi) * Math.sin(theta) * 0.24
+      );
+      group.add(seed);
+    }
+    // Crown leaves
+    for (let i = 0; i < 5; i++) {
+      const angle = (i / 5) * Math.PI * 2;
+      const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.15, 4), leafMat);
+      leaf.position.set(Math.cos(angle) * 0.08, 0.55, Math.sin(angle) * 0.08);
+      leaf.rotation.z = Math.cos(angle) * 0.5;
+      group.add(leaf);
+    }
+  } else if (type === "cherry") {
+    const cherryMat = new THREE.MeshStandardMaterial({ color: color || "#cc0000", roughness: roughness ?? 0.3 });
+    const stemMat = new THREE.MeshStandardMaterial({ color: "#5d3a1a", roughness: 0.9 });
+    // Two cherries
+    for (const x of [-0.12, 0.12]) {
+      const cherry = new THREE.Mesh(new THREE.SphereGeometry(0.18, 16, 12), cherryMat);
+      cherry.position.set(x, 0.2, 0);
+      group.add(cherry);
+      const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.3, 4), stemMat);
+      stem.position.set(x, 0.4, 0);
+      stem.rotation.z = x * 2;
+      group.add(stem);
+    }
+    // Leaf
+    const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 6), new THREE.MeshStandardMaterial({ color: "#2d6a2d" }));
+    leaf.position.set(0, 0.55, 0);
+    leaf.scale.set(1.5, 0.2, 0.6);
+    group.add(leaf);
+  } else if (type === "lemon") {
+    const lemonMat = new THREE.MeshStandardMaterial({ color: color || "#ffdd44", roughness: roughness ?? 0.4 });
+    const lemon = new THREE.Mesh(new THREE.SphereGeometry(0.28, 16, 12), lemonMat);
+    lemon.position.y = 0.3;
+    lemon.scale.set(1.2, 0.9, 0.9);
+    group.add(lemon);
+    // Pointed ends
+    for (const x of [-0.3, 0.3]) {
+      const tip = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.12, 8), lemonMat);
+      tip.position.set(x, 0.3, 0);
+      tip.rotation.z = x > 0 ? -Math.PI / 2 : Math.PI / 2;
+      group.add(tip);
+    }
+  } else if (type === "peach") {
+    const peachMat = new THREE.MeshStandardMaterial({ color: color || "#ffaa77", roughness: roughness ?? 0.4 });
+    const leafMat = new THREE.MeshStandardMaterial({ color: "#2d6a2d", roughness: 0.8 });
+    const peach = new THREE.Mesh(new THREE.SphereGeometry(0.28, 16, 12), peachMat);
+    peach.position.y = 0.3;
+    peach.scale.set(1, 1.1, 1);
+    group.add(peach);
+    // Crease
+    const crease = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.5, 0.02), new THREE.MeshStandardMaterial({ color: "#cc6655" }));
+    crease.position.set(0, 0.3, 0.25);
+    group.add(crease);
+    // Leaf
+    const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 6), leafMat);
+    leaf.position.set(0.1, 0.6, 0);
+    leaf.scale.set(1.5, 0.2, 0.6);
+    group.add(leaf);
+  }
+
+  group.traverse((child) => {
+    if ((child as import("three").Mesh).isMesh) {
+      child.castShadow = true;
+      child.receiveShadow = true;
+    }
+  });
+  return group;
+}
+
+// ============================================================
+// MUSHROOM2 & CACTUS2 GEOMETRIES
+// ============================================================
+
+export function createPlantExtraGeometry(
+  THREE: typeof import("three"),
+  type: "mushroom2" | "cactus2",
+  color?: string,
+  metalness?: number,
+  roughness?: number
+): import("three").Group {
+  const group = new THREE.Group();
+
+  if (type === "mushroom2") {
+    const stemMat = new THREE.MeshStandardMaterial({ color: "#f5f0e0", roughness: roughness ?? 0.8 });
+    const capMat = new THREE.MeshStandardMaterial({ color: color || "#c0392b", roughness: 0.6 });
+    const spotMat = new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.6 });
+    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.2, 0.8, 12), stemMat);
+    stem.position.y = 0.4;
+    group.add(stem);
+    const cap = new THREE.Mesh(new THREE.SphereGeometry(0.45, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2), capMat);
+    cap.position.y = 0.8;
+    cap.scale.set(1, 0.7, 1);
+    group.add(cap);
+    for (let i = 0; i < 8; i++) {
+      const angle = (i / 8) * Math.PI * 2;
+      const r = 0.15 + Math.random() * 0.15;
+      const spot = new THREE.Mesh(new THREE.SphereGeometry(0.05, 6, 4), spotMat);
+      spot.position.set(Math.cos(angle) * r, 0.8 + Math.sqrt(Math.max(0, 0.45 * 0.45 - r * r)) * 0.7, Math.sin(angle) * r);
+      spot.scale.set(1, 0.3, 1);
+      group.add(spot);
+    }
+  } else if (type === "cactus2") {
+    const cactusMat = new THREE.MeshStandardMaterial({ color: color || "#3a8a3a", roughness: roughness ?? 0.8 });
+    const spineMat = new THREE.MeshStandardMaterial({ color: "#e8e8c0", roughness: 0.6 });
+    const flowerMat = new THREE.MeshStandardMaterial({ color: "#ff69b4", roughness: 0.4 });
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.3, 1.8, 12), cactusMat);
+    trunk.position.y = 0.9;
+    group.add(trunk);
+    // Arms
+    for (const side of [-1, 1]) {
+      const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 0.8, 10), cactusMat);
+      arm.position.set(side * 0.35, 1.2, 0);
+      arm.rotation.z = side * -0.7;
+      group.add(arm);
+      const armTop = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.5, 10), cactusMat);
+      armTop.position.set(side * 0.7, 1.55, 0);
+      group.add(armTop);
+    }
+    // Spines
+    for (let i = 0; i < 15; i++) {
+      const spine = new THREE.Mesh(new THREE.ConeGeometry(0.02, 0.08, 4), spineMat);
+      const angle = (i / 15) * Math.PI * 2;
+      spine.position.set(Math.cos(angle) * 0.26, 0.2 + i * 0.11, Math.sin(angle) * 0.26);
+      spine.rotation.z = Math.PI / 2;
+      spine.rotation.y = angle;
+      group.add(spine);
+    }
+    // Flower
+    const flower = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 8), flowerMat);
+    flower.position.y = 1.9;
+    flower.scale.set(1, 0.5, 1);
+    group.add(flower);
+  }
+
+  group.traverse((child) => {
+    if ((child as import("three").Mesh).isMesh) {
+      child.castShadow = true;
+      child.receiveShadow = true;
+    }
+  });
+  return group;
+}
