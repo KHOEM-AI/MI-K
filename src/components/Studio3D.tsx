@@ -3,12 +3,13 @@ import { Eye, EyeOff, Lock, Unlock, Pencil, HelpCircle, X, Camera, Trash2, Copy,
 import { saveAsset } from "../lib/storage.mjs";
 import { UI3DPreview } from "./UI3DPreview";
 import { presets, MATERIAL_PRESETS, zero, one, createId } from "./studioConstants";
-import { createGeometry, createCarGeometry, createFurnitureGeometry, createKhoemGeometry, createHighwayGeometry, disposeMesh } from "./studioGeometry";
+import { createGeometry, createCarGeometry, createFurnitureGeometry, createKhoemGeometry, createHighwayGeometry, createBridgeGeometry, createTrafficLightGeometry, disposeMesh } from "./studioGeometry";
 import { CameraPresets } from "./CameraPresets";
 import { SceneLightingPanel } from "./SceneLightingPanel";
 import { MaterialPanel } from "./MaterialPanel";
 import { TransformPanel } from "./TransformPanel";
 import { EnvironmentTemplates, generateTemplate } from "./EnvironmentTemplates";
+import { RoadElementsPanel } from "./RoadElementsPanel";
 import type { Shape, Vector3, SceneObject, StudioAsset, Studio3DProps } from "./studioTypes";
 import {
   listScenes,
@@ -438,8 +439,18 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
 
       let wheelAngle = 0;
       let ledTime = 0;
+      let trafficTime = 0;
+      let previousFrameTime = 0;
+
       const animate = () => {
         if (cleanup || !renderer || !scene || !camera) return;
+        const now = performance.now();
+        const deltaSeconds = previousFrameTime
+          ? Math.min((now - previousFrameTime) / 1000, 0.1)
+          : 0;
+        previousFrameTime = now;
+        trafficTime += deltaSeconds;
+
         controls?.update();
 
         // Animate car wheels around their axle
@@ -473,6 +484,29 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
               });
             });
           }
+        });
+
+        // Animate Traffic Lights using real elapsed time
+        const cycle = trafficTime % 9;
+        meshesRef.current.forEach((obj) => {
+          const lights = obj.userData.trafficLights;
+          if (!lights) return;
+
+          const setLight = (mesh: import("three").Mesh, active: boolean) => {
+            const materials = Array.isArray(mesh.material)
+              ? mesh.material
+              : [mesh.material];
+
+            materials.forEach((material) => {
+              if ("emissiveIntensity" in material) {
+                material.emissiveIntensity = active ? 2.5 : 0.05;
+              }
+            });
+          };
+
+          setLight(lights.red, cycle < 3);
+          setLight(lights.green, cycle >= 3 && cycle < 6);
+          setLight(lights.yellow, cycle >= 6);
         });
 
         renderer.render(scene, camera);
@@ -735,6 +769,10 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
               obj = createKhoemGeometry(THREE, item.color, item.metalness, item.roughness);
             } else if (item.shape === "highway") {
               obj = createHighwayGeometry(THREE, item.color, item.metalness, item.roughness);
+            } else if (item.shape === "bridge") {
+              obj = createBridgeGeometry(THREE, item.color, item.metalness, item.roughness);
+            } else if (item.shape === "trafficlight") {
+              obj = createTrafficLightGeometry(THREE, item.color, item.metalness, item.roughness);
             } else {
               let geo: import("three").BufferGeometry;
               if (item.shape === "text") {
@@ -798,6 +836,28 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       cancelled = true;
     };
   }, [objects, selectedId, sceneReady]);
+
+  function handleQuickAdd(shape: Shape) {
+    const preset = presets.find(p => p.shape === shape);
+    const count = objects.filter((o) => o.shape === shape).length + 1;
+    const next: SceneObject = {
+      id: createId(),
+      name: `${preset?.name ?? "Object"} ${count}`,
+      shape,
+      color: shape === "highway" || shape === "bridge" ? "#2a2a2a" : "#fbbf24",
+      metalness: 0.2,
+      roughness: 0.8,
+      position: { x: ((objects.length % 3) - 1) * 5, y: 0, z: Math.floor(objects.length / 3) * 5 },
+      rotation: { x: 0, y: 0, z: 0 },
+      scale: { x: 1, y: 1, z: 1 },
+      visible: true,
+      locked: false,
+      textureData: null,
+    };
+    commitObjects([...objects, next]);
+    setSelectedId(next.id);
+    setMessage(`បានបន្ថែម ${next.name}។`);
+  }
 
   function handleLoadTemplate(template: "park" | "room" | "studio" | "highway") {
     const newObjects = generateTemplate(template);
@@ -1553,6 +1613,18 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             return;
           }
 
+          if (item.shape === "bridge" || item.shape === "trafficlight") {
+            const g = item.shape === "bridge"
+              ? createBridgeGeometry(THREE, item.color, item.metalness, item.roughness)
+              : createTrafficLightGeometry(THREE, item.color, item.metalness, item.roughness);
+            g.position.set(item.position.x, item.position.y, item.position.z);
+            g.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            g.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            g.name = item.name;
+            exportScene.add(g);
+            return;
+          }
+
           let geo: import("three").BufferGeometry;
           if (item.shape === "text") {
             const { FontLoader } = await import("three/examples/jsm/loaders/FontLoader.js");
@@ -2224,6 +2296,18 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             return;
           }
 
+          if (item.shape === "bridge" || item.shape === "trafficlight") {
+            const g = item.shape === "bridge"
+              ? createBridgeGeometry(THREE, item.color, item.metalness, item.roughness)
+              : createTrafficLightGeometry(THREE, item.color, item.metalness, item.roughness);
+            g.position.set(item.position.x, item.position.y, item.position.z);
+            g.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            g.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            g.name = item.name;
+            exportScene!.add(g);
+            return;
+          }
+
           let geo: import("three").BufferGeometry;
           if (item.shape === "text") {
             const { FontLoader } = await import("three/examples/jsm/loaders/FontLoader.js");
@@ -2428,6 +2512,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
           </div>
 
           <EnvironmentTemplates onLoadTemplate={handleLoadTemplate} />
+          <RoadElementsPanel onAdd={handleQuickAdd} />
 
           <div className="studio-history-controls">
             <button type="button" className="upload-button" onClick={undo} disabled={!history.past.length}>

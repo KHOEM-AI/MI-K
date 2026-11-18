@@ -18,6 +18,8 @@ export const presets: { name: string; shape: Shape }[] = [
   { name: "Lamp", shape: "lamp" },
   { name: "KHOEM-AI", shape: "khoem" },
   { name: "Dual Highway", shape: "highway" },
+  { name: "Bridge", shape: "bridge" },
+  { name: "Traffic Light", shape: "trafficlight" },
 ];
 
 export const MATERIAL_PRESETS = [

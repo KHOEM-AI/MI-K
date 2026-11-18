@@ -652,6 +652,98 @@ export function createHighwayGeometry(
   return group;
 }
 
+
+export function createBridgeGeometry(
+  THREE: typeof import("three"),
+  color?: string,
+  metalness?: number,
+  roughness?: number
+): import("three").Group {
+  const group = new THREE.Group();
+  const roadMat = new THREE.MeshStandardMaterial({ color: color || "#2a2a2a", metalness: metalness ?? 0.1, roughness: roughness ?? 0.9 });
+  const concreteMat = new THREE.MeshStandardMaterial({ color: "#888888", metalness: 0.1, roughness: 0.9 });
+  const railMat = new THREE.MeshStandardMaterial({ color: "#a0a0a0", metalness: 0.9, roughness: 0.2 });
+
+  // Elevated Road
+  const road = new THREE.Mesh(new THREE.BoxGeometry(6, 0.2, 30), roadMat);
+  road.position.y = 4;
+  group.add(road);
+
+  // Side Rails
+  const railL = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.5, 30), railMat);
+  railL.position.set(-3, 4.35, 0);
+  group.add(railL);
+  const railR = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.5, 30), railMat);
+  railR.position.set(3, 4.35, 0);
+  group.add(railR);
+
+  // Pillars (Supporting the bridge)
+  const pillarGeo = new THREE.CylinderGeometry(0.8, 1, 4, 16);
+  [-10, 0, 10].forEach((z) => {
+    const pillar = new THREE.Mesh(pillarGeo, concreteMat);
+    pillar.position.set(0, 2, z);
+    group.add(pillar);
+  });
+
+  // Ramps (Slanted to connect to ground)
+  const rampGeo = new THREE.BoxGeometry(6, 0.2, 10);
+  const rampL = new THREE.Mesh(rampGeo, roadMat);
+  rampL.position.set(0, 2, -20);
+  rampL.rotation.x = -Math.PI / 6;
+  group.add(rampL);
+
+  const rampR = new THREE.Mesh(rampGeo, roadMat);
+  rampR.position.set(0, 2, 20);
+  rampR.rotation.x = Math.PI / 6;
+  group.add(rampR);
+
+  group.traverse(c => { if ((c as import("three").Mesh).isMesh) { c.castShadow = true; c.receiveShadow = true; }});
+  return group;
+}
+
+export function createTrafficLightGeometry(
+  THREE: typeof import("three"),
+  color?: string,
+  metalness?: number,
+  roughness?: number
+): import("three").Group {
+  const group = new THREE.Group();
+  const poleMat = new THREE.MeshStandardMaterial({ color: "#1a1a1a", metalness: 0.8, roughness: 0.3 });
+  const boxMat = new THREE.MeshStandardMaterial({ color: "#222222", metalness: 0.5, roughness: 0.5 });
+  const housingMat = new THREE.MeshStandardMaterial({ color: "#333333", metalness: 0.5, roughness: 0.6 });
+
+  // Pole
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 3, 8), poleMat);
+  pole.position.y = 1.5;
+  group.add(pole);
+
+  // Housing Box
+  const housing = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1.5, 0.4), housingMat);
+  housing.position.set(0, 3.5, 0);
+  group.add(housing);
+
+  // Lights (Red, Yellow, Green)
+  const createLight = (y: number, colorHex: string, name: string) => {
+    const mat = new THREE.MeshStandardMaterial({ color: colorHex, emissive: colorHex, emissiveIntensity: 0.1 });
+    const light = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.1, 16), mat);
+    light.rotation.x = Math.PI / 2;
+    light.position.set(0, y, 0.21);
+    light.name = name;
+    group.add(light);
+    return light;
+  };
+
+  const red = createLight(4.0, "#ff0000", "red");
+  const yellow = createLight(3.5, "#ffff00", "yellow");
+  const green = createLight(3.0, "#00ff00", "green");
+
+  // Store in userData for animation
+  group.userData.trafficLights = { red, yellow, green };
+
+  group.traverse(c => { if ((c as import("three").Mesh).isMesh) { c.castShadow = true; c.receiveShadow = true; }});
+  return group;
+}
+
 export function disposeMesh(obj: import("three").Object3D) {
   obj.traverse((child) => {
     if ((child as import("three").Mesh).isMesh) {
