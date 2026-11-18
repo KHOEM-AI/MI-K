@@ -190,6 +190,14 @@ export const presets: { name: string; shape: Shape }[] = [
   { name: "Bank Urban Low", shape: "bank_urban_low" },
   { name: "Bank Rural Tall", shape: "bank_rural_tall" },
   { name: "Bank Rural Low", shape: "bank_rural_low" },
+  { name: "School", shape: "school" },
+  { name: "University", shape: "university" },
+  { name: "Library", shape: "library" },
+  { name: "Police Station", shape: "policestation" },
+  { name: "Fire Station", shape: "firestation" },
+  { name: "Post Office", shape: "postoffice" },
+  { name: "Court House", shape: "courthouse" },
+  { name: "City Hall", shape: "cityhall" },
 ];
 
 

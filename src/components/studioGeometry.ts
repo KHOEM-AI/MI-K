@@ -6593,3 +6593,273 @@ export function createBankGeometry(
   });
   return group;
 }
+
+// ============================================================
+// CIVIC GEOMETRIES (School, University, Library, Police Station, Fire Station, Post Office, Court House, City Hall)
+// ============================================================
+
+export function createCivicGeometry(
+  THREE: typeof import("three"),
+  type: "school" | "university" | "library" | "policestation" | "firestation" | "postoffice" | "courthouse" | "cityhall",
+  color?: string,
+  metalness?: number,
+  roughness?: number
+): import("three").Group {
+  const group = new THREE.Group();
+  const wallMat = new THREE.MeshStandardMaterial({
+    color: color || "#e8e0d0",
+    roughness: roughness ?? 0.7,
+    metalness: metalness ?? 0.1,
+  });
+  const glassMat = new THREE.MeshStandardMaterial({ color: "#88ccff", metalness: 0.5, roughness: 0.1, transparent: true, opacity: 0.7 });
+  const accentMat = new THREE.MeshStandardMaterial({ color: "#cc0000", roughness: 0.5 });
+
+  if (type === "school") {
+    // Main building
+    const building = new THREE.Mesh(new THREE.BoxGeometry(4, 2.5, 2), wallMat);
+    building.position.y = 1.25;
+    group.add(building);
+    // Roof
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(2.8, 1, 4), new THREE.MeshStandardMaterial({ color: "#8b4513", roughness: 0.8 }));
+    roof.position.y = 3;
+    roof.rotation.y = Math.PI / 4;
+    roof.scale.set(1.2, 1, 0.7);
+    group.add(roof);
+    // Windows
+    for (let i = 0; i < 5; i++) {
+      for (const side of [-1, 1]) {
+        const win = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.5, 0.05), glassMat);
+        win.position.set(-1.6 + i * 0.8, 1.5, side * 1.01);
+        group.add(win);
+      }
+    }
+    // Bell tower
+    const tower = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1.2, 0.6), wallMat);
+    tower.position.set(0, 3.2, 0);
+    group.add(tower);
+    const bell = new THREE.Mesh(new THREE.SphereGeometry(0.15, 12, 8), new THREE.MeshStandardMaterial({ color: "#ffd700", metalness: 1, roughness: 0.2 }));
+    bell.position.set(0, 3.5, 0.31);
+    group.add(bell);
+    // Flag pole
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.5, 6), new THREE.MeshStandardMaterial({ color: "#d0d0d0", metalness: 0.9, roughness: 0.2 }));
+    pole.position.set(1.8, 2, 1.5);
+    group.add(pole);
+    const flag = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.3, 0.02), accentMat);
+    flag.position.set(2.05, 2.5, 1.5);
+    group.add(flag);
+  } else if (type === "university") {
+    // Main building (larger)
+    const building = new THREE.Mesh(new THREE.BoxGeometry(6, 3, 2.5), wallMat);
+    building.position.y = 1.5;
+    group.add(building);
+    // Columns (classical)
+    for (let i = 0; i < 6; i++) {
+      const col = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.18, 2.8, 12), new THREE.MeshStandardMaterial({ color: "#f0e8d0", roughness: 0.5 }));
+      col.position.set(-2.2 + i * 0.9, 1.4, 1.4);
+      group.add(col);
+    }
+    // Triangular pediment
+    const pediment = new THREE.Mesh(new THREE.ConeGeometry(3.2, 1, 4), wallMat);
+    pediment.position.y = 3.5;
+    pediment.rotation.y = Math.PI / 4;
+    pediment.scale.set(1.2, 1, 0.4);
+    group.add(pediment);
+    // Dome
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ color: "#4a7a4a", roughness: 0.4, metalness: 0.5 }));
+    dome.position.y = 4;
+    dome.scale.set(1.5, 0.8, 0.6);
+    group.add(dome);
+    // Steps
+    for (let i = 0; i < 3; i++) {
+      const step = new THREE.Mesh(new THREE.BoxGeometry(6, 0.1, 0.4 + i * 0.3), wallMat);
+      step.position.set(0, 0.05 + i * 0.1, 1.25 + i * 0.15);
+      group.add(step);
+    }
+  } else if (type === "library") {
+    const building = new THREE.Mesh(new THREE.BoxGeometry(3.5, 2.5, 2), wallMat);
+    building.position.y = 1.25;
+    group.add(building);
+    // Large arched windows
+    for (let i = 0; i < 3; i++) {
+      const win = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1, 0.05), glassMat);
+      win.position.set(-1 + i, 1.5, 1.01);
+      group.add(win);
+      // Arch top
+      const arch = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.05, 12, 1, false, 0, Math.PI), glassMat);
+      arch.rotation.x = Math.PI / 2;
+      arch.position.set(-1 + i, 2, 1.01);
+      group.add(arch);
+    }
+    // Roof
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(3.7, 0.2, 2.2), new THREE.MeshStandardMaterial({ color: "#8b4513", roughness: 0.7 }));
+    roof.position.y = 2.6;
+    group.add(roof);
+    // Book symbol on top
+    const book = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.1, 0.4), new THREE.MeshStandardMaterial({ color: "#2a5a8a", roughness: 0.6 }));
+    book.position.y = 2.75;
+    group.add(book);
+  } else if (type === "policestation") {
+    const building = new THREE.Mesh(new THREE.BoxGeometry(3, 2, 2), new THREE.MeshStandardMaterial({ color: "#2a4a7a", roughness: 0.6 }));
+    building.position.y = 1;
+    group.add(building);
+    // Blue/white stripes
+    const stripe = new THREE.Mesh(new THREE.BoxGeometry(3.05, 0.2, 2.05), new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.5 }));
+    stripe.position.y = 1;
+    group.add(stripe);
+    // Windows with bars
+    for (let i = 0; i < 3; i++) {
+      for (const side of [-1, 1]) {
+        const win = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.05), glassMat);
+        win.position.set(-0.8 + i * 0.8, 1.3, side * 1.01);
+        group.add(win);
+      }
+    }
+    // Siren light on top
+    const siren = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 8), new THREE.MeshStandardMaterial({ color: "#ff0000", emissive: "#ff0000", emissiveIntensity: 1.5 }));
+    siren.position.y = 2.3;
+    group.add(siren);
+    // Badge
+    const badge = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.05, 6), new THREE.MeshStandardMaterial({ color: "#ffd700", metalness: 1, roughness: 0.2 }));
+    badge.rotation.x = Math.PI / 2;
+    badge.position.set(0, 1.5, 1.05);
+    group.add(badge);
+  } else if (type === "firestation") {
+    const building = new THREE.Mesh(new THREE.BoxGeometry(3.5, 2, 2.5), new THREE.MeshStandardMaterial({ color: "#8b0000", roughness: 0.7 }));
+    building.position.y = 1;
+    group.add(building);
+    // Large garage doors (front)
+    for (let i = 0; i < 2; i++) {
+      const door = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.5, 0.05), new THREE.MeshStandardMaterial({ color: "#f0f0f0", roughness: 0.5 }));
+      door.position.set(-0.7 + i * 1.4, 0.8, 1.26);
+      group.add(door);
+      // Door lines
+      for (let j = 0; j < 3; j++) {
+        const line = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.03, 0.06), new THREE.MeshStandardMaterial({ color: "#888888" }));
+        line.position.set(-0.7 + i * 1.4, 0.4 + j * 0.4, 1.27);
+        group.add(line);
+      }
+    }
+    // Fire pole (side)
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 2.5, 8), new THREE.MeshStandardMaterial({ color: "#ffd700", metalness: 1, roughness: 0.2 }));
+    pole.position.set(1.5, 1.25, -0.8);
+    group.add(pole);
+    // Bell on top
+    const bell = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 8), new THREE.MeshStandardMaterial({ color: "#ffd700", metalness: 1, roughness: 0.2 }));
+    bell.position.y = 2.3;
+    group.add(bell);
+  } else if (type === "postoffice") {
+    const building = new THREE.Mesh(new THREE.BoxGeometry(3, 2, 2), wallMat);
+    building.position.y = 1;
+    group.add(building);
+    // Roof (red)
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.2, 2.2), new THREE.MeshStandardMaterial({ color: "#cc0000", roughness: 0.7 }));
+    roof.position.y = 2.1;
+    group.add(roof);
+    // Windows
+    for (let i = 0; i < 3; i++) {
+      const win = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.05), glassMat);
+      win.position.set(-0.8 + i * 0.8, 1.3, 1.01);
+      group.add(win);
+    }
+    // Door
+    const door = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1.1, 0.05), new THREE.MeshStandardMaterial({ color: "#5d3a1a", roughness: 0.7 }));
+    door.position.set(0, 0.55, 1.01);
+    group.add(door);
+    // Mailbox out front
+    const mailbox = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.4, 0.4), new THREE.MeshStandardMaterial({ color: "#1a3a7a", roughness: 0.5 }));
+    mailbox.position.set(1.5, 0.8, 1.5);
+    group.add(mailbox);
+    // Flag on top
+    const flagPole = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1, 6), new THREE.MeshStandardMaterial({ color: "#d0d0d0", metalness: 0.9 }));
+    flagPole.position.set(-1.2, 2.6, 0);
+    group.add(flagPole);
+    const flag = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.25, 0.02), accentMat);
+    flag.position.set(-1, 2.9, 0);
+    group.add(flag);
+  } else if (type === "courthouse") {
+    // Grand building
+    const building = new THREE.Mesh(new THREE.BoxGeometry(5, 2.5, 2.5), new THREE.MeshStandardMaterial({ color: "#e8e0c8", roughness: 0.6 }));
+    building.position.y = 1.25;
+    group.add(building);
+    // Columns (grand)
+    for (let i = 0; i < 6; i++) {
+      const col = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.2, 2.4, 12), new THREE.MeshStandardMaterial({ color: "#f0e8d0", roughness: 0.4 }));
+      col.position.set(-2 + i * 0.8, 1.2, 1.4);
+      group.add(col);
+    }
+    // Pediment (triangular roof)
+    const pediment = new THREE.Mesh(new THREE.ConeGeometry(3, 1.2, 4), new THREE.MeshStandardMaterial({ color: "#d4c4a0", roughness: 0.6 }));
+    pediment.position.y = 3.1;
+    pediment.rotation.y = Math.PI / 4;
+    pediment.scale.set(1.2, 1, 0.4);
+    group.add(pediment);
+    // Scales of justice on top
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.6, 6), new THREE.MeshStandardMaterial({ color: "#ffd700", metalness: 1, roughness: 0.2 }));
+    pole.position.set(0, 3.7, 0);
+    group.add(pole);
+    const balance = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.03, 0.03), new THREE.MeshStandardMaterial({ color: "#ffd700", metalness: 1, roughness: 0.2 }));
+    balance.position.set(0, 3.9, 0);
+    group.add(balance);
+    for (const side of [-1, 1]) {
+      const pan = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.02, 12), new THREE.MeshStandardMaterial({ color: "#ffd700", metalness: 1, roughness: 0.2 }));
+      pan.position.set(side * 0.4, 3.8, 0);
+      group.add(pan);
+    }
+    // Steps
+    for (let i = 0; i < 3; i++) {
+      const step = new THREE.Mesh(new THREE.BoxGeometry(5, 0.1, 0.4 + i * 0.3), wallMat);
+      step.position.set(0, 0.05 + i * 0.1, 1.25 + i * 0.15);
+      group.add(step);
+    }
+  } else if (type === "cityhall") {
+    // Tall tower
+    const tower = new THREE.Mesh(new THREE.BoxGeometry(2, 5, 2), new THREE.MeshStandardMaterial({ color: "#c8b8a0", roughness: 0.6 }));
+    tower.position.y = 2.5;
+    group.add(tower);
+    // Clock tower (top)
+    const clockTower = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.5, 1.2), new THREE.MeshStandardMaterial({ color: "#d8c8b0", roughness: 0.5 }));
+    clockTower.position.y = 5.75;
+    group.add(clockTower);
+    // Clock face
+    for (const side of [-1, 1]) {
+      for (const axis of ["x", "z"]) {
+        const clock = new THREE.Mesh(new THREE.CircleGeometry(0.35, 20), new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.5 }));
+        if (axis === "x") {
+          clock.position.set(side * 0.61, 5.75, 0);
+          clock.rotation.y = side * Math.PI / 2;
+        } else {
+          clock.position.set(0, 5.75, side * 0.61);
+          clock.rotation.y = side === 1 ? 0 : Math.PI;
+        }
+        group.add(clock);
+      }
+    }
+    // Roof (spire)
+    const spire = new THREE.Mesh(new THREE.ConeGeometry(0.9, 1.5, 8), new THREE.MeshStandardMaterial({ color: "#4a7a4a", metalness: 0.5, roughness: 0.4 }));
+    spire.position.y = 7.25;
+    group.add(spire);
+    // Flag on top
+    const flagPole = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.8, 6), new THREE.MeshStandardMaterial({ color: "#d0d0d0", metalness: 0.9 }));
+    flagPole.position.y = 8.4;
+    group.add(flagPole);
+    const flag = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.25, 0.02), accentMat);
+    flag.position.set(0.2, 8.6, 0);
+    group.add(flag);
+    // Windows
+    for (let f = 0; f < 4; f++) {
+      for (const side of [-1, 1]) {
+        const win = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.5, 0.05), glassMat);
+        win.position.set(0, 0.8 + f * 1, side * 1.01);
+        group.add(win);
+      }
+    }
+  }
+
+  group.traverse((child) => {
+    if ((child as import("three").Mesh).isMesh) {
+      child.castShadow = true;
+      child.receiveShadow = true;
+    }
+  });
+  return group;
+}
