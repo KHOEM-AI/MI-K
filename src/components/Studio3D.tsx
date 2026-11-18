@@ -10,6 +10,7 @@ import { MaterialPanel } from "./MaterialPanel";
 import { TransformPanel } from "./TransformPanel";
 import { EnvironmentTemplates, generateTemplate } from "./EnvironmentTemplates";
 import { RoadElementsPanel } from "./RoadElementsPanel";
+import { KiPanel } from "./KiPanel";
 import type { Shape, Vector3, SceneObject, StudioAsset, Studio3DProps } from "./studioTypes";
 import {
   listScenes,
@@ -2519,6 +2520,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
 
           <EnvironmentTemplates onLoadTemplate={handleLoadTemplate} />
           <RoadElementsPanel onAdd={handleQuickAdd} />
+          <KiPanel objects={objects} />
 
           <div className="studio-history-controls">
             <button type="button" className="upload-button" onClick={undo} disabled={!history.past.length}>
