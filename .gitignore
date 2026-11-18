@@ -12,3 +12,5 @@ dist/
 backup_*/
 test_write.py
 add_v2_dispatch.py
+*.v9-backup
+*.v10-backup
