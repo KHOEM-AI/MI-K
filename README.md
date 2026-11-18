@@ -121,3 +121,25 @@ git diff --check
 ## Repository
 
 [KHOEM-AI/MI-K](https://github.com/KHOEM-AI/MI-K)
+
+## Run with the whole KHOEM-AI stack
+
+The 3D studio is started by the `ai` command (`~/KSV/ai.sh`) together with the KI API (:5001), AI (:5175), IQ-AI, KSV and the other services.
+
+| Service | URL |
+|---|---|
+| MI-K VISION 3D | http://localhost:5176 |
+
+~~~bash
+ai          # start everything (3D studio on :5176)
+ai stop     # stop everything
+bash ai.sh  # same as `ai` (thin wrapper)
+~~~
+
+Port 5173 belongs to the KSV UI, so run the 3D studio alone on another port:
+
+~~~bash
+npm run dev -- --port 5176
+~~~
+
+The launcher listens on 127.0.0.1 only. To open it from another device on the same network: `MIK_HOST=0.0.0.0 ai`.
