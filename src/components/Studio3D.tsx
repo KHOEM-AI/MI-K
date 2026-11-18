@@ -3,7 +3,7 @@ import { Eye, EyeOff, Lock, Unlock, Pencil, HelpCircle, X, Camera, Trash2, Copy,
 import { saveAsset } from "../lib/storage.mjs";
 import { UI3DPreview } from "./UI3DPreview";
 import { presets, MATERIAL_PRESETS, PLANT_COLOR_PRESETS, SKY_COLOR_PRESETS, WATER_COLOR_PRESETS, zero, one, createId } from "./studioConstants";
-import { createGeometry, createCarGeometry, createFurnitureGeometry, createPlantGeometry, createPlantGeometry2, createPlantGeometry3, createPlantGeometry4, createEnvironmentGeometry, createEnvironmentGeometry2, createEnvironmentGeometry3, createSkyGeometry, createSpaceGeometry, createSpaceGeometry2, createStructureGeometry, createStructureGeometry2, createStructureGeometry3, createMonumentGeometry, createBuildingGeometry, createBuildingGeometry2, createBuildingGeometry3, createEnergyGeometry, createTransportGeometry, createPersonalTransportGeometry, createFoodGeometry, createNatureGeometry, createFruitGeometry2, createPlantExtraGeometry, createParkGeometry, createStreetGeometry, createGardenGeometry, createMineralGeometry, createLuxuryCarGeometry, createAircraftGeometry, createBoatGeometry, createAnimalGeometry, createCharacterGeometry, createKhoemGeometry, createHighwayGeometry, createBridgeGeometry, createTrafficLightGeometry, createStreetLightGeometry, disposeMesh } from "./studioGeometry";
+import { createGeometry, createCarGeometry, createFurnitureGeometry, createPlantGeometry, createPlantGeometry2, createPlantGeometry3, createPlantGeometry4, createEnvironmentGeometry, createEnvironmentGeometry2, createEnvironmentGeometry3, createSkyGeometry, createSpaceGeometry, createSpaceGeometry2, createStructureGeometry, createStructureGeometry2, createStructureGeometry3, createMonumentGeometry, createBuildingGeometry, createBuildingGeometry2, createBuildingGeometry3, createHospitalGeometry, createBankGeometry, createEnergyGeometry, createTransportGeometry, createPersonalTransportGeometry, createFoodGeometry, createNatureGeometry, createFruitGeometry2, createPlantExtraGeometry, createParkGeometry, createStreetGeometry, createGardenGeometry, createMineralGeometry, createLuxuryCarGeometry, createAircraftGeometry, createBoatGeometry, createAnimalGeometry, createCharacterGeometry, createKhoemGeometry, createHighwayGeometry, createBridgeGeometry, createTrafficLightGeometry, createStreetLightGeometry, disposeMesh } from "./studioGeometry";
 import { CameraPresets } from "./CameraPresets";
 import { SceneLightingPanel } from "./SceneLightingPanel";
 import { MaterialPanel } from "./MaterialPanel";
@@ -1994,6 +1994,26 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             return;
           }
 
+          if (item.shape === "hospital_urban_tall" || item.shape === "hospital_urban_low" || item.shape === "hospital_rural_tall" || item.shape === "hospital_rural_low") {
+            const hospitalGroup = createHospitalGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            hospitalGroup.position.set(item.position.x, item.position.y, item.position.z);
+            hospitalGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            hospitalGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            hospitalGroup.name = item.name;
+            exportScene.add(hospitalGroup);
+            return;
+          }
+
+          if (item.shape === "bank_urban_tall" || item.shape === "bank_urban_low" || item.shape === "bank_rural_tall" || item.shape === "bank_rural_low") {
+            const bankGroup = createBankGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            bankGroup.position.set(item.position.x, item.position.y, item.position.z);
+            bankGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            bankGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            bankGroup.name = item.name;
+            exportScene.add(bankGroup);
+            return;
+          }
+
           if (item.shape === "khoem") {
             const khoemGroup = createKhoemGeometry(THREE, item.color, item.metalness, item.roughness);
             khoemGroup.position.set(item.position.x, item.position.y, item.position.z);
@@ -3005,6 +3025,26 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             mineralGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
             mineralGroup.name = item.name;
             exportScene!.add(mineralGroup);
+            return;
+          }
+
+          if (item.shape === "hospital_urban_tall" || item.shape === "hospital_urban_low" || item.shape === "hospital_rural_tall" || item.shape === "hospital_rural_low") {
+            const hospitalGroup = createHospitalGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            hospitalGroup.position.set(item.position.x, item.position.y, item.position.z);
+            hospitalGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            hospitalGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            hospitalGroup.name = item.name;
+            exportScene!.add(hospitalGroup);
+            return;
+          }
+
+          if (item.shape === "bank_urban_tall" || item.shape === "bank_urban_low" || item.shape === "bank_rural_tall" || item.shape === "bank_rural_low") {
+            const bankGroup = createBankGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            bankGroup.position.set(item.position.x, item.position.y, item.position.z);
+            bankGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            bankGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            bankGroup.name = item.name;
+            exportScene!.add(bankGroup);
             return;
           }
 

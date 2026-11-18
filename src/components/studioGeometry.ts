@@ -6367,3 +6367,229 @@ export function createMineralGeometry(
   });
   return group;
 }
+
+// ============================================================
+// HOSPITAL GEOMETRIES (Urban/Rural, Tall/Low)
+// ============================================================
+
+export function createHospitalGeometry(
+  THREE: typeof import("three"),
+  type: "hospital_urban_tall" | "hospital_urban_low" | "hospital_rural_tall" | "hospital_rural_low",
+  color?: string,
+  metalness?: number,
+  roughness?: number
+): import("three").Group {
+  const group = new THREE.Group();
+  const wallMat = new THREE.MeshStandardMaterial({
+    color: color || "#f0f0f0",
+    roughness: roughness ?? 0.7,
+    metalness: metalness ?? 0.1,
+  });
+  const glassMat = new THREE.MeshStandardMaterial({
+    color: "#88ccff",
+    metalness: 0.5,
+    roughness: 0.1,
+    transparent: true,
+    opacity: 0.7,
+  });
+  const redCrossMat = new THREE.MeshStandardMaterial({
+    color: "#cc0000",
+    roughness: 0.5,
+    emissive: "#880000",
+    emissiveIntensity: 0.3,
+  });
+
+  const isTall = type.includes("tall");
+  const isUrban = type.includes("urban");
+  const height = isTall ? 6 : 2.5;
+  const width = isUrban ? 3 : 4;
+  const depth = isUrban ? 2.5 : 3.5;
+  const floors = isTall ? 5 : 2;
+
+  // Main building
+  const building = new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), wallMat);
+  building.position.y = height / 2;
+  group.add(building);
+
+  // Windows (rows and columns)
+  const cols = isUrban ? 4 : 3;
+  for (let f = 0; f < floors; f++) {
+    for (let c = 0; c < cols; c++) {
+      for (const side of [-1, 1]) {
+        const win = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.4, 0.05), glassMat);
+        win.position.set(
+          -width / 2 + (c + 1) * (width / (cols + 1)),
+          0.5 + f * (height / floors),
+          side * (depth / 2 + 0.01)
+        );
+        group.add(win);
+      }
+    }
+  }
+
+  // Red Cross on front (large)
+  const crossV = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.8, 0.1), redCrossMat);
+  crossV.position.set(0, height * 0.6, depth / 2 + 0.05);
+  group.add(crossV);
+  const crossH = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.15, 0.1), redCrossMat);
+  crossH.position.set(0, height * 0.6, depth / 2 + 0.05);
+  group.add(crossH);
+
+  // Entrance (glass doors)
+  const entrance = new THREE.Mesh(new THREE.BoxGeometry(width * 0.5, 0.8, 0.05), glassMat);
+  entrance.position.set(0, 0.4, depth / 2 + 0.05);
+  group.add(entrance);
+
+  // Roof details
+  const roof = new THREE.Mesh(new THREE.BoxGeometry(width * 1.05, 0.15, depth * 1.05), new THREE.MeshStandardMaterial({ color: "#888888", roughness: 0.8 }));
+  roof.position.y = height + 0.075;
+  group.add(roof);
+
+  // Helipad on top (tall only)
+  if (isTall) {
+    const helipad = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 0.05, 16), new THREE.MeshStandardMaterial({ color: "#555555", roughness: 0.9 }));
+    helipad.position.y = height + 0.2;
+    group.add(helipad);
+    const h = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.05, 0.5), new THREE.MeshStandardMaterial({ color: "#ffffff" }));
+    h.position.y = height + 0.23;
+    group.add(h);
+    const h2 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.05, 0.2), new THREE.MeshStandardMaterial({ color: "#ffffff" }));
+    h2.position.y = height + 0.23;
+    group.add(h2);
+  }
+
+  // Ambulance parking (rural/low)
+  if (!isUrban) {
+    const parking = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.05, 0.8), new THREE.MeshStandardMaterial({ color: "#555555", roughness: 0.9 }));
+    parking.position.set(0, 0.03, depth / 2 + 0.8);
+    group.add(parking);
+    const ambulance = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.4, 0.4), new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.5 }));
+    ambulance.position.set(0, 0.25, depth / 2 + 0.8);
+    group.add(ambulance);
+    const redStripe = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.1, 0.42), redCrossMat);
+    redStripe.position.set(0, 0.3, depth / 2 + 0.8);
+    group.add(redStripe);
+  }
+
+  group.traverse((child) => {
+    if ((child as import("three").Mesh).isMesh) {
+      child.castShadow = true;
+      child.receiveShadow = true;
+    }
+  });
+  return group;
+}
+
+// ============================================================
+// BANK GEOMETRIES (Urban/Rural, Tall/Low)
+// ============================================================
+
+export function createBankGeometry(
+  THREE: typeof import("three"),
+  type: "bank_urban_tall" | "bank_urban_low" | "bank_rural_tall" | "bank_rural_low",
+  color?: string,
+  metalness?: number,
+  roughness?: number
+): import("three").Group {
+  const group = new THREE.Group();
+  const wallMat = new THREE.MeshStandardMaterial({
+    color: color || "#e8d8a0",
+    roughness: roughness ?? 0.6,
+    metalness: metalness ?? 0.3,
+  });
+  const glassMat = new THREE.MeshStandardMaterial({
+    color: "#88ccff",
+    metalness: 0.6,
+    roughness: 0.1,
+    transparent: true,
+    opacity: 0.7,
+  });
+  const goldMat = new THREE.MeshStandardMaterial({
+    color: "#ffd700",
+    metalness: 1,
+    roughness: 0.2,
+    emissive: "#ffaa00",
+    emissiveIntensity: 0.2,
+  });
+
+  const isTall = type.includes("tall");
+  const isUrban = type.includes("urban");
+  const height = isTall ? 5 : 2;
+  const width = isUrban ? 3 : 4;
+  const depth = isUrban ? 2.5 : 3;
+  const floors = isTall ? 4 : 1;
+
+  // Main building
+  const building = new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), wallMat);
+  building.position.y = height / 2;
+  group.add(building);
+
+  // Windows
+  const cols = isUrban ? 4 : 3;
+  for (let f = 0; f < floors; f++) {
+    for (let c = 0; c < cols; c++) {
+      for (const side of [-1, 1]) {
+        const win = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.4, 0.05), glassMat);
+        win.position.set(
+          -width / 2 + (c + 1) * (width / (cols + 1)),
+          0.5 + f * (height / floors),
+          side * (depth / 2 + 0.01)
+        );
+        group.add(win);
+      }
+    }
+  }
+
+  // Columns (classical bank look)
+  const colCount = isUrban ? 4 : 3;
+  for (let i = 0; i < colCount; i++) {
+    const col = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.12, height * 0.85, 10), new THREE.MeshStandardMaterial({ color: "#f0e8d0", roughness: 0.5 }));
+    col.position.set(
+      -width / 2 + (i + 1) * (width / (colCount + 1)),
+      height * 0.45,
+      depth / 2 + 0.3
+    );
+    group.add(col);
+  }
+
+  // Roof (triangular pediment)
+  const roof = new THREE.Mesh(new THREE.ConeGeometry(width * 0.7, 0.8, 4), wallMat);
+  roof.position.y = height + 0.4;
+  roof.rotation.y = Math.PI / 4;
+  roof.scale.set(1, 1, depth / width);
+  group.add(roof);
+
+  // Dollar sign or coin symbol on front
+  const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.05, 20), goldMat);
+  coin.rotation.x = Math.PI / 2;
+  coin.position.set(0, height * 0.7, depth / 2 + 0.05);
+  group.add(coin);
+
+  // ATM (urban) or vault door (rural)
+  if (isUrban) {
+    const atm = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.6, 0.2), new THREE.MeshStandardMaterial({ color: "#333333", roughness: 0.5 }));
+    atm.position.set(width / 2 - 0.3, 0.3, depth / 2 + 0.2);
+    group.add(atm);
+    const atmScreen = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.2, 0.02), new THREE.MeshStandardMaterial({ color: "#00aaff", emissive: "#0088ff", emissiveIntensity: 0.5 }));
+    atmScreen.position.set(width / 2 - 0.3, 0.45, depth / 2 + 0.31);
+    group.add(atmScreen);
+  } else {
+    const vault = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.1, 20), new THREE.MeshStandardMaterial({ color: "#555555", metalness: 0.9, roughness: 0.2 }));
+    vault.rotation.x = Math.PI / 2;
+    vault.position.set(0, 0.5, depth / 2 + 0.05);
+    group.add(vault);
+  }
+
+  // Sign board on top
+  const sign = new THREE.Mesh(new THREE.BoxGeometry(width * 0.7, 0.3, 0.05), goldMat);
+  sign.position.set(0, height + 1.0, depth / 2 + 0.05);
+  group.add(sign);
+
+  group.traverse((child) => {
+    if ((child as import("three").Mesh).isMesh) {
+      child.castShadow = true;
+      child.receiveShadow = true;
+    }
+  });
+  return group;
+}

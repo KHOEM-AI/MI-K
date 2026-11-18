@@ -182,6 +182,14 @@ export const presets: { name: string; shape: Shape }[] = [
   { name: "Pearl", shape: "pearl" },
   { name: "Shell", shape: "shell" },
   { name: "Coral", shape: "coral" },
+  { name: "Hospital Urban Tall", shape: "hospital_urban_tall" },
+  { name: "Hospital Urban Low", shape: "hospital_urban_low" },
+  { name: "Hospital Rural Tall", shape: "hospital_rural_tall" },
+  { name: "Hospital Rural Low", shape: "hospital_rural_low" },
+  { name: "Bank Urban Tall", shape: "bank_urban_tall" },
+  { name: "Bank Urban Low", shape: "bank_urban_low" },
+  { name: "Bank Rural Tall", shape: "bank_rural_tall" },
+  { name: "Bank Rural Low", shape: "bank_rural_low" },
 ];
 
 
