@@ -1,5 +1,14 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import { readFileSync } from "node:fs";
+
+// KI token stays on the server side: the proxy adds it, the browser never sees it.
+const kiToken = (() => {
+  try {
+    const t = readFileSync(process.env.KI_ENV_FILE ?? `${process.env.HOME}/KI/.env`, "utf8");
+    return /^KI_API_TOKEN=(.+)$/m.exec(t)?.[1].trim() ?? "";
+  } catch { return ""; }
+})();
 
 // Only these KI routes are reachable through the dev/preview server.
 const ALLOWED = new Set([
@@ -16,6 +25,7 @@ const ki = {
   "/ki": {
     target: "http://127.0.0.1:5001",
     changeOrigin: true,
+    headers: kiToken ? { "x-ki-token": kiToken } : {},
     rewrite: (p) => p.replace(/^\/ki/, ""),
     bypass(req, res) {
       const path = (req.url ?? "").replace(/^\/ki/, "").split("?")[0].replace(/\/+$/, "");
