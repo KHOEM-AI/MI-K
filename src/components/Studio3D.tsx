@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { Eye, EyeOff, Lock, Unlock, Pencil, HelpCircle, X, Camera, Trash2, Copy, RotateCcw } from "lucide-react";
 import { saveAsset } from "../lib/storage.mjs";
 import { UI3DPreview } from "./UI3DPreview";
-import { presets, MATERIAL_PRESETS, zero, one, createId } from "./studioConstants";
-import { createGeometry, createCarGeometry, createFurnitureGeometry, createKhoemGeometry, createHighwayGeometry, createBridgeGeometry, createTrafficLightGeometry, createStreetLightGeometry, disposeMesh } from "./studioGeometry";
+import { presets, MATERIAL_PRESETS, PLANT_COLOR_PRESETS, zero, one, createId } from "./studioConstants";
+import { createGeometry, createCarGeometry, createFurnitureGeometry, createPlantGeometry, createPlantGeometry2, createPlantGeometry3, createPlantGeometry4, createEnvironmentGeometry, createEnvironmentGeometry2, createSkyGeometry, createSpaceGeometry, createBuildingGeometry, createLuxuryCarGeometry, createAircraftGeometry, createBoatGeometry, createAnimalGeometry, createCharacterGeometry, createKhoemGeometry, createHighwayGeometry, createBridgeGeometry, createTrafficLightGeometry, createStreetLightGeometry, disposeMesh } from "./studioGeometry";
 import { CameraPresets } from "./CameraPresets";
 import { SceneLightingPanel } from "./SceneLightingPanel";
 import { MaterialPanel } from "./MaterialPanel";
@@ -92,6 +92,9 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
   const [currentSceneId, setCurrentSceneId] = useState<string | null>(null);
   const [pendingAutobackup, setPendingAutobackup] = useState<AutobackupData | null>(null);
   const [snapToGrid, setSnapToGrid] = useState(false);
+  const [windEnabled, setWindEnabled] = useState(true);
+  const [windStrength, setWindStrength] = useState(1.0);
+  const windTimeRef = useRef(0);
   const [autoRotate, setAutoRotate] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [sceneSearchQuery, setSceneSearchQuery] = useState("");
@@ -766,6 +769,34 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
               obj = createCarGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
             } else if (item.shape === "table" || item.shape === "chair" || item.shape === "sofa" || item.shape === "tree" || item.shape === "house" || item.shape === "lamp") {
               obj = createFurnitureGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            } else if (item.shape === "palmtree" || item.shape === "bigtree" || item.shape === "bush" || item.shape === "flower" || item.shape === "bamboo") {
+            obj = createPlantGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+          } else if (item.shape === "cactus" || item.shape === "pinetree" || item.shape === "sunflower" || item.shape === "lotus" || item.shape === "grass" || item.shape === "vine") {
+              obj = createPlantGeometry2(THREE, item.shape, item.color, item.metalness, item.roughness);
+            } else if (item.shape === "rock" || item.shape === "pond" || item.shape === "hill" || item.shape === "groundpatch") {
+              obj = createEnvironmentGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            } else if (item.shape === "rose" || item.shape === "tulip" || item.shape === "mushroom") {
+              obj = createPlantGeometry3(THREE, item.shape, item.color, item.metalness, item.roughness);
+            } else if (item.shape === "star" || item.shape === "moon" || item.shape === "cloud" || item.shape === "waterfall") {
+              obj = createSkyGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            } else if (item.shape === "lavender" || item.shape === "cattail" || item.shape === "fern" || item.shape === "cactusflower" || item.shape === "bonsai") {
+              obj = createPlantGeometry4(THREE, item.shape, item.color, item.metalness, item.roughness);
+            } else if (item.shape === "volcano" || item.shape === "sanddune" || item.shape === "ice" || item.shape === "lavarock" || item.shape === "cave") {
+              obj = createEnvironmentGeometry2(THREE, item.shape, item.color, item.metalness, item.roughness);
+            } else if (item.shape === "planet" || item.shape === "satellite" || item.shape === "spaceship") {
+              obj = createSpaceGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            } else if (item.shape === "skyscraper" || item.shape === "castle") {
+              obj = createBuildingGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            } else if (item.shape === "lamborghini" || item.shape === "ferrari" || item.shape === "tesla") {
+              obj = createLuxuryCarGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            } else if (item.shape === "airplane" || item.shape === "helicopter") {
+              obj = createAircraftGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            } else if (item.shape === "boat" || item.shape === "yacht") {
+              obj = createBoatGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            } else if (item.shape === "tiger" || item.shape === "elephant") {
+              obj = createAnimalGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            } else if (item.shape === "dragon" || item.shape === "robot") {
+              obj = createCharacterGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
             } else if (item.shape === "khoem") {
               obj = createKhoemGeometry(THREE, item.color, item.metalness, item.roughness);
             } else if (item.shape === "highway") {
@@ -1595,6 +1626,145 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             exportScene.add(furnitureGroup);
             return;
           }
+          if (item.shape === "palmtree" || item.shape === "bigtree" || item.shape === "bush" || item.shape === "flower" || item.shape === "bamboo") {
+            const plantGroup = createPlantGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            plantGroup.position.set(item.position.x, item.position.y, item.position.z);
+            plantGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            plantGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            plantGroup.name = item.name;
+            exportScene.add(plantGroup);
+            return;
+          }
+
+          if (item.shape === "cactus" || item.shape === "pinetree" || item.shape === "sunflower" || item.shape === "lotus" || item.shape === "grass" || item.shape === "vine") {
+            const plant2Group = createPlantGeometry2(THREE, item.shape, item.color, item.metalness, item.roughness);
+            plant2Group.position.set(item.position.x, item.position.y, item.position.z);
+            plant2Group.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            plant2Group.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            plant2Group.name = item.name;
+            exportScene.add(plant2Group);
+            return;
+          }
+
+          if (item.shape === "rock" || item.shape === "pond" || item.shape === "hill" || item.shape === "groundpatch") {
+            const environmentGroup = createEnvironmentGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            environmentGroup.position.set(item.position.x, item.position.y, item.position.z);
+            environmentGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            environmentGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            environmentGroup.name = item.name;
+            exportScene.add(environmentGroup);
+            return;
+          }
+
+          if (item.shape === "rose" || item.shape === "tulip" || item.shape === "mushroom") {
+            const plant3Group = createPlantGeometry3(THREE, item.shape, item.color, item.metalness, item.roughness);
+            plant3Group.position.set(item.position.x, item.position.y, item.position.z);
+            plant3Group.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            plant3Group.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            plant3Group.name = item.name;
+            exportScene.add(plant3Group);
+            return;
+          }
+
+          if (item.shape === "star" || item.shape === "moon" || item.shape === "cloud" || item.shape === "waterfall") {
+            const skyGroup = createSkyGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            skyGroup.position.set(item.position.x, item.position.y, item.position.z);
+            skyGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            skyGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            skyGroup.name = item.name;
+            exportScene.add(skyGroup);
+            return;
+          }
+
+          if (item.shape === "lavender" || item.shape === "cattail" || item.shape === "fern" || item.shape === "cactusflower" || item.shape === "bonsai") {
+            const plant4Group = createPlantGeometry4(THREE, item.shape, item.color, item.metalness, item.roughness);
+            plant4Group.position.set(item.position.x, item.position.y, item.position.z);
+            plant4Group.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            plant4Group.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            plant4Group.name = item.name;
+            exportScene.add(plant4Group);
+            return;
+          }
+
+          if (item.shape === "volcano" || item.shape === "sanddune" || item.shape === "ice" || item.shape === "lavarock" || item.shape === "cave") {
+            const env2Group = createEnvironmentGeometry2(THREE, item.shape, item.color, item.metalness, item.roughness);
+            env2Group.position.set(item.position.x, item.position.y, item.position.z);
+            env2Group.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            env2Group.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            env2Group.name = item.name;
+            exportScene.add(env2Group);
+            return;
+          }
+
+          if (item.shape === "planet" || item.shape === "satellite" || item.shape === "spaceship") {
+            const spaceGroup = createSpaceGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            spaceGroup.position.set(item.position.x, item.position.y, item.position.z);
+            spaceGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            spaceGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            spaceGroup.name = item.name;
+            exportScene.add(spaceGroup);
+            return;
+          }
+
+          if (item.shape === "skyscraper" || item.shape === "castle") {
+            const buildingGroup = createBuildingGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            buildingGroup.position.set(item.position.x, item.position.y, item.position.z);
+            buildingGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            buildingGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            buildingGroup.name = item.name;
+            exportScene.add(buildingGroup);
+            return;
+          }
+
+          if (item.shape === "lamborghini" || item.shape === "ferrari" || item.shape === "tesla") {
+            const luxuryGroup = createLuxuryCarGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            luxuryGroup.position.set(item.position.x, item.position.y, item.position.z);
+            luxuryGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            luxuryGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            luxuryGroup.name = item.name;
+            exportScene.add(luxuryGroup);
+            return;
+          }
+
+          if (item.shape === "airplane" || item.shape === "helicopter") {
+            const aircraftGroup = createAircraftGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            aircraftGroup.position.set(item.position.x, item.position.y, item.position.z);
+            aircraftGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            aircraftGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            aircraftGroup.name = item.name;
+            exportScene.add(aircraftGroup);
+            return;
+          }
+
+          if (item.shape === "boat" || item.shape === "yacht") {
+            const boatGroup = createBoatGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            boatGroup.position.set(item.position.x, item.position.y, item.position.z);
+            boatGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            boatGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            boatGroup.name = item.name;
+            exportScene.add(boatGroup);
+            return;
+          }
+
+          if (item.shape === "tiger" || item.shape === "elephant") {
+            const animalGroup = createAnimalGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            animalGroup.position.set(item.position.x, item.position.y, item.position.z);
+            animalGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            animalGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            animalGroup.name = item.name;
+            exportScene.add(animalGroup);
+            return;
+          }
+
+          if (item.shape === "dragon" || item.shape === "robot") {
+            const characterGroup = createCharacterGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            characterGroup.position.set(item.position.x, item.position.y, item.position.z);
+            characterGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            characterGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            characterGroup.name = item.name;
+            exportScene.add(characterGroup);
+            return;
+          }
 
           if (item.shape === "khoem") {
             const khoemGroup = createKhoemGeometry(THREE, item.color, item.metalness, item.roughness);
@@ -2280,6 +2450,145 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             exportScene!.add(furnitureGroup);
             return;
           }
+          if (item.shape === "palmtree" || item.shape === "bigtree" || item.shape === "bush" || item.shape === "flower" || item.shape === "bamboo") {
+            const plantGroup = createPlantGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            plantGroup.position.set(item.position.x, item.position.y, item.position.z);
+            plantGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            plantGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            plantGroup.name = item.name;
+            exportScene!.add(plantGroup);
+            return;
+          }
+
+          if (item.shape === "cactus" || item.shape === "pinetree" || item.shape === "sunflower" || item.shape === "lotus" || item.shape === "grass" || item.shape === "vine") {
+            const plant2Group = createPlantGeometry2(THREE, item.shape, item.color, item.metalness, item.roughness);
+            plant2Group.position.set(item.position.x, item.position.y, item.position.z);
+            plant2Group.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            plant2Group.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            plant2Group.name = item.name;
+            exportScene!.add(plant2Group);
+            return;
+          }
+
+          if (item.shape === "rock" || item.shape === "pond" || item.shape === "hill" || item.shape === "groundpatch") {
+            const environmentGroup = createEnvironmentGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            environmentGroup.position.set(item.position.x, item.position.y, item.position.z);
+            environmentGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            environmentGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            environmentGroup.name = item.name;
+            exportScene!.add(environmentGroup);
+            return;
+          }
+
+          if (item.shape === "rose" || item.shape === "tulip" || item.shape === "mushroom") {
+            const plant3Group = createPlantGeometry3(THREE, item.shape, item.color, item.metalness, item.roughness);
+            plant3Group.position.set(item.position.x, item.position.y, item.position.z);
+            plant3Group.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            plant3Group.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            plant3Group.name = item.name;
+            exportScene!.add(plant3Group);
+            return;
+          }
+
+          if (item.shape === "star" || item.shape === "moon" || item.shape === "cloud" || item.shape === "waterfall") {
+            const skyGroup = createSkyGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            skyGroup.position.set(item.position.x, item.position.y, item.position.z);
+            skyGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            skyGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            skyGroup.name = item.name;
+            exportScene!.add(skyGroup);
+            return;
+          }
+
+          if (item.shape === "lavender" || item.shape === "cattail" || item.shape === "fern" || item.shape === "cactusflower" || item.shape === "bonsai") {
+            const plant4Group = createPlantGeometry4(THREE, item.shape, item.color, item.metalness, item.roughness);
+            plant4Group.position.set(item.position.x, item.position.y, item.position.z);
+            plant4Group.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            plant4Group.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            plant4Group.name = item.name;
+            exportScene!.add(plant4Group);
+            return;
+          }
+
+          if (item.shape === "volcano" || item.shape === "sanddune" || item.shape === "ice" || item.shape === "lavarock" || item.shape === "cave") {
+            const env2Group = createEnvironmentGeometry2(THREE, item.shape, item.color, item.metalness, item.roughness);
+            env2Group.position.set(item.position.x, item.position.y, item.position.z);
+            env2Group.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            env2Group.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            env2Group.name = item.name;
+            exportScene!.add(env2Group);
+            return;
+          }
+
+          if (item.shape === "planet" || item.shape === "satellite" || item.shape === "spaceship") {
+            const spaceGroup = createSpaceGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            spaceGroup.position.set(item.position.x, item.position.y, item.position.z);
+            spaceGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            spaceGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            spaceGroup.name = item.name;
+            exportScene!.add(spaceGroup);
+            return;
+          }
+
+          if (item.shape === "skyscraper" || item.shape === "castle") {
+            const buildingGroup = createBuildingGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            buildingGroup.position.set(item.position.x, item.position.y, item.position.z);
+            buildingGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            buildingGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            buildingGroup.name = item.name;
+            exportScene!.add(buildingGroup);
+            return;
+          }
+
+          if (item.shape === "lamborghini" || item.shape === "ferrari" || item.shape === "tesla") {
+            const luxuryGroup = createLuxuryCarGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            luxuryGroup.position.set(item.position.x, item.position.y, item.position.z);
+            luxuryGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            luxuryGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            luxuryGroup.name = item.name;
+            exportScene!.add(luxuryGroup);
+            return;
+          }
+
+          if (item.shape === "airplane" || item.shape === "helicopter") {
+            const aircraftGroup = createAircraftGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            aircraftGroup.position.set(item.position.x, item.position.y, item.position.z);
+            aircraftGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            aircraftGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            aircraftGroup.name = item.name;
+            exportScene!.add(aircraftGroup);
+            return;
+          }
+
+          if (item.shape === "boat" || item.shape === "yacht") {
+            const boatGroup = createBoatGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            boatGroup.position.set(item.position.x, item.position.y, item.position.z);
+            boatGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            boatGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            boatGroup.name = item.name;
+            exportScene!.add(boatGroup);
+            return;
+          }
+
+          if (item.shape === "tiger" || item.shape === "elephant") {
+            const animalGroup = createAnimalGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            animalGroup.position.set(item.position.x, item.position.y, item.position.z);
+            animalGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            animalGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            animalGroup.name = item.name;
+            exportScene!.add(animalGroup);
+            return;
+          }
+
+          if (item.shape === "dragon" || item.shape === "robot") {
+            const characterGroup = createCharacterGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            characterGroup.position.set(item.position.x, item.position.y, item.position.z);
+            characterGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            characterGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            characterGroup.name = item.name;
+            exportScene!.add(characterGroup);
+            return;
+          }
 
           if (item.shape === "khoem") {
             const khoemGroup = createKhoemGeometry(THREE, item.color, item.metalness, item.roughness);
@@ -2415,6 +2724,87 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       setExporting(false);
     }
   }
+
+  // Water, cloud, star animation
+  useEffect(() => {
+    if (!windEnabled || !sceneReady) return;
+
+    const waterShapes = new Set(["pond", "waterfall"]);
+    const cloudShapes = new Set(["cloud"]);
+    const starShapes = new Set(["star", "moon"]);
+
+    let rafId: number;
+    const animate = () => {
+      windTimeRef.current += 0.016;
+      const t = windTimeRef.current;
+
+      meshesRef.current.forEach((mesh, id) => {
+        const sceneObj = objects.find(o => o.id === id);
+        if (!sceneObj) return;
+        if (sceneObj.locked) return;
+
+        if (waterShapes.has(sceneObj.shape)) {
+          // Gentle wave motion
+          mesh.position.y = sceneObj.position.y + Math.sin(t * 2) * 0.02;
+          mesh.rotation.y = sceneObj.rotation.y + Math.sin(t * 0.8) * 0.02;
+        } else if (cloudShapes.has(sceneObj.shape)) {
+          // Slow drift
+          mesh.position.x = sceneObj.position.x + Math.sin(t * 0.3) * 0.5;
+          mesh.position.y = sceneObj.position.y + Math.cos(t * 0.4) * 0.1;
+        } else if (starShapes.has(sceneObj.shape)) {
+          // Twinkle (scale pulse)
+          const pulse = 1 + Math.sin(t * 3 + sceneObj.position.x) * 0.05;
+          mesh.scale.set(
+            sceneObj.scale.x * pulse,
+            sceneObj.scale.y * pulse,
+            sceneObj.scale.z * pulse
+          );
+        }
+      });
+
+      rafId = requestAnimationFrame(animate);
+    };
+
+    rafId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(rafId);
+  }, [windEnabled, windStrength, sceneReady, objects]);
+
+  // Wind animation for plants
+  useEffect(() => {
+    if (!windEnabled || !sceneReady) return;
+    
+    const plantShapes = new Set([
+      "tree", "palmtree", "bigtree", "bush", "flower", "bamboo",
+      "cactus", "pinetree", "sunflower", "lotus", "grass", "vine",
+      "rose", "tulip", "mushroom"
+    ]);
+    
+    let rafId: number;
+    const animate = () => {
+      windTimeRef.current += 0.016;
+      const t = windTimeRef.current;
+      
+      meshesRef.current.forEach((mesh, id) => {
+        const sceneObj = objects.find(o => o.id === id);
+        if (!sceneObj || !plantShapes.has(sceneObj.shape)) return;
+        if (sceneObj.locked) return;
+        
+        // Gentle sway based on time and position
+        const baseRotZ = sceneObj.rotation.z;
+        const baseRotX = sceneObj.rotation.x;
+        const swayZ = Math.sin(t * 1.2 + sceneObj.position.x * 0.5) * 0.03 * windStrength;
+        const swayX = Math.cos(t * 0.9 + sceneObj.position.z * 0.5) * 0.02 * windStrength;
+        
+        mesh.rotation.z = baseRotZ + swayZ;
+        mesh.rotation.x = baseRotX + swayX;
+      });
+      
+      rafId = requestAnimationFrame(animate);
+    };
+    
+    rafId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(rafId);
+  }, [windEnabled, sceneReady, objects]);
 
   return (
     <section className="studio-panel">
@@ -2783,6 +3173,56 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
               />
               Snap to Grid (0.5)
             </label>
+            <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", fontSize: "0.9rem", color: "#a0aec0" }}>
+              <input
+                type="checkbox"
+                checked={windEnabled}
+                onChange={(e) => setWindEnabled(e.target.checked)}
+              />
+              🌬️ Wind Animation
+            </label>
+            {windEnabled && (
+              <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.9rem", color: "#a0aec0" }}>
+                Strength:
+                <input
+                  type="range"
+                  min="0.1"
+                  max="2.0"
+                  step="0.1"
+                  value={windStrength}
+                  onChange={(e) => setWindStrength(parseFloat(e.target.value))}
+                  style={{ width: "100px" }}
+                />
+                <span style={{ fontSize: "0.8rem", minWidth: "30px" }}>{windStrength.toFixed(1)}</span>
+              </label>
+            )}
+
+            <div style={{ marginTop: "12px", padding: "12px", backgroundColor: "#0a1420", borderRadius: "8px", border: "1px solid #31516e" }}>
+              <h4 style={{ margin: "0 0 8px", fontSize: "0.9rem", color: "#4a90d9" }}>🌱 Plant Colors</h4>
+              <p style={{ margin: "0 0 8px", fontSize: "0.75rem", color: "#a0aec0" }}>
+                ជ្រើសរើសវត្ថុរុក្ខជាតិមួយ រួចចុចពណ៌ខាងក្រោមដើម្បីផ្លាស់ពណ៌
+              </p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                {PLANT_COLOR_PRESETS.map((preset) => (
+                  <button
+                    key={preset.name}
+                    type="button"
+                    title={preset.name}
+                    onClick={() => updateSelectedColor(preset.color)}
+                    disabled={!selectedId}
+                    style={{
+                      width: "28px",
+                      height: "28px",
+                      borderRadius: "50%",
+                      backgroundColor: preset.color,
+                      border: "2px solid #31516e",
+                      cursor: selectedId ? "pointer" : "not-allowed",
+                      opacity: selectedId ? 1 : 0.4,
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
           </div>
 
           <CameraPresets
