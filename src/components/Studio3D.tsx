@@ -799,7 +799,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
     };
   }, [objects, selectedId, sceneReady]);
 
-  function handleLoadTemplate(template: "park" | "room" | "studio") {
+  function handleLoadTemplate(template: "park" | "room" | "studio" | "highway") {
     const newObjects = generateTemplate(template);
     commitObjects(newObjects);
     setSelectedId(newObjects[0]?.id ?? null);
