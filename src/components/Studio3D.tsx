@@ -3,7 +3,7 @@ import { Eye, EyeOff, Lock, Unlock, Pencil, HelpCircle, X, Camera, Trash2, Copy,
 import { saveAsset } from "../lib/storage.mjs";
 import { UI3DPreview } from "./UI3DPreview";
 import { presets, MATERIAL_PRESETS, PLANT_COLOR_PRESETS, SKY_COLOR_PRESETS, WATER_COLOR_PRESETS, zero, one, createId } from "./studioConstants";
-import { createGeometry, createCarGeometry, createFurnitureGeometry, createPlantGeometry, createPlantGeometry2, createPlantGeometry3, createPlantGeometry4, createEnvironmentGeometry, createEnvironmentGeometry2, createEnvironmentGeometry3, createSkyGeometry, createSpaceGeometry, createSpaceGeometry2, createStructureGeometry, createStructureGeometry2, createStructureGeometry3, createMonumentGeometry, createBuildingGeometry, createBuildingGeometry2, createBuildingGeometry3, createHospitalGeometry, createBankGeometry, createCivicGeometry, createEnergyGeometry, createTransportGeometry, createPersonalTransportGeometry, createFoodGeometry, createNatureGeometry, createFruitGeometry2, createPlantExtraGeometry, createParkGeometry, createStreetGeometry, createGardenGeometry, createMineralGeometry, createLuxuryCarGeometry, createAircraftGeometry, createBoatGeometry, createAnimalGeometry, createCharacterGeometry, createKhoemGeometry, createHighwayGeometry, createBridgeGeometry, createTrafficLightGeometry, createStreetLightGeometry, disposeMesh } from "./studioGeometry";
+import { createGeometry, createCarGeometry, createFurnitureGeometry, createPlantGeometry, createPlantGeometry2, createPlantGeometry3, createPlantGeometry4, createEnvironmentGeometry, createEnvironmentGeometry2, createEnvironmentGeometry3, createSkyGeometry, createSpaceGeometry, createSpaceGeometry2, createStructureGeometry, createStructureGeometry2, createStructureGeometry3, createMonumentGeometry, createBuildingGeometry, createBuildingGeometry2, createBuildingGeometry3, createHospitalGeometry, createBankGeometry, createCivicGeometry, createCommercialGeometry, createEnergyGeometry, createTransportGeometry, createPersonalTransportGeometry, createFoodGeometry, createNatureGeometry, createFruitGeometry2, createPlantExtraGeometry, createParkGeometry, createStreetGeometry, createGardenGeometry, createMineralGeometry, createLuxuryCarGeometry, createAircraftGeometry, createBoatGeometry, createAnimalGeometry, createCharacterGeometry, createKhoemGeometry, createHighwayGeometry, createBridgeGeometry, createTrafficLightGeometry, createStreetLightGeometry, disposeMesh } from "./studioGeometry";
 import { CameraPresets } from "./CameraPresets";
 import { SceneLightingPanel } from "./SceneLightingPanel";
 import { MaterialPanel } from "./MaterialPanel";
@@ -2024,6 +2024,16 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             return;
           }
 
+          if (item.shape === "factory" || item.shape === "warehouse" || item.shape === "officebuilding" || item.shape === "hotel" || item.shape === "restaurant" || item.shape === "supermarket" || item.shape === "shoppingmall" || item.shape === "cinema") {
+            const commercialGroup = createCommercialGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            commercialGroup.position.set(item.position.x, item.position.y, item.position.z);
+            commercialGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            commercialGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            commercialGroup.name = item.name;
+            exportScene.add(commercialGroup);
+            return;
+          }
+
           if (item.shape === "khoem") {
             const khoemGroup = createKhoemGeometry(THREE, item.color, item.metalness, item.roughness);
             khoemGroup.position.set(item.position.x, item.position.y, item.position.z);
@@ -3068,6 +3078,16 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             return;
           }
 
+          if (item.shape === "factory" || item.shape === "warehouse" || item.shape === "officebuilding" || item.shape === "hotel" || item.shape === "restaurant" || item.shape === "supermarket" || item.shape === "shoppingmall" || item.shape === "cinema") {
+            const commercialGroup = createCommercialGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            commercialGroup.position.set(item.position.x, item.position.y, item.position.z);
+            commercialGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            commercialGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            commercialGroup.name = item.name;
+            exportScene!.add(commercialGroup);
+            return;
+          }
+
           if (item.shape === "khoem") {
             const khoemGroup = createKhoemGeometry(THREE, item.color, item.metalness, item.roughness);
             khoemGroup.position.set(item.position.x, item.position.y, item.position.z);
@@ -3202,6 +3222,56 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       setExporting(false);
     }
   }
+
+  // Commercial animation (factory smoke, cinema marquee lights, hotel pool shimmer)
+  useEffect(() => {
+    if (!windEnabled || !sceneReady) return;
+
+    const factories = new Set(["factory"]);
+    const cinemas = new Set(["cinema"]);
+    const hotels = new Set(["hotel"]);
+
+    let rafId: number;
+    const animate = () => {
+      windTimeRef.current += 0.016;
+      const t = windTimeRef.current;
+
+      meshesRef.current.forEach((mesh) => {
+        const sceneObj = objects.find(o => o.id === mesh.userData.objectId);
+        if (!sceneObj) return;
+        if (sceneObj.locked) return;
+
+        if (factories.has(sceneObj.shape)) {
+          mesh.traverse((child) => {
+            const mat = (child as import("three").Mesh).material as import("three").MeshStandardMaterial;
+            if (mat && mat.opacity !== undefined && mat.opacity < 0.6) {
+              child.position.y += 0.005;
+              if (child.position.y > 6) child.position.y = 4;
+            }
+          });
+        } else if (cinemas.has(sceneObj.shape)) {
+          mesh.traverse((child) => {
+            const mat = (child as import("three").Mesh).material as import("three").MeshStandardMaterial;
+            if (mat && mat.emissiveIntensity !== undefined && mat.emissiveIntensity > 1.5) {
+              mat.emissiveIntensity = 1.5 + Math.sin(t * 3 + child.position.x) * 0.8;
+            }
+          });
+        } else if (hotels.has(sceneObj.shape)) {
+          mesh.traverse((child) => {
+            const mat = (child as import("three").Mesh).material as import("three").MeshStandardMaterial;
+            if (mat && mat.metalness === 0.3 && mat.roughness === 0.1) {
+              mat.opacity = 0.8 + Math.sin(t * 2) * 0.1;
+            }
+          });
+        }
+      });
+
+      rafId = requestAnimationFrame(animate);
+    };
+
+    rafId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(rafId);
+  }, [windEnabled, sceneReady, objects]);
 
   // Civic animation (police siren flash, fire station bell, city hall clock tick)
   useEffect(() => {

@@ -198,6 +198,14 @@ export const presets: { name: string; shape: Shape }[] = [
   { name: "Post Office", shape: "postoffice" },
   { name: "Court House", shape: "courthouse" },
   { name: "City Hall", shape: "cityhall" },
+  { name: "Factory", shape: "factory" },
+  { name: "Warehouse", shape: "warehouse" },
+  { name: "Office Building", shape: "officebuilding" },
+  { name: "Hotel", shape: "hotel" },
+  { name: "Restaurant", shape: "restaurant" },
+  { name: "Supermarket", shape: "supermarket" },
+  { name: "Shopping Mall", shape: "shoppingmall" },
+  { name: "Cinema", shape: "cinema" },
 ];
 
 

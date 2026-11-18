@@ -6863,3 +6863,258 @@ export function createCivicGeometry(
   });
   return group;
 }
+
+// ============================================================
+// COMMERCIAL & INDUSTRIAL GEOMETRIES (Factory, Warehouse, Office Building, Hotel, Restaurant, Supermarket, Shopping Mall, Cinema)
+// ============================================================
+
+export function createCommercialGeometry(
+  THREE: typeof import("three"),
+  type: "factory" | "warehouse" | "officebuilding" | "hotel" | "restaurant" | "supermarket" | "shoppingmall" | "cinema",
+  color?: string,
+  metalness?: number,
+  roughness?: number
+): import("three").Group {
+  const group = new THREE.Group();
+  const wallMat = new THREE.MeshStandardMaterial({
+    color: color || "#d0d0d0",
+    roughness: roughness ?? 0.7,
+    metalness: metalness ?? 0.2,
+  });
+  const glassMat = new THREE.MeshStandardMaterial({ color: "#88ccff", metalness: 0.5, roughness: 0.1, transparent: true, opacity: 0.7 });
+  const accentMat = new THREE.MeshStandardMaterial({ color: "#ff6b6b", roughness: 0.5 });
+  const goldMat = new THREE.MeshStandardMaterial({ color: "#ffd700", metalness: 1, roughness: 0.2 });
+
+  if (type === "factory") {
+    // Main building
+    const building = new THREE.Mesh(new THREE.BoxGeometry(5, 2, 3), wallMat);
+    building.position.y = 1;
+    group.add(building);
+    // Sawtooth roof
+    for (let i = 0; i < 3; i++) {
+      const sawtooth = new THREE.Mesh(new THREE.ConeGeometry(0.8, 0.8, 4), new THREE.MeshStandardMaterial({ color: "#888888", roughness: 0.8 }));
+      sawtooth.position.set(-1.5 + i * 1.5, 2.3, 0);
+      sawtooth.rotation.y = Math.PI / 4;
+      group.add(sawtooth);
+    }
+    // Smokestacks
+    for (let i = 0; i < 2; i++) {
+      const stack = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.25, 3, 10), new THREE.MeshStandardMaterial({ color: "#aa5533", roughness: 0.8 }));
+      stack.position.set(-1.5 + i * 3, 2.8, -1.2);
+      group.add(stack);
+      // Smoke
+      for (let j = 0; j < 3; j++) {
+        const smoke = new THREE.Mesh(new THREE.SphereGeometry(0.3 + j * 0.1, 8, 6), new THREE.MeshStandardMaterial({ color: "#888888", transparent: true, opacity: 0.5 }));
+        smoke.position.set(-1.5 + i * 3 + Math.sin(j) * 0.2, 4.5 + j * 0.4, -1.2);
+        group.add(smoke);
+      }
+    }
+    // Loading dock doors
+    for (let i = 0; i < 2; i++) {
+      const door = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.2, 0.05), new THREE.MeshStandardMaterial({ color: "#555555" }));
+      door.position.set(-1 + i * 2, 0.6, 1.51);
+      group.add(door);
+    }
+  } else if (type === "warehouse") {
+    // Large flat building
+    const building = new THREE.Mesh(new THREE.BoxGeometry(5, 2.5, 4), wallMat);
+    building.position.y = 1.25;
+    group.add(building);
+    // Corrugated roof
+    for (let i = 0; i < 6; i++) {
+      const ridge = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.15, 4.05), new THREE.MeshStandardMaterial({ color: "#888888", roughness: 0.7 }));
+      ridge.position.set(-2 + i * 0.8, 2.6, 0);
+      group.add(ridge);
+    }
+    // Loading doors (front)
+    for (let i = 0; i < 3; i++) {
+      const door = new THREE.Mesh(new THREE.BoxGeometry(1, 1.5, 0.05), new THREE.MeshStandardMaterial({ color: "#666666" }));
+      door.position.set(-1.4 + i * 1.4, 0.75, 2.01);
+      group.add(door);
+      // Door lines
+      for (let j = 0; j < 4; j++) {
+        const line = new THREE.Mesh(new THREE.BoxGeometry(1, 0.03, 0.06), new THREE.MeshStandardMaterial({ color: "#444444" }));
+        line.position.set(-1.4 + i * 1.4, 0.3 + j * 0.35, 2.02);
+        group.add(line);
+      }
+    }
+    // Forklift
+    const forklift = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.3, 0.3), new THREE.MeshStandardMaterial({ color: "#ffaa00", roughness: 0.5 }));
+    forklift.position.set(1.8, 0.15, 2.5);
+    group.add(forklift);
+  } else if (type === "officebuilding") {
+    // Modern glass tower
+    const building = new THREE.Mesh(new THREE.BoxGeometry(2.5, 6, 2.5), glassMat);
+    building.position.y = 3;
+    group.add(building);
+    // Steel frame
+    for (let f = 0; f < 6; f++) {
+      const frame = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.05, 2.6), new THREE.MeshStandardMaterial({ color: "#2a2a2a", metalness: 0.8, roughness: 0.3 }));
+      frame.position.y = 0.5 + f;
+      group.add(frame);
+    }
+    // Entrance
+    const entrance = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.8, 0.05), glassMat);
+    entrance.position.set(0, 0.4, 1.26);
+    group.add(entrance);
+    // Roof antenna
+    const antenna = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1, 6), new THREE.MeshStandardMaterial({ color: "#d0d0d0", metalness: 0.9, roughness: 0.2 }));
+    antenna.position.y = 6.5;
+    group.add(antenna);
+    // Red light
+    const light = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 6), new THREE.MeshStandardMaterial({ color: "#ff0000", emissive: "#ff0000", emissiveIntensity: 2 }));
+    light.position.y = 7;
+    group.add(light);
+  } else if (type === "hotel") {
+    // Tall building
+    const building = new THREE.Mesh(new THREE.BoxGeometry(3, 5, 2.5), new THREE.MeshStandardMaterial({ color: "#e8d8b0", roughness: 0.6 }));
+    building.position.y = 2.5;
+    group.add(building);
+    // Windows (grid)
+    for (let f = 0; f < 5; f++) {
+      for (let c = 0; c < 3; c++) {
+        for (const side of [-1, 1]) {
+          const win = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.05), glassMat);
+          win.position.set(-0.9 + c * 0.9, 0.5 + f * 0.9, side * 1.26);
+          group.add(win);
+        }
+      }
+    }
+    // Grand entrance
+    const entrance = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.9, 0.1), new THREE.MeshStandardMaterial({ color: "#8b0000", roughness: 0.6 }));
+    entrance.position.set(0, 0.45, 1.26);
+    group.add(entrance);
+    // Awning
+    const awning = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.1, 0.6), new THREE.MeshStandardMaterial({ color: "#8b0000", roughness: 0.7 }));
+    awning.position.set(0, 0.95, 1.5);
+    group.add(awning);
+    // Hotel sign
+    const sign = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.5, 0.1), goldMat);
+    sign.position.set(0, 5.3, 0);
+    group.add(sign);
+    // Rooftop pool
+    const pool = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.1, 1), new THREE.MeshStandardMaterial({ color: "#4fc3f7", roughness: 0.1, metalness: 0.3 }));
+    pool.position.set(0, 5.1, 0);
+    group.add(pool);
+  } else if (type === "restaurant") {
+    // Building with large windows
+    const building = new THREE.Mesh(new THREE.BoxGeometry(3, 1.8, 2.5), wallMat);
+    building.position.y = 0.9;
+    group.add(building);
+    // Large front windows
+    for (let i = 0; i < 2; i++) {
+      const win = new THREE.Mesh(new THREE.BoxGeometry(1, 0.8, 0.05), glassMat);
+      win.position.set(-0.6 + i * 1.2, 1, 1.26);
+      group.add(win);
+    }
+    // Door
+    const door = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1.1, 0.05), new THREE.MeshStandardMaterial({ color: "#5d3a1a", roughness: 0.7 }));
+    door.position.set(0, 0.55, 1.26);
+    group.add(door);
+    // Awning (striped)
+    for (let i = 0; i < 6; i++) {
+      const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.05, 0.6), i % 2 === 0 ? accentMat : new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.7 }));
+      stripe.position.set(-1.25 + i * 0.5, 1.6, 1.4);
+      stripe.rotation.x = 0.2;
+      group.add(stripe);
+    }
+    // Chimney
+    const chimney = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.8, 0.3), new THREE.MeshStandardMaterial({ color: "#8b4513", roughness: 0.8 }));
+    chimney.position.set(-0.8, 2.2, -0.8);
+    group.add(chimney);
+    // Sign
+    const sign = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.4, 0.05), accentMat);
+    sign.position.set(0, 1.95, 1.26);
+    group.add(sign);
+  } else if (type === "supermarket") {
+    // Wide building
+    const building = new THREE.Mesh(new THREE.BoxGeometry(4.5, 2, 3), wallMat);
+    building.position.y = 1;
+    group.add(building);
+    // Large windows
+    for (let i = 0; i < 4; i++) {
+      const win = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1, 0.05), glassMat);
+      win.position.set(-1.5 + i * 1, 1.2, 1.51);
+      group.add(win);
+    }
+    // Entrance
+    const entrance = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.2, 0.05), glassMat);
+    entrance.position.set(0, 0.6, 1.51);
+    group.add(entrance);
+    // Sign (large)
+    const sign = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.6, 0.1), accentMat);
+    sign.position.set(0, 2.2, 1.4);
+    group.add(sign);
+    // Shopping carts outside
+    for (let i = 0; i < 3; i++) {
+      const cart = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.25, 0.4), new THREE.MeshStandardMaterial({ color: "#888888", metalness: 0.7, roughness: 0.3 }));
+      cart.position.set(-1.5 + i * 0.5, 0.15, 2.2);
+      group.add(cart);
+    }
+  } else if (type === "shoppingmall") {
+    // Large modern mall
+    const building = new THREE.Mesh(new THREE.BoxGeometry(6, 3, 4), wallMat);
+    building.position.y = 1.5;
+    group.add(building);
+    // Glass dome on top
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(2, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2), glassMat);
+    dome.position.y = 3;
+    dome.scale.set(1, 0.4, 0.7);
+    group.add(dome);
+    // Large entrance
+    const entrance = new THREE.Mesh(new THREE.BoxGeometry(2, 1.5, 0.05), glassMat);
+    entrance.position.set(0, 0.75, 2.01);
+    group.add(entrance);
+    // Store windows
+    for (let i = 0; i < 5; i++) {
+      for (const side of [-1, 1]) {
+        const win = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1, 0.05), glassMat);
+        win.position.set(-2.4 + i * 1.2, 1.8, side * 2.01);
+        group.add(win);
+      }
+    }
+    // Sign
+    const sign = new THREE.Mesh(new THREE.BoxGeometry(4, 0.7, 0.1), new THREE.MeshStandardMaterial({ color: "#4a90d9", emissive: "#4a90d9", emissiveIntensity: 0.3 }));
+    sign.position.set(0, 3.5, 0);
+    group.add(sign);
+    // Parking lot
+    const parking = new THREE.Mesh(new THREE.BoxGeometry(6, 0.05, 2), new THREE.MeshStandardMaterial({ color: "#2a2a2a", roughness: 0.9 }));
+    parking.position.set(0, 0.03, 3);
+    group.add(parking);
+  } else if (type === "cinema") {
+    // Building with marquee
+    const building = new THREE.Mesh(new THREE.BoxGeometry(4, 2.5, 3), new THREE.MeshStandardMaterial({ color: "#2a2a4a", roughness: 0.6 }));
+    building.position.y = 1.25;
+    group.add(building);
+    // Marquee (large sign)
+    const marquee = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.8, 0.3), new THREE.MeshStandardMaterial({ color: "#ff6b6b", emissive: "#ff6b6b", emissiveIntensity: 0.5 }));
+    marquee.position.set(0, 2.2, 1.6);
+    group.add(marquee);
+    // Marquee lights (bulbs)
+    for (let i = 0; i < 8; i++) {
+      const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 4), new THREE.MeshStandardMaterial({ color: "#ffdd00", emissive: "#ffdd00", emissiveIntensity: 2 }));
+      bulb.position.set(-1.6 + i * 0.45, 2.6, 1.75);
+      group.add(bulb);
+    }
+    // Ticket booth
+    const booth = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.8, 0.6), glassMat);
+    booth.position.set(1.8, 0.4, 1.5);
+    group.add(booth);
+    // Entrance doors (dark)
+    const doors = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.2, 0.05), new THREE.MeshStandardMaterial({ color: "#1a1a2a", roughness: 0.3, metalness: 0.5 }));
+    doors.position.set(0, 0.6, 1.51);
+    group.add(doors);
+    // Popcorn stand
+    const popcorn = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), new THREE.MeshStandardMaterial({ color: "#ffdd44", roughness: 0.5 }));
+    popcorn.position.set(-1.8, 0.2, 1.8);
+    group.add(popcorn);
+  }
+
+  group.traverse((child) => {
+    if ((child as import("three").Mesh).isMesh) {
+      child.castShadow = true;
+      child.receiveShadow = true;
+    }
+  });
+  return group;
+}
