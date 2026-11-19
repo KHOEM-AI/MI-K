@@ -8198,6 +8198,41 @@ export function createKaraokeGeometry(
     roomLight.userData.roomTier = room.tier;
     roomGroup.add(roomLight);
 
+    // Wall sconces (2 per room)
+    for (const sconceX of [-room.w / 2 + 2.5, room.w / 2 - 2.5]) {
+      const sconceMount = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.06, 0.06, 0.03, 10),
+        gold
+      );
+      sconceMount.rotation.x = Math.PI / 2;
+      sconceMount.position.set(sconceX, 2.0, -room.d / 2 + 0.18);
+      roomGroup.add(sconceMount);
+      const sconceArm = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.02, 0.02, 0.25, 6),
+        gold
+      );
+      sconceArm.rotation.x = Math.PI / 2;
+      sconceArm.position.set(sconceX, 2.0, -room.d / 2 + 0.30);
+      roomGroup.add(sconceArm);
+      const sconceShade = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.10, 0.14, 0.18, 10, 1, true),
+        new THREE.MeshStandardMaterial({
+          color: pendantColor, emissive: pendantColor, emissiveIntensity: 1.8,
+          side: THREE.DoubleSide, transparent: true, opacity: 0.85,
+        })
+      );
+      sconceShade.position.set(sconceX, 2.08, -room.d / 2 + 0.42);
+      roomGroup.add(sconceShade);
+      const sconceBulb = new THREE.Mesh(
+        new THREE.SphereGeometry(0.04, 8, 6),
+        new THREE.MeshStandardMaterial({
+          color: "#ffffff", emissive: "#ffffff", emissiveIntensity: 3.0,
+        })
+      );
+      sconceBulb.position.set(sconceX, 2.0, -room.d / 2 + 0.42);
+      roomGroup.add(sconceBulb);
+    }
+
     // ============ ROUND 2: LUXURY DETAILS ============
 
     // ---- Wall pictures (art frames) ----
@@ -8492,6 +8527,29 @@ export function createKaraokeGeometry(
   // Store tile info for animation
   group.userData.danceTiles = danceTiles;
 
+  // DANCERS ON DANCE FLOOR
+  const dancerConfigs: Array<[number, number, string, string, "long" | "short" | "bun", "male" | "female"]> = [
+    [-2.5, 12.0, "#ff1493", "#f0c8a0", "long", "female"],
+    [ 2.0, 11.5, "#00e5ff", "#e0b088", "short", "male"],
+    [-1.0, 13.0, "#ffd700", "#d8a878", "bun", "female"],
+    [ 2.5, 13.2, "#7c3aed", "#f0c8a0", "long", "female"],
+    [-3.0, 13.5, "#00ff88", "#e0b088", "short", "male"],
+    [ 0.5, 11.0, "#ff69b4", "#f0c8a0", "long", "female"],
+  ];
+  dancerConfigs.forEach(([dx, dz, color, skin, hair, gender], di) => {
+    const dancer = buildDetailedHuman(THREE, {
+      role: "guest", gender, primaryColor: color,
+      hairStyle: hair, skinTone: skin,
+    });
+    dancer.position.set(dx, 0.18, dz);
+    dancer.rotation.y = (di * Math.PI) / 3 + Math.PI;
+    dancer.name = "dancer";
+    dancer.userData.danceDelay = di * 0.7;
+    dancer.userData.danceBaseY = 0.18;
+    dancer.userData.danceBaseRot = (di * Math.PI) / 3 + Math.PI;
+    group.add(dancer);
+  });
+
   // Stage backdrop screen (LED wall)
   const backdrop = new THREE.Mesh(
     new THREE.BoxGeometry(8, 4, 0.15),
@@ -8738,6 +8796,67 @@ export function createKaraokeGeometry(
   const wcSign = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.4, 0.08), neonCyan);
   wcSign.position.set(W / 2 - 2, 2.8, -D / 2 + 0.2);
   group.add(wcSign);
+
+  // BATHROOM FIXTURES
+  const toiletBase = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.22, 0.26, 0.35, 16),
+    new THREE.MeshStandardMaterial({ color: "#fafafa", roughness: 0.2, metalness: 0.05 })
+  );
+  toiletBase.position.set(W / 2 - 1.2, 0.18, -D / 2 + 1.0);
+  group.add(toiletBase);
+  const toiletBowl = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.28, 0.24, 0.15, 16),
+    new THREE.MeshStandardMaterial({ color: "#fafafa", roughness: 0.2, metalness: 0.05 })
+  );
+  toiletBowl.position.set(W / 2 - 1.2, 0.42, -D / 2 + 1.0);
+  group.add(toiletBowl);
+  const toiletLid = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.27, 0.27, 0.04, 16),
+    new THREE.MeshStandardMaterial({ color: "#eaeaea", roughness: 0.3 })
+  );
+  toiletLid.position.set(W / 2 - 1.2, 0.51, -D / 2 + 1.0);
+  group.add(toiletLid);
+  const toiletTank = new THREE.Mesh(
+    new THREE.BoxGeometry(0.42, 0.3, 0.25),
+    new THREE.MeshStandardMaterial({ color: "#fafafa", roughness: 0.2, metalness: 0.05 })
+  );
+  toiletTank.position.set(W / 2 - 1.2, 0.6, -D / 2 + 0.85);
+  group.add(toiletTank);
+
+  const sinkBase = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.15, 0.18, 0.6, 12),
+    new THREE.MeshStandardMaterial({ color: "#f0f0f0", roughness: 0.25 })
+  );
+  sinkBase.position.set(W / 2 - 3.5, 0.3, -D / 2 + 1.0);
+  group.add(sinkBase);
+  const sinkBasin = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.32, 0.3, 0.18, 20),
+    new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.15, metalness: 0.1 })
+  );
+  sinkBasin.position.set(W / 2 - 3.5, 0.65, -D / 2 + 1.0);
+  group.add(sinkBasin);
+  const faucetSpout = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.025, 0.025, 0.2, 8),
+    new THREE.MeshStandardMaterial({ color: "#c0c0c0", metalness: 0.95, roughness: 0.15 })
+  );
+  faucetSpout.position.set(W / 2 - 3.5, 0.85, -D / 2 + 0.92);
+  faucetSpout.rotation.x = Math.PI / 2;
+  group.add(faucetSpout);
+
+  const mirror = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.7, 0.9),
+    new THREE.MeshStandardMaterial({
+      color: "#c0d4e0", metalness: 1.0, roughness: 0.05, envMapIntensity: 1.2,
+    })
+  );
+  mirror.position.set(W / 2 - 3.5, 1.7, -D / 2 + 0.15);
+  group.add(mirror);
+  const mirrorFrame = new THREE.Mesh(
+    new THREE.BoxGeometry(0.8, 1.0, 0.05),
+    gold
+  );
+  mirrorFrame.position.set(W / 2 - 3.5, 1.7, -D / 2 + 0.10);
+  group.add(mirrorFrame);
 
   // ---------- MIRROR WALL (premium side, reflective) ----------
   const mirrorWall = new THREE.Mesh(new THREE.BoxGeometry(0.1, 3, D - 4), mirrorMat);
