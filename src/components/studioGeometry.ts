@@ -7900,6 +7900,210 @@ export function createKaraokeGeometry(
     cockGlass.position.set(0, 0.65, 1.3);
     roomGroup.add(cockGlass);
 
+    // ============ KTV ROOM DETAILS ============
+    // Tier colors
+    const carpetColors: Record<string, [string, string, string]> = {
+      premium: ["#6b0f1a", "#d4af37", "#ffd700"],
+      vip:     ["#3a0033", "#ff1493", "#c71585"],
+      standard:["#2a2a2a", "#505050", "#707070"],
+    };
+    const palette = carpetColors[room.tier] || carpetColors.standard;
+    const carpetBaseColor = palette[0];
+    const carpetLineColor = palette[1];
+    const accentColor = palette[2];
+    const wallPanelColor =
+      room.tier === "premium" ? "#5a0a14" :
+      room.tier === "vip"     ? "#2a002a" :
+                                "#1a1a1a";
+    const pendantColor =
+      room.tier === "premium" ? "#ffd700" :
+      room.tier === "vip"     ? "#ff1493" :
+                                "#e0e0e0";
+
+    // ---- 1. CARPET under table (ការ៉ូ) ----
+    const carpet = new THREE.Mesh(
+      new THREE.PlaneGeometry(room.w - 1.6, room.d - 2),
+      new THREE.MeshStandardMaterial({ color: carpetBaseColor, roughness: 0.95 })
+    );
+    carpet.rotation.x = -Math.PI / 2;
+    carpet.position.set(0, 0.04, 0);
+    roomGroup.add(carpet);
+
+    // Carpet border (gold/accent)
+    for (const [bx, bz, bw, bd] of [
+      [0, -(room.d - 2) / 2 + 0.08, room.w - 1.6, 0.16],
+      [0,  (room.d - 2) / 2 - 0.08, room.w - 1.6, 0.16],
+      [-(room.w - 1.6) / 2 + 0.08, 0, 0.16, room.d - 2],
+      [ (room.w - 1.6) / 2 - 0.08, 0, 0.16, room.d - 2],
+    ]) {
+      const border = new THREE.Mesh(
+        new THREE.PlaneGeometry(bw, bd),
+        new THREE.MeshStandardMaterial({
+          color: carpetLineColor, roughness: 0.6, metalness: 0.3,
+          emissive: carpetLineColor, emissiveIntensity: 0.15,
+        })
+      );
+      border.rotation.x = -Math.PI / 2;
+      border.position.set(bx, 0.045, bz);
+      roomGroup.add(border);
+    }
+
+    // Diamond pattern in center of carpet
+    for (let di = -1; di <= 1; di++) {
+      for (let dj = -1; dj <= 1; dj++) {
+        if (di === 0 && dj === 0) continue;
+        const diamond = new THREE.Mesh(
+          new THREE.PlaneGeometry(0.4, 0.4),
+          new THREE.MeshStandardMaterial({
+            color: carpetLineColor, roughness: 0.5, metalness: 0.4,
+            emissive: carpetLineColor, emissiveIntensity: 0.1,
+          })
+        );
+        diamond.rotation.x = -Math.PI / 2;
+        diamond.rotation.z = Math.PI / 4;
+        diamond.position.set(di * 1.6, 0.046, dj * 1.2);
+        roomGroup.add(diamond);
+      }
+    }
+
+    // ---- 2. WALL COLOR PANELS (ច្រឡុងជញ្ជាំងពណ៌) ----
+    // Back wall fabric panel
+    const backPanel = new THREE.Mesh(
+      new THREE.PlaneGeometry(room.w - 1.2, 2.4),
+      new THREE.MeshStandardMaterial({ color: wallPanelColor, roughness: 0.95, metalness: 0.05 })
+    );
+    backPanel.position.set(0, 1.35, -room.d / 2 + 0.16);
+    roomGroup.add(backPanel);
+
+    // Gold trims (top + bottom) around back panel
+    for (const [ty, th] of [[2.6, 0.05], [0.12, 0.05]]) {
+      const trim = new THREE.Mesh(
+        new THREE.BoxGeometry(room.w - 1.1, th, 0.06),
+        gold
+      );
+      trim.position.set(0, ty, -room.d / 2 + 0.18);
+      roomGroup.add(trim);
+    }
+    // Vertical trims
+    for (const sx of [-1, 1]) {
+      const vTrim = new THREE.Mesh(
+        new THREE.BoxGeometry(0.06, 2.4, 0.06),
+        gold
+      );
+      vTrim.position.set(sx * (room.w - 1.2) / 2, 1.35, -room.d / 2 + 0.18);
+      roomGroup.add(vTrim);
+    }
+
+    // Side wall accent panels
+    for (const sx of [-1, 1]) {
+      const sidePanel = new THREE.Mesh(
+        new THREE.PlaneGeometry(room.d - 2.2, 2.0),
+        new THREE.MeshStandardMaterial({ color: wallPanelColor, roughness: 0.95, metalness: 0.05 })
+      );
+      sidePanel.rotation.y = sx > 0 ? -Math.PI / 2 : Math.PI / 2;
+      sidePanel.position.set(sx * (room.w / 2 - 0.16), 1.35, 0);
+      roomGroup.add(sidePanel);
+
+      // Trim
+      const sideTrim = new THREE.Mesh(
+        new THREE.BoxGeometry(0.06, 2.0, room.d - 2.2),
+        gold
+      );
+      sideTrim.position.set(sx * (room.w / 2 - 0.19), 1.35, 0);
+      roomGroup.add(sideTrim);
+    }
+
+    // Wall-mounted decorative stripes (accent color)
+    for (let ws = 0; ws < 3; ws++) {
+      const stripe = new THREE.Mesh(
+        new THREE.BoxGeometry(room.w - 2, 0.08, 0.04),
+        new THREE.MeshStandardMaterial({
+          color: accentColor, emissive: accentColor,
+          emissiveIntensity: 0.8, roughness: 0.4,
+        })
+      );
+      stripe.position.set(0, 0.8 + ws * 0.7, -room.d / 2 + 0.20);
+      roomGroup.add(stripe);
+    }
+
+    // ---- 3. PENDANT CEILING LIGHTS (អំពូលភ្លើង) ----
+    for (const px of [-2.2, 2.2]) {
+      // Chain from top (walls are 3 high)
+      const chain = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.02, 0.02, 0.55, 6),
+        gold
+      );
+      chain.position.set(px, 2.75, 0);
+      roomGroup.add(chain);
+
+      // Shade (cone shape)
+      const shade = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.32, 0.48, 0.35, 16, 1, true),
+        new THREE.MeshStandardMaterial({
+          color: pendantColor, emissive: pendantColor, emissiveIntensity: 1.4,
+          side: THREE.DoubleSide, transparent: true, opacity: 0.9,
+        })
+      );
+      shade.position.set(px, 2.45, 0);
+      roomGroup.add(shade);
+
+      // Glowing bulb inside
+      const bulb = new THREE.Mesh(
+        new THREE.SphereGeometry(0.11, 10, 8),
+        new THREE.MeshStandardMaterial({
+          color: "#ffffff", emissive: "#ffffff",
+          emissiveIntensity: 3.0, roughness: 0.2,
+        })
+      );
+      bulb.position.set(px, 2.32, 0);
+      roomGroup.add(bulb);
+
+      // Shade top cap
+      const cap = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.05, 0.05, 0.06, 8),
+        gold
+      );
+      cap.position.set(px, 2.63, 0);
+      roomGroup.add(cap);
+    }
+
+    // ---- 4. AIR CONDITIONER (ម៉ាស៊ីនត្រជាក់) ----
+    // Wall-mounted split AC on back wall (upper right)
+    const acUnit = new THREE.Mesh(
+      new THREE.BoxGeometry(1.5, 0.42, 0.28),
+      new THREE.MeshStandardMaterial({ color: "#f5f5f5", roughness: 0.4, metalness: 0.2 })
+    );
+    acUnit.position.set(room.w / 2 - 1.6, 2.55, -room.d / 2 + 0.40);
+    roomGroup.add(acUnit);
+
+    // AC vent slats
+    for (let vi = 0; vi < 5; vi++) {
+      const vent = new THREE.Mesh(
+        new THREE.BoxGeometry(1.3, 0.025, 0.02),
+        new THREE.MeshStandardMaterial({ color: "#a8a8a8", roughness: 0.5 })
+      );
+      vent.position.set(room.w / 2 - 1.6, 2.38 + vi * 0.05, -room.d / 2 + 0.55);
+      roomGroup.add(vent);
+    }
+
+    // AC power LED (green)
+    const acLed = new THREE.Mesh(
+      new THREE.SphereGeometry(0.035, 6, 4),
+      new THREE.MeshStandardMaterial({
+        color: "#00ff44", emissive: "#00ff44", emissiveIntensity: 2.5,
+      })
+    );
+    acLed.position.set(room.w / 2 - 1.0, 2.70, -room.d / 2 + 0.55);
+    roomGroup.add(acLed);
+
+    // AC brand strip (gold)
+    const acStrip = new THREE.Mesh(
+      new THREE.BoxGeometry(0.7, 0.03, 0.02),
+      gold
+    );
+    acStrip.position.set(room.w / 2 - 1.6, 2.68, -room.d / 2 + 0.55);
+    roomGroup.add(acStrip);
+
     group.add(roomGroup);
   });
 
