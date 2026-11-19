@@ -7724,6 +7724,26 @@ export function createKaraokeGeometry(
     sofaBackTop.position.set(0, 0.95, -room.d / 2 + 0.5);
     roomGroup.add(sofaBackTop);
 
+    // Tufted buttons on sofa (luxury 5-star detail)
+    for (let tx = 0; tx < 6; tx++) {
+      for (let ty = 0; ty < 2; ty++) {
+        const button = new THREE.Mesh(
+          new THREE.SphereGeometry(0.025, 6, 4),
+          new THREE.MeshStandardMaterial({
+            color: room.tier === "premium" ? "#8b6914" : "#2a1a1a",
+            metalness: room.tier === "premium" ? 0.6 : 0.2,
+            roughness: 0.5,
+          })
+        );
+        button.position.set(
+          -(room.w - 0.6) / 2 + 0.35 + tx * ((room.w - 0.6) - 0.7) / 5,
+          0.92,
+          -room.d / 2 + 0.55 + ty * 0.25
+        );
+        roomGroup.add(button);
+      }
+    }
+
     for (const sx of [-1, 1]) {
       const side = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.7, room.d - 2), room.sofaColor);
       side.position.set(sx * (room.w / 2 - 0.8), 0.35, 0);
@@ -8140,38 +8160,26 @@ export function createKaraokeGeometry(
   stageFront.position.set(0, 0.5, 9.5);
   group.add(stageFront);
 
-  // Singer with microphone on stage
-  const singer = new THREE.Group();
+  // Singer with microphone on stage (5-star detail)
+  const singer = buildDetailedHuman(THREE, {
+    role: "guest", gender: "female", primaryColor: "#8e44ad",
+    hairStyle: "long", skinTone: "#f0c8a0", hairColor: "#0a0505",
+  });
   singer.position.set(-1, 0.6, 8);
-  // legs
-  for (const sx of [-0.18, 0.18]) {
-    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 1.1, 8), new THREE.MeshStandardMaterial({ color: "#1a1a2e" }));
-    leg.position.set(sx, 0.55, 0);
-    singer.add(leg);
-  }
-  // body
-  const singerBody = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.32, 0.9, 10), new THREE.MeshStandardMaterial({ color: "#8e44ad", roughness: 0.4, metalness: 0.2 }));
-  singerBody.position.y = 1.55;
-  singer.add(singerBody);
-  // head
-  const singerHead = new THREE.Mesh(new THREE.SphereGeometry(0.22, 12, 10), skinMat);
-  singerHead.position.y = 2.25;
-  singer.add(singerHead);
-  // arm holding mic
-  const armR = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.7, 6), skinMat);
-  armR.position.set(0.35, 1.7, 0.1);
-  armR.rotation.z = -0.5;
-  singer.add(armR);
-  // microphone
-  const mic = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 0.18, 8), new THREE.MeshStandardMaterial({ color: "#222", metalness: 0.9, roughness: 0.2 }));
-  mic.position.set(0.6, 2.0, 0.3);
+  // Add microphone in hand
+  const mic = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.04, 0.05, 0.18, 10),
+    new THREE.MeshStandardMaterial({ color: "#222", metalness: 0.9, roughness: 0.2 })
+  );
+  mic.position.set(0.35, 1.0, 0.2);
   mic.rotation.x = 0.3;
   singer.add(mic);
-  // mic tip glow
-  const micTip = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 6), neonGold);
-  micTip.position.set(0.62, 2.1, 0.32);
+  const micTip = new THREE.Mesh(
+    new THREE.SphereGeometry(0.05, 8, 6),
+    neonGold
+  );
+  micTip.position.set(0.37, 1.1, 0.22);
   singer.add(micTip);
-  singer.traverse((c: any) => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
   group.add(singer);
 
   // ---------- TRADITIONAL INSTRUMENTS (stage side) ----------
@@ -8206,43 +8214,12 @@ export function createKaraokeGeometry(
 
   // ---------- HOSTESSES (6 ladies) ----------
   function makeHostess(x: number, z: number, facing: number) {
-    const h = new THREE.Group();
+    const h = buildDetailedHuman(THREE, {
+      role: "hostess", gender: "female", primaryColor: "#ff1f6d",
+      hairStyle: "long", skinTone: "#f5cba0", hairColor: "#0a0505",
+    });
     h.position.set(x, 0, z);
     h.rotation.y = facing;
-    for (const sx of [-0.12, 0.12]) {
-      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 1.0, 8), skinMat);
-      leg.position.set(sx, 0.5, 0);
-      h.add(leg);
-    }
-    // dress
-    const dress = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.35, 0.9, 10), dressMat);
-    dress.position.y = 1.45;
-    h.add(dress);
-    // arms
-    for (const sx of [-0.25, 0.25]) {
-      const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.7, 6), skinMat);
-      arm.position.set(sx, 1.6, 0);
-      arm.rotation.z = sx > 0 ? 0.15 : -0.15;
-      h.add(arm);
-    }
-    // head
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 10), skinMat);
-    head.position.y = 2.1;
-    h.add(head);
-    // hair
-    const hair = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 10), new THREE.MeshStandardMaterial({ color: "#1a0a05", roughness: 0.6 }));
-    hair.position.y = 2.15;
-    hair.scale.set(1, 0.8, 1);
-    h.add(hair);
-    // small golden plate (tray) in hand
-    const tray = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.02, 12), gold);
-    tray.position.set(0.3, 1.35, 0.15);
-    h.add(tray);
-    // bottle on tray
-    const bot = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 0.25, 8), new THREE.MeshStandardMaterial({ color: "#1a1a2a", metalness: 0.4, roughness: 0.2 }));
-    bot.position.set(0.3, 1.5, 0.15);
-    h.add(bot);
-    h.traverse((c: any) => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
     group.add(h);
   }
   // 2 at entrance
@@ -8257,29 +8234,16 @@ export function createKaraokeGeometry(
 
   // ---------- GUESTS (sitting on sofas, 12 total) ----------
   function makeGuest(x: number, z: number, facing: number, color: string) {
-    const g = new THREE.Group();
+    const h = color.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+    const isFem = h % 2 === 0;
+    const g = buildDetailedHuman(THREE, {
+      role: "guest", gender: isFem ? "female" : "male",
+      primaryColor: color, seated: true,
+      hairStyle: isFem ? "long" : "short",
+      hairColor: isFem ? "#1a0805" : "#050303",
+    });
     g.position.set(x, 0, z);
     g.rotation.y = facing;
-    const bodyMat = new THREE.MeshStandardMaterial({ color, roughness: 0.6 });
-    const legs = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.15, 0.5), new THREE.MeshStandardMaterial({ color: "#222", roughness: 0.7 }));
-    legs.position.y = 0.45;
-    g.add(legs);
-    const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.25, 0.7, 10), bodyMat);
-    torso.position.y = 1.0;
-    g.add(torso);
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 10), skinMat);
-    head.position.y = 1.55;
-    g.add(head);
-    // hair
-    const hair = new THREE.Mesh(new THREE.SphereGeometry(0.17, 10, 8), new THREE.MeshStandardMaterial({ color: "#0a0505", roughness: 0.7 }));
-    hair.position.y = 1.6;
-    hair.scale.set(1, 0.7, 1);
-    g.add(hair);
-    // glass in hand
-    const glass = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 0.15, 8), glassMat);
-    glass.position.set(0.3, 1.05, 0.2);
-    g.add(glass);
-    g.traverse((c: any) => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
     group.add(g);
   }
   // Guests in rooms
@@ -8293,30 +8257,11 @@ export function createKaraokeGeometry(
 
   // ---------- WAITERS (3, one per tier) ----------
   function makeWaiter(x: number, z: number, color: string) {
-    const w = new THREE.Group();
+    const w = buildDetailedHuman(THREE, {
+      role: "waiter", gender: "male", primaryColor: color,
+      hairStyle: "short", skinTone: "#e0b088",
+    });
     w.position.set(x, 0, z);
-    for (const sx of [-0.12, 0.12]) {
-      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 1.0, 8), new THREE.MeshStandardMaterial({ color: "#111", roughness: 0.6 }));
-      leg.position.set(sx, 0.5, 0);
-      w.add(leg);
-    }
-    const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.24, 0.85, 10), new THREE.MeshStandardMaterial({ color, roughness: 0.5 }));
-    torso.position.y = 1.4;
-    w.add(torso);
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 10), skinMat);
-    head.position.y = 2.0;
-    w.add(head);
-    // tray
-    const tray = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.02, 12), gold);
-    tray.position.set(0.35, 1.35, 0.2);
-    w.add(tray);
-    // 2 glasses on tray
-    for (let k = 0; k < 2; k++) {
-      const glass = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 0.15, 8), glassMat);
-      glass.position.set(0.35 + (k - 0.5) * 0.15, 1.45, 0.2);
-      w.add(glass);
-    }
-    w.traverse((c: any) => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
     group.add(w);
   }
   makeWaiter(-8, -6, "#1a1a2e");
@@ -8347,28 +8292,11 @@ export function createKaraokeGeometry(
 
   // ---------- SECURITY (2, at entrance) ----------
   function makeSecurity(x: number, z: number) {
-    const s = new THREE.Group();
+    const s = buildDetailedHuman(THREE, {
+      role: "security", gender: "male", primaryColor: "#050505",
+      hairStyle: "short", skinTone: "#c89070",
+    });
     s.position.set(x, 0, z);
-    for (const sx of [-0.14, 0.14]) {
-      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 1.1, 8), securityMat);
-      leg.position.set(sx, 0.55, 0);
-      s.add(leg);
-    }
-    const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.28, 0.95, 10), securityMat);
-    torso.position.y = 1.55;
-    s.add(torso);
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.17, 12, 10), skinMat);
-    head.position.y = 2.2;
-    s.add(head);
-    // cap
-    const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.19, 0.12, 12), securityMat);
-    cap.position.y = 2.32;
-    s.add(cap);
-    // glasses (sunglasses)
-    const sunglasses = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.08, 0.08), new THREE.MeshStandardMaterial({ color: "#000", metalness: 0.9, roughness: 0.1 }));
-    sunglasses.position.set(0, 2.2, 0.14);
-    s.add(sunglasses);
-    s.traverse((c: any) => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
     group.add(s);
   }
   makeSecurity(-6, D / 2 - 0.5);
@@ -8419,3 +8347,254 @@ export function createKaraokeGeometry(
   group.name = "karaoke";
   return group;
 }
+
+// ============================================================
+// 5-STAR DETAILED HUMAN BUILDER
+// ============================================================
+function buildDetailedHuman(
+  THREE: typeof import("three"),
+  opts: {
+    role: "guest" | "hostess" | "waiter" | "security" | "tech";
+    gender: "male" | "female";
+    primaryColor: string;
+    seated?: boolean;
+    skinTone?: string;
+    hairColor?: string;
+    hairStyle?: "short" | "long" | "bun";
+  }
+): import("three").Group {
+  const g = new THREE.Group();
+  const skin = new THREE.MeshStandardMaterial({
+    color: opts.skinTone || (opts.gender === "female" ? "#f0c8a0" : "#e0b088"),
+    roughness: 0.75, metalness: 0.02,
+  });
+  const hair = new THREE.MeshStandardMaterial({
+    color: opts.hairColor || (opts.gender === "female" ? "#1a0a05" : "#0a0505"),
+    roughness: 0.55, metalness: 0.08,
+  });
+  const cloth = new THREE.MeshStandardMaterial({
+    color: opts.primaryColor,
+    roughness: opts.role === "security" ? 0.75 : 0.35,
+    metalness: opts.role === "hostess" ? 0.2 : 0.05,
+  });
+  const shirt = new THREE.MeshStandardMaterial({ color: "#f5f5f5", roughness: 0.45 });
+  const pants = new THREE.MeshStandardMaterial({ color: "#1a1a1a", roughness: 0.65 });
+  const shoes = new THREE.MeshStandardMaterial({ color: "#050505", roughness: 0.25, metalness: 0.6 });
+  const eyeWhite = new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.3 });
+  const pupil = new THREE.MeshStandardMaterial({ color: "#0a0505", roughness: 0.2 });
+  const lips = new THREE.MeshStandardMaterial({
+    color: opts.gender === "female" ? "#d4345a" : "#a05545", roughness: 0.5,
+  });
+  const goldMat = new THREE.MeshStandardMaterial({ color: "#d4af37", roughness: 0.3, metalness: 0.85 });
+
+  const headBase = 1.5;
+
+  // ---- HEAD ----
+  const skull = new THREE.Mesh(new THREE.SphereGeometry(0.16, 16, 12), skin);
+  skull.scale.set(1, 1.08, 0.95);
+  skull.position.y = headBase;
+  g.add(skull);
+
+  const jaw = new THREE.Mesh(new THREE.SphereGeometry(0.13, 12, 10), skin);
+  jaw.scale.set(0.95, 0.75, 0.92);
+  jaw.position.set(0, headBase - 0.09, 0.02);
+  g.add(jaw);
+
+  for (const sx of [-1, 1]) {
+    const ear = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 6), skin);
+    ear.scale.set(0.55, 1, 0.4);
+    ear.position.set(sx * 0.155, headBase + 0.01, 0);
+    g.add(ear);
+  }
+
+  const nose = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.05, 6), skin);
+  nose.rotation.x = Math.PI / 2;
+  nose.position.set(0, headBase - 0.02, 0.155);
+  g.add(nose);
+
+  for (const sx of [-1, 1]) {
+    const eyeball = new THREE.Mesh(new THREE.SphereGeometry(0.026, 8, 6), eyeWhite);
+    eyeball.position.set(sx * 0.055, headBase + 0.025, 0.135);
+    g.add(eyeball);
+    const pup = new THREE.Mesh(new THREE.SphereGeometry(0.013, 8, 6), pupil);
+    pup.position.set(sx * 0.055, headBase + 0.025, 0.155);
+    g.add(pup);
+    const brow = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.008, 0.015), hair);
+    brow.position.set(sx * 0.055, headBase + 0.075, 0.14);
+    g.add(brow);
+  }
+
+  const mouth = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.018, 0.015), lips);
+  mouth.position.set(0, headBase - 0.075, 0.145);
+  g.add(mouth);
+
+  // ---- HAIR ----
+  const hairCap = new THREE.Mesh(
+    new THREE.SphereGeometry(0.17, 14, 12, 0, Math.PI * 2, 0, Math.PI * 0.6),
+    hair
+  );
+  hairCap.position.y = headBase + 0.02;
+  g.add(hairCap);
+
+  if (opts.hairStyle === "long") {
+    const backHair = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.13, 0.42, 12), hair);
+    backHair.position.set(0, headBase - 0.22, -0.06);
+    g.add(backHair);
+    for (const sx of [-1, 1]) {
+      const sideHair = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.03, 0.35, 8), hair);
+      sideHair.position.set(sx * 0.155, headBase - 0.14, 0.01);
+      g.add(sideHair);
+    }
+  } else if (opts.hairStyle === "bun") {
+    const bun = new THREE.Mesh(new THREE.SphereGeometry(0.1, 12, 10), hair);
+    bun.position.set(0, headBase + 0.13, -0.13);
+    g.add(bun);
+  }
+
+  // ---- NECK ----
+  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.065, 0.13, 10), skin);
+  neck.position.y = headBase - 0.25;
+  g.add(neck);
+
+  // ---- TORSO ----
+  const torsoY = opts.seated ? 1.05 : 1.15;
+  const chest = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.16, 0.45, 14), cloth);
+  chest.position.y = torsoY;
+  if (opts.gender === "female") chest.scale.set(0.95, 1, 1.08);
+  g.add(chest);
+
+  const waist = new THREE.Mesh(new THREE.CylinderGeometry(0.155, 0.17, 0.18, 14), cloth);
+  waist.position.y = torsoY - 0.31;
+  g.add(waist);
+
+  // Collar for waiter/security
+  if (opts.role === "waiter" || opts.role === "security") {
+    const collar = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.11, 0.05, 14), shirt);
+    collar.position.y = torsoY + 0.22;
+    g.add(collar);
+    if (opts.role === "waiter") {
+      const bow = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.035, 0.03),
+        new THREE.MeshStandardMaterial({ color: "#050505", roughness: 0.3 }));
+      bow.position.set(0, torsoY + 0.17, 0.16);
+      g.add(bow);
+    }
+  }
+
+  // Hostess necklace
+  if (opts.role === "hostess") {
+    const chain = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.008, 6, 20), goldMat);
+    chain.rotation.x = Math.PI / 2;
+    chain.position.set(0, torsoY + 0.13, 0.04);
+    g.add(chain);
+    const pendant = new THREE.Mesh(new THREE.SphereGeometry(0.02, 8, 6), goldMat);
+    pendant.position.set(0, torsoY + 0.02, 0.14);
+    g.add(pendant);
+  }
+
+  // ---- ARMS ----
+  for (const sx of [-1, 1]) {
+    const shoulder = new THREE.Mesh(new THREE.SphereGeometry(0.08, 10, 8), cloth);
+    shoulder.position.set(sx * 0.22, torsoY + 0.18, 0);
+    g.add(shoulder);
+
+    const upperMat = opts.role === "hostess" ? skin : cloth;
+    const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.045, 0.3, 10), upperMat);
+    upper.position.set(sx * 0.245, torsoY - 0.02, 0);
+    upper.rotation.z = sx * 0.08;
+    g.add(upper);
+
+    const elbow = new THREE.Mesh(new THREE.SphereGeometry(0.042, 8, 6), skin);
+    elbow.position.set(sx * 0.26, torsoY - 0.19, 0);
+    g.add(elbow);
+
+    const fore = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.035, 0.28, 10), skin);
+    fore.position.set(sx * 0.27, torsoY - 0.35, 0);
+    g.add(fore);
+
+    const hand = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.09, 0.035), skin);
+    hand.position.set(sx * 0.27, torsoY - 0.52, 0);
+    g.add(hand);
+  }
+
+  // ---- LEGS ----
+  if (opts.seated) {
+    for (const sx of [-1, 1]) {
+      const thigh = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.07, 0.35, 10), pants);
+      thigh.rotation.x = -Math.PI / 2;
+      thigh.position.set(sx * 0.1, 0.55, 0.18);
+      g.add(thigh);
+
+      const calf = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.05, 0.4, 10), pants);
+      calf.position.set(sx * 0.1, 0.3, 0.35);
+      g.add(calf);
+
+      const foot = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.05, 0.2), shoes);
+      foot.position.set(sx * 0.1, 0.08, 0.42);
+      g.add(foot);
+    }
+  } else {
+    for (const sx of [-1, 1]) {
+      const thigh = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.065, 0.4, 10), pants);
+      thigh.position.set(sx * 0.08, 0.6, 0);
+      g.add(thigh);
+
+      const knee = new THREE.Mesh(new THREE.SphereGeometry(0.065, 8, 6), pants);
+      knee.position.set(sx * 0.08, 0.38, 0);
+      g.add(knee);
+
+      const calf = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.05, 0.35, 10), pants);
+      calf.position.set(sx * 0.08, 0.2, 0);
+      g.add(calf);
+
+      const foot = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.04, 0.18), shoes);
+      foot.position.set(sx * 0.08, 0.02, 0.06);
+      g.add(foot);
+    }
+  }
+
+  // ---- ROLE ACCESSORIES ----
+  if (opts.role === "security") {
+    const glasses = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.055, 0.08),
+      new THREE.MeshStandardMaterial({ color: "#050505", metalness: 0.9, roughness: 0.1 }));
+    glasses.position.set(0, headBase + 0.03, 0.13);
+    g.add(glasses);
+    const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.08, 16),
+      new THREE.MeshStandardMaterial({ color: "#050505", roughness: 0.5 }));
+    cap.position.y = headBase + 0.15;
+    g.add(cap);
+  }
+
+  if (opts.role === "waiter") {
+    const tray = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.02, 16), goldMat);
+    tray.position.set(0.4, torsoY - 0.1, 0.15);
+    g.add(tray);
+    for (let i = 0; i < 3; i++) {
+      const glass = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 0.12, 8),
+        new THREE.MeshStandardMaterial({ color: "#88ccff", metalness: 0.5, roughness: 0.1, transparent: true, opacity: 0.7 }));
+      glass.position.set(0.4 + (i - 1) * 0.08, torsoY + 0.02, 0.15);
+      g.add(glass);
+    }
+  }
+
+  if (opts.role === "hostess") {
+    const tray = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.02, 16), goldMat);
+    tray.position.set(0.35, torsoY - 0.35, 0.15);
+    g.add(tray);
+    const bottle = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 0.22, 10),
+      new THREE.MeshStandardMaterial({ color: "#1a1a2a", roughness: 0.2, metalness: 0.5 }));
+    bottle.position.set(0.35, torsoY - 0.22, 0.15);
+    g.add(bottle);
+  }
+
+  if (opts.role === "tech") {
+    const band = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.015, 6, 16, Math.PI),
+      new THREE.MeshStandardMaterial({ color: "#050505", metalness: 0.7 }));
+    band.rotation.z = Math.PI / 2;
+    band.position.y = headBase + 0.04;
+    g.add(band);
+  }
+
+  g.traverse((c: any) => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
+  return g;
+}
+
