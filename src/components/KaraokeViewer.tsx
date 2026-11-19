@@ -1,8 +1,11 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createKaraokeGeometry } from "./studioGeometry";
+
+type KaraokeTier = "karaoke_full" | "karaoke_premium" | "karaoke_vip" | "karaoke_standard";
 
 export default function KaraokeViewer({ onClose }: { onClose: () => void }) {
   const mountRef = useRef<HTMLDivElement>(null);
+  const [tier, setTier] = useState<KaraokeTier>("karaoke_full");
 
   useEffect(() => {
     let cancelled = false;
@@ -17,10 +20,10 @@ export default function KaraokeViewer({ onClose }: { onClose: () => void }) {
       if (cancelled) return;
 
       const scene = new THREE.Scene();
-      scene.background = new THREE.Color("#0a0812");
+      scene.background = new THREE.Color("#1a1428");
 
       const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 500);
-      camera.position.set(28, 22, 28);
+      camera.position.set(42, 35, 42);
       camera.lookAt(0, 3, 0);
 
       const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -37,10 +40,13 @@ export default function KaraokeViewer({ onClose }: { onClose: () => void }) {
       controls.enableDamping = true;
       controls.dampingFactor = 0.08;
       controls.maxPolarAngle = Math.PI / 2.05;
-      controls.minDistance = 12;
-      controls.maxDistance = 90;
+      controls.minDistance = 8;
+      controls.maxDistance = 150;
 
-      scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+      (window as any).__karaokeCamera = camera;
+      (window as any).__karaokeControls = controls;
+
+      scene.add(new THREE.AmbientLight(0xffffff, 1.0));
       const dir = new THREE.DirectionalLight(0xffffff, 1.1);
       dir.position.set(20, 30, 20);
       dir.castShadow = true;
@@ -53,19 +59,27 @@ export default function KaraokeViewer({ onClose }: { onClose: () => void }) {
       dir.shadow.camera.bottom = -35;
       scene.add(dir);
 
-      const pink = new THREE.PointLight(0xff1493, 3, 60);
+      const pink = new THREE.PointLight(0xff1493, 4, 80);
       pink.position.set(-14, 8, 10);
       scene.add(pink);
-      const cyan = new THREE.PointLight(0x00e5ff, 3, 60);
+      const cyan = new THREE.PointLight(0x00e5ff, 4, 80);
       cyan.position.set(14, 8, -10);
       scene.add(cyan);
-      const gold = new THREE.PointLight(0xffd700, 2, 50);
-      gold.position.set(0, 10, 0);
+      const gold = new THREE.PointLight(0xffd700, 3, 60);
+      gold.position.set(0, 6, 5);
       scene.add(gold);
+
+      const overhead = new THREE.PointLight(0xffffff, 1.5, 100);
+      overhead.position.set(0, 15, 0);
+      scene.add(overhead);
+
+      const fillFront = new THREE.PointLight(0xffddaa, 1.0, 80);
+      fillFront.position.set(0, 5, 15);
+      scene.add(fillFront);
 
       const karaoke = createKaraokeGeometry(
         THREE,
-        "karaoke_full",
+        tier,
         "#d4af37",
         0.7,
         0.35
@@ -123,10 +137,62 @@ export default function KaraokeViewer({ onClose }: { onClose: () => void }) {
       const cleanup = (mount as any).__karaokeCleanup;
       if (cleanup) cleanup();
     };
-  }, []);
+  }, [tier]);
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "#0a0812" }}>
+      <div
+        style={{
+          position: "absolute", top: 16, right: 120, zIndex: 10,
+          display: "flex", gap: 6,
+        }}
+      >
+        {([
+          ["karaoke_full", "🎤 Full"],
+          ["karaoke_premium", "⭐ Premium"],
+          ["karaoke_vip", "💎 VIP"],
+          ["karaoke_standard", "🎵 Standard"],
+        ] as [KaraokeTier, string][]).map(([value, label]) => (
+          <button
+            key={value}
+            onClick={() => setTier(value)}
+            style={{
+              padding: "8px 14px",
+              borderRadius: 8,
+              border: "none",
+              cursor: "pointer",
+              fontWeight: 700,
+              fontSize: 13,
+              color: "#fff",
+              background: tier === value ? "#4f7cff" : "rgba(255,255,255,0.14)",
+              transition: "background 0.2s",
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <button
+        onClick={() => {
+          const cam = (window as any).__karaokeCamera;
+          const ctrl = (window as any).__karaokeControls;
+          if (cam && ctrl) {
+            cam.position.set(42, 35, 42);
+            ctrl.target.set(0, 3, 0);
+            ctrl.update();
+          }
+        }}
+        style={{
+          position: "absolute", top: 16, right: 320, zIndex: 10,
+          padding: "8px 14px", background: "rgba(255,255,255,0.14)",
+          color: "#fff", border: "none", borderRadius: 8, cursor: "pointer",
+          fontWeight: 700, fontSize: 13,
+        }}
+      >
+        🔍 Fit View
+      </button>
+
       <button
         onClick={onClose}
         style={{
