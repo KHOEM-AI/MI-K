@@ -34,7 +34,7 @@ export default function KaraokeViewer({ onClose }: { onClose: () => void }) {
       camera.lookAt(0, 3, 0);
 
       const renderer = new THREE.WebGLRenderer({ antialias: true });
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -64,7 +64,7 @@ export default function KaraokeViewer({ onClose }: { onClose: () => void }) {
       const dir = new THREE.DirectionalLight(0xffffff, 1.1);
       dir.position.set(20, 30, 20);
       dir.castShadow = true;
-      dir.shadow.mapSize.set(2048, 2048);
+      dir.shadow.mapSize.set(1024, 1024);
       dir.shadow.camera.near = 1;
       dir.shadow.camera.far = 120;
       dir.shadow.camera.left = -35;
@@ -105,7 +105,7 @@ export default function KaraokeViewer({ onClose }: { onClose: () => void }) {
       scene.add(grid);
 
       // ---------- SMOKE/FOG PARTICLES (D) ----------
-      const smokeCount = 80;
+      const smokeCount = 50;
       const smokeGeo = new THREE.BufferGeometry();
       const smokePositions = new Float32Array(smokeCount * 3);
       const smokeVelocities = new Float32Array(smokeCount * 3);
@@ -133,7 +133,7 @@ export default function KaraokeViewer({ onClose }: { onClose: () => void }) {
       scene.add(smokeParticles);
 
       // ---------- HEAVY SMOKE MACHINE (from stage edge) ----------
-      const smokeMachineCount = 120;
+      const smokeMachineCount = 80;
       const smokeMachineGeo = new THREE.BufferGeometry();
       const smokeMachinePositions = new Float32Array(smokeMachineCount * 3);
       const smokeMachineVelocities = new Float32Array(smokeMachineCount * 3);
@@ -178,7 +178,7 @@ export default function KaraokeViewer({ onClose }: { onClose: () => void }) {
       scene.add(machineLed);
 
       // ---------- CONFETTI PARTICLES (E) ----------
-      const confettiCount = 150;
+      const confettiCount = 100;
       const confettiGeo = new THREE.BufferGeometry();
       const confettiPositions = new Float32Array(confettiCount * 3);
       const confettiVelocities = new Float32Array(confettiCount * 3);
