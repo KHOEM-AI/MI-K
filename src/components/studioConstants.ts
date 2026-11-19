@@ -215,6 +215,10 @@ export const presets: { name: string; shape: Shape }[] = [
   { name: "Synagogue", shape: "synagogue" },
   { name: "Monastery", shape: "monastery" },
   { name: "Karaoke / Pub (Large)", shape: "karaoke" },
+  { name: "Karaoke Premium", shape: "karaoke_premium" },
+  { name: "Karaoke VIP", shape: "karaoke_vip" },
+  { name: "Karaoke Standard", shape: "karaoke_standard" },
+  { name: "Karaoke Full", shape: "karaoke_full" },
 ];
 
 
