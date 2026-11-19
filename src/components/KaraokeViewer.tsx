@@ -132,6 +132,51 @@ export default function KaraokeViewer({ onClose }: { onClose: () => void }) {
       const smokeParticles = new THREE.Points(smokeGeo, smokeMat);
       scene.add(smokeParticles);
 
+      // ---------- HEAVY SMOKE MACHINE (from stage edge) ----------
+      const smokeMachineCount = 120;
+      const smokeMachineGeo = new THREE.BufferGeometry();
+      const smokeMachinePositions = new Float32Array(smokeMachineCount * 3);
+      const smokeMachineVelocities = new Float32Array(smokeMachineCount * 3);
+      const smokeMachineSizes = new Float32Array(smokeMachineCount);
+      for (let i = 0; i < smokeMachineCount; i++) {
+        smokeMachinePositions[i * 3] = -3 + Math.random() * 6;
+        smokeMachinePositions[i * 3 + 1] = 0.2 + Math.random() * 0.3;
+        smokeMachinePositions[i * 3 + 2] = 10.5 + Math.random() * 0.5;
+        smokeMachineVelocities[i * 3] = (Math.random() - 0.5) * 0.4;
+        smokeMachineVelocities[i * 3 + 1] = 0.3 + Math.random() * 0.4;
+        smokeMachineVelocities[i * 3 + 2] = (Math.random() - 0.5) * 0.3 - 0.2;
+        smokeMachineSizes[i] = 1 + Math.random() * 1.5;
+      }
+      smokeMachineGeo.setAttribute("position", new THREE.BufferAttribute(smokeMachinePositions, 3));
+      smokeMachineGeo.setAttribute("size", new THREE.BufferAttribute(smokeMachineSizes, 1));
+      const smokeMachineMat = new THREE.PointsMaterial({
+        color: 0xd8dde8,
+        size: 1.2,
+        transparent: true,
+        opacity: 0.35,
+        depthWrite: false,
+        sizeAttenuation: true,
+        blending: THREE.AdditiveBlending,
+      });
+      const smokeMachine = new THREE.Points(smokeMachineGeo, smokeMachineMat);
+      scene.add(smokeMachine);
+
+      // Smoke machine hardware (visible box on stage)
+      const machineBox = new THREE.Mesh(
+        new THREE.BoxGeometry(1.2, 0.6, 0.8),
+        new THREE.MeshStandardMaterial({ color: "#0a0a0a", metalness: 0.8, roughness: 0.3 })
+      );
+      machineBox.position.set(-5.5, 0.3, 9.2);
+      scene.add(machineBox);
+      const machineLed = new THREE.Mesh(
+        new THREE.SphereGeometry(0.08, 8, 6),
+        new THREE.MeshStandardMaterial({
+          color: "#ff1493", emissive: "#ff1493", emissiveIntensity: 3.0,
+        })
+      );
+      machineLed.position.set(-5.5, 0.45, 9.62);
+      scene.add(machineLed);
+
       // ---------- CONFETTI PARTICLES (E) ----------
       const confettiCount = 150;
       const confettiGeo = new THREE.BufferGeometry();
@@ -302,6 +347,64 @@ export default function KaraokeViewer({ onClose }: { onClose: () => void }) {
           }
         });
 
+        // Fountain jets pulse
+        karaoke.traverse((obj: any) => {
+          if (obj.name === "fountainJet") {
+            const ang = obj.userData.jetAngle || 0;
+            obj.position.y = 1.6 + Math.sin(t * 3 + ang) * 0.15;
+            obj.scale.y = 1.0 + Math.sin(t * 2.5 + ang) * 0.2;
+          }
+          if (obj.name === "centerJet") {
+            obj.position.y = 2.8 + Math.sin(t * 2) * 0.2;
+            obj.scale.y = 1.0 + Math.sin(t * 3) * 0.25;
+          }
+          if (obj.name === "elevatorCar") {
+            const baseY = obj.userData.elevatorBaseY || 1.0;
+            const cycle = (Math.sin(t * 0.3) + 1) / 2;
+            obj.position.y = baseY + cycle * 3.2;
+          }
+          if (obj.name === "turntable") {
+            obj.rotation.y = t * 4;
+          }
+          if (obj.name === "realMirrorBall") {
+            obj.rotation.y = t * 0.6;
+          }
+          if (obj.name === "outdoorLetter") {
+            const delay = obj.userData.letterDelay || 0;
+            if (obj.material) {
+              obj.material.emissiveIntensity = 2.0 + Math.sin(t * 2 + delay) * 1.2;
+            }
+          }
+          if (obj.name === "marqueeBulb") {
+            const idx = obj.userData.bulbIndex || 0;
+            const phase = Math.sin(t * 4 - idx * 0.4);
+            if (obj.material) {
+              obj.material.emissiveIntensity = phase > 0.3 ? 3.0 : 0.8;
+            }
+          }
+        });
+
+        // Animate heavy smoke machine
+        {
+          const pos = smokeMachineGeo.attributes.position.array as Float32Array;
+          for (let i = 0; i < smokeMachineCount; i++) {
+            pos[i * 3] += smokeMachineVelocities[i * 3] * 0.02;
+            pos[i * 3 + 1] += smokeMachineVelocities[i * 3 + 1] * 0.02;
+            pos[i * 3 + 2] += smokeMachineVelocities[i * 3 + 2] * 0.02;
+            if (pos[i * 3 + 1] > 5.5) {
+              pos[i * 3] = -3 + Math.random() * 6;
+              pos[i * 3 + 1] = 0.2;
+              pos[i * 3 + 2] = 10.5 + Math.random() * 0.5;
+            }
+          }
+          smokeMachineGeo.attributes.position.needsUpdate = true;
+        }
+
+        // Fade machine LED (flicker)
+        if (machineLed.material) {
+          machineLed.material.emissiveIntensity = 2.0 + Math.sin(t * 8) * 1.5;
+        }
+
         controls.update();
         renderer.render(scene, camera);
         raf = requestAnimationFrame(animate);
@@ -325,6 +428,8 @@ export default function KaraokeViewer({ onClose }: { onClose: () => void }) {
         smokeGeo.dispose();
         smokeMat.dispose();
         confettiGeo.dispose();
+        smokeMachineGeo.dispose();
+        smokeMachineMat.dispose();
         confettiMat.dispose();
         controls.dispose();
         renderer.dispose();
