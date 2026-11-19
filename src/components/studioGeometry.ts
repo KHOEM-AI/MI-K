@@ -7637,6 +7637,74 @@ export function createKaraokeGeometry(
     group.add(led);
   }
 
+  // ---------- PHOTO WALL ----------
+  // Frame structure on right side near entrance
+  const photoWallFrame = new THREE.Mesh(
+    new THREE.BoxGeometry(0.2, 3.5, 6),
+    new THREE.MeshStandardMaterial({ color: "#1a1410", roughness: 0.5, metalness: 0.4 })
+  );
+  photoWallFrame.position.set(8.5, 1.75, 17);
+  group.add(photoWallFrame);
+
+  // Star stickers (glowing) on photo wall
+  const starColors = ["#ffd700", "#ff1493", "#00e5ff", "#ffd700"];
+  for (let si = 0; si < 8; si++) {
+    const star = new THREE.Mesh(
+      new THREE.CircleGeometry(0.15, 5),
+      new THREE.MeshStandardMaterial({
+        color: starColors[si % 4], emissive: starColors[si % 4],
+        emissiveIntensity: 2.0, side: THREE.DoubleSide,
+      })
+    );
+    star.rotation.y = -Math.PI / 2;
+    star.rotation.z = si * 0.4;
+    star.position.set(8.4, 0.8 + (si % 4) * 0.75, 14.5 + Math.floor(si / 4) * 1.5);
+    group.add(star);
+  }
+
+  // Photo frames (polaroid-style) on wall
+  const polaroidColors = ["#f5f0e0", "#ffffff", "#f0e8d8"];
+  for (let pi = 0; pi < 6; pi++) {
+    const row = Math.floor(pi / 3);
+    const col = pi % 3;
+    // White polaroid frame
+    const polaroid = new THREE.Mesh(
+      new THREE.BoxGeometry(0.04, 0.7, 0.55),
+      new THREE.MeshStandardMaterial({
+        color: polaroidColors[pi % 3], roughness: 0.7,
+      })
+    );
+    polaroid.position.set(8.45, 1.0 + row * 1.0, 14.5 + col * 1.6);
+    group.add(polaroid);
+    // Photo area (dark)
+    const photoContent = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.42, 0.52),
+      new THREE.MeshStandardMaterial({
+        color: pi % 2 ? "#2a1a3a" : "#1a2a3a", roughness: 0.8,
+      })
+    );
+    photoContent.rotation.y = -Math.PI / 2;
+    photoContent.position.set(8.42, 1.05 + row * 1.0, 14.5 + col * 1.6);
+    group.add(photoContent);
+    // Gold pin at top
+    const pin = new THREE.Mesh(
+      new THREE.SphereGeometry(0.04, 6, 4),
+      gold
+    );
+    pin.position.set(8.40, 1.30 + row * 1.0, 14.5 + col * 1.6);
+    group.add(pin);
+  }
+
+  // "PHOTO" neon sign above wall
+  const photoSign = new THREE.Mesh(
+    new THREE.BoxGeometry(0.1, 0.5, 3.2),
+    new THREE.MeshStandardMaterial({
+      color: "#ff69b4", emissive: "#ff69b4", emissiveIntensity: 2.2,
+    })
+  );
+  photoSign.position.set(8.4, 3.4, 15.5);
+  group.add(photoSign);
+
   // ---------- ENTRANCE (red carpet + velvet rope) ----------
   const redCarpet = new THREE.Mesh(
     new THREE.BoxGeometry(4, 0.05, 8),
@@ -8427,6 +8495,34 @@ export function createKaraokeGeometry(
       roomGroup.add(dot);
     }
 
+    // Tier-specific neon sign on side wall
+    const tierNeonColors =
+      room.tier === "premium" ? { color: "#ffd700", word: "PREMIUM" } :
+      room.tier === "vip"     ? { color: "#ff1493", word: "VIP" } :
+                                { color: "#00e5ff", word: "STANDARD" };
+    const tierNeonSign = new THREE.Mesh(
+      new THREE.BoxGeometry(0.05, 0.35, 1.6),
+      new THREE.MeshStandardMaterial({
+        color: tierNeonColors.color, emissive: tierNeonColors.color,
+        emissiveIntensity: 2.0,
+      })
+    );
+    tierNeonSign.position.set(-room.w / 2 + 0.2, 2.5, 0.5);
+    tierNeonSign.name = "tierNeonSign";
+    tierNeonSign.userData.neonColor = tierNeonColors.color;
+    roomGroup.add(tierNeonSign);
+
+    // Small underline
+    const neonUnderline = new THREE.Mesh(
+      new THREE.BoxGeometry(0.05, 0.06, 1.4),
+      new THREE.MeshStandardMaterial({
+        color: tierNeonColors.color, emissive: tierNeonColors.color,
+        emissiveIntensity: 2.4,
+      })
+    );
+    neonUnderline.position.set(-room.w / 2 + 0.2, 2.28, 0.5);
+    roomGroup.add(neonUnderline);
+
     // ---- Ceiling fan (small, elegant) ----
     if (room.tier !== "standard") {
       const fanHub = new THREE.Mesh(
@@ -8511,6 +8607,16 @@ export function createKaraokeGeometry(
       });
     }
   }
+  // DANCE neon sign above dance floor
+  const danceNeon = new THREE.Mesh(
+    new THREE.BoxGeometry(4.5, 0.5, 0.1),
+    new THREE.MeshStandardMaterial({
+      color: "#ff1493", emissive: "#ff1493", emissiveIntensity: 2.4,
+    })
+  );
+  danceNeon.position.set(0, 5.5, 12.5);
+  group.add(danceNeon);
+
   // Dance floor frame (gold border)
   for (const [fw, fd, fx, fz] of [
     [7.5, 0.15, 0, 11.4], [7.5, 0.15, 0, 13.6],
@@ -8549,6 +8655,94 @@ export function createKaraokeGeometry(
     dancer.userData.danceBaseRot = (di * Math.PI) / 3 + Math.PI;
     group.add(dancer);
   });
+
+  // ---------- SOUND SYSTEM ----------
+  // Main speakers (left + right of stage)
+  for (const spx of [-4.5, 4.5]) {
+    // Speaker cabinet
+    const speakerCab = new THREE.Mesh(
+      new THREE.BoxGeometry(0.8, 1.4, 0.7),
+      new THREE.MeshStandardMaterial({ color: "#0a0a0a", roughness: 0.75, metalness: 0.3 })
+    );
+    speakerCab.position.set(spx, 1.0, 8.0);
+    group.add(speakerCab);
+    // Speaker grille
+    const grille = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.7, 1.3),
+      new THREE.MeshStandardMaterial({
+        color: "#1a1a1a", roughness: 0.9, metalness: 0.4,
+      })
+    );
+    grille.position.set(spx, 1.0, 8.36);
+    group.add(grille);
+    // Speaker cones (2 per cabinet)
+    for (const cy of [0.55, 1.35]) {
+      const cone = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.2, 0.15, 0.08, 20),
+        new THREE.MeshStandardMaterial({ color: "#050505", roughness: 0.7, metalness: 0.5 })
+      );
+      cone.rotation.x = Math.PI / 2;
+      cone.position.set(spx, cy, 8.38);
+      group.add(cone);
+      // Cone center
+      const center = new THREE.Mesh(
+        new THREE.SphereGeometry(0.06, 10, 8),
+        new THREE.MeshStandardMaterial({ color: "#2a2a2a", metalness: 0.8, roughness: 0.3 })
+      );
+      center.position.set(spx, cy, 8.40);
+      group.add(center);
+    }
+    // LED power light
+    const powerLed = new THREE.Mesh(
+      new THREE.SphereGeometry(0.04, 6, 4),
+      new THREE.MeshStandardMaterial({
+        color: "#00ff44", emissive: "#00ff44", emissiveIntensity: 3.0,
+      })
+    );
+    powerLed.position.set(spx + 0.3, 0.4, 8.36);
+    group.add(powerLed);
+    // Speaker stand
+    const stand = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.04, 0.04, 0.3, 8),
+      new THREE.MeshStandardMaterial({ color: "#050505", metalness: 0.9, roughness: 0.2 })
+    );
+    stand.position.set(spx, 0.15, 8.0);
+    group.add(stand);
+  }
+
+  // Subwoofer under stage
+  const subwooferBox = new THREE.Mesh(
+    new THREE.BoxGeometry(2.5, 0.7, 0.8),
+    new THREE.MeshStandardMaterial({ color: "#0a0a0a", roughness: 0.8, metalness: 0.3 })
+  );
+  subwooferBox.position.set(0, 0.55, 9.3);
+  group.add(subwooferBox);
+  // Subwoofer driver
+  const subCone = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.28, 0.28, 0.05, 24),
+    new THREE.MeshStandardMaterial({ color: "#050505", roughness: 0.9, metalness: 0.5 })
+  );
+  subCone.rotation.x = Math.PI / 2;
+  subCone.position.set(0, 0.55, 9.72);
+  group.add(subCone);
+
+  // Mixer/amp rack (side of stage)
+  const ampRack = new THREE.Mesh(
+    new THREE.BoxGeometry(1.2, 0.8, 0.5),
+    new THREE.MeshStandardMaterial({ color: "#1a1a1a", roughness: 0.5, metalness: 0.6 })
+  );
+  ampRack.position.set(5.5, 0.4, 7.5);
+  group.add(ampRack);
+  // Knobs on amp
+  for (let ki = 0; ki < 6; ki++) {
+    const knob = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.04, 0.04, 0.03, 10),
+      gold
+    );
+    knob.rotation.x = Math.PI / 2;
+    knob.position.set(5.0 + ki * 0.2, 0.55, 7.76);
+    group.add(knob);
+  }
 
   // Stage backdrop screen (LED wall)
   const backdrop = new THREE.Mesh(
@@ -8729,6 +8923,16 @@ export function createKaraokeGeometry(
     bot.position.set(-W / 2 + 1, 1.3 + Math.floor(i / 6) * 0.3, -3 + (i % 6) * 1.1);
     group.add(bot);
   }
+  // BAR neon sign above counter
+  const barNeon = new THREE.Mesh(
+    new THREE.BoxGeometry(0.08, 0.5, 2.0),
+    new THREE.MeshStandardMaterial({
+      color: "#00ff44", emissive: "#00ff44", emissiveIntensity: 2.4,
+    })
+  );
+  barNeon.position.set(-W / 2 + 0.5, 3.5, 0);
+  group.add(barNeon);
+
   // Shelf under bottles
   for (let s = 0; s < 2; s++) {
     const shelf = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.06, 8), gold);

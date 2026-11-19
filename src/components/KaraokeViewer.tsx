@@ -95,6 +95,74 @@ export default function KaraokeViewer({ onClose }: { onClose: () => void }) {
       grid.position.y = -0.02;
       scene.add(grid);
 
+      // ---------- SMOKE/FOG PARTICLES (D) ----------
+      const smokeCount = 80;
+      const smokeGeo = new THREE.BufferGeometry();
+      const smokePositions = new Float32Array(smokeCount * 3);
+      const smokeVelocities = new Float32Array(smokeCount * 3);
+      const smokePhases = new Float32Array(smokeCount);
+      for (let i = 0; i < smokeCount; i++) {
+        smokePositions[i * 3] = -4 + Math.random() * 8;
+        smokePositions[i * 3 + 1] = 0.5 + Math.random() * 2.5;
+        smokePositions[i * 3 + 2] = 7 + Math.random() * 4;
+        smokeVelocities[i * 3] = (Math.random() - 0.5) * 0.3;
+        smokeVelocities[i * 3 + 1] = 0.15 + Math.random() * 0.2;
+        smokeVelocities[i * 3 + 2] = (Math.random() - 0.5) * 0.3;
+        smokePhases[i] = Math.random() * Math.PI * 2;
+      }
+      smokeGeo.setAttribute("position", new THREE.BufferAttribute(smokePositions, 3));
+      const smokeMat = new THREE.PointsMaterial({
+        color: 0xc0c8e0,
+        size: 0.5,
+        transparent: true,
+        opacity: 0.25,
+        depthWrite: false,
+        sizeAttenuation: true,
+        blending: THREE.AdditiveBlending,
+      });
+      const smokeParticles = new THREE.Points(smokeGeo, smokeMat);
+      scene.add(smokeParticles);
+
+      // ---------- CONFETTI PARTICLES (E) ----------
+      const confettiCount = 150;
+      const confettiGeo = new THREE.BufferGeometry();
+      const confettiPositions = new Float32Array(confettiCount * 3);
+      const confettiVelocities = new Float32Array(confettiCount * 3);
+      const confettiColors = new Float32Array(confettiCount * 3);
+      const confettiPhase = new Float32Array(confettiCount);
+      const palette = [
+        [1.0, 0.08, 0.58],
+        [0.0, 0.90, 1.0],
+        [1.0, 0.85, 0.0],
+        [0.48, 0.23, 0.93],
+        [0.0, 1.0, 0.53],
+      ];
+      for (let i = 0; i < confettiCount; i++) {
+        confettiPositions[i * 3] = -18 + Math.random() * 36;
+        confettiPositions[i * 3 + 1] = 2 + Math.random() * 12;
+        confettiPositions[i * 3 + 2] = -18 + Math.random() * 36;
+        confettiVelocities[i * 3] = (Math.random() - 0.5) * 0.4;
+        confettiVelocities[i * 3 + 1] = -0.08 - Math.random() * 0.15;
+        confettiVelocities[i * 3 + 2] = (Math.random() - 0.5) * 0.4;
+        const c = palette[i % palette.length];
+        confettiColors[i * 3] = c[0];
+        confettiColors[i * 3 + 1] = c[1];
+        confettiColors[i * 3 + 2] = c[2];
+        confettiPhase[i] = Math.random() * Math.PI * 2;
+      }
+      confettiGeo.setAttribute("position", new THREE.BufferAttribute(confettiPositions, 3));
+      confettiGeo.setAttribute("color", new THREE.BufferAttribute(confettiColors, 3));
+      const confettiMat = new THREE.PointsMaterial({
+        size: 0.18,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.9,
+        depthWrite: false,
+        sizeAttenuation: true,
+      });
+      const confettiParticles = new THREE.Points(confettiGeo, confettiMat);
+      scene.add(confettiParticles);
+
       // Animation loop
       let raf = 0;
       const clock = new THREE.Clock();
@@ -135,6 +203,48 @@ export default function KaraokeViewer({ onClose }: { onClose: () => void }) {
           }
         });
 
+        // Update smoke particles (rise up + reset)
+        {
+          const pos = smokeGeo.attributes.position.array as Float32Array;
+          for (let i = 0; i < smokeCount; i++) {
+            pos[i * 3] += smokeVelocities[i * 3] * 0.016 + Math.sin(t + smokePhases[i]) * 0.002;
+            pos[i * 3 + 1] += smokeVelocities[i * 3 + 1] * 0.016;
+            pos[i * 3 + 2] += smokeVelocities[i * 3 + 2] * 0.016;
+            if (pos[i * 3 + 1] > 4.5) {
+              pos[i * 3] = -4 + Math.random() * 8;
+              pos[i * 3 + 1] = 0.5;
+              pos[i * 3 + 2] = 7 + Math.random() * 4;
+            }
+          }
+          smokeGeo.attributes.position.needsUpdate = true;
+        }
+
+        // Update confetti particles (fall down + reset)
+        {
+          const pos = confettiGeo.attributes.position.array as Float32Array;
+          for (let i = 0; i < confettiCount; i++) {
+            pos[i * 3] += confettiVelocities[i * 3] * 0.016 + Math.sin(t * 2 + confettiPhase[i]) * 0.01;
+            pos[i * 3 + 1] += confettiVelocities[i * 3 + 1] * 0.016;
+            pos[i * 3 + 2] += confettiVelocities[i * 3 + 2] * 0.016;
+            if (pos[i * 3 + 1] < 0.2) {
+              pos[i * 3] = -18 + Math.random() * 36;
+              pos[i * 3 + 1] = 13 + Math.random() * 2;
+              pos[i * 3 + 2] = -18 + Math.random() * 36;
+            }
+          }
+          confettiGeo.attributes.position.needsUpdate = true;
+        }
+
+        // Tier neon signs pulse
+        karaoke.traverse((obj: any) => {
+          if (obj.name === "tierNeonSign") {
+            const base = obj.userData.neonColor;
+            if (obj.material) {
+              obj.material.emissiveIntensity = 1.5 + Math.sin(t * 2.5) * 1.0;
+            }
+          }
+        });
+
         controls.update();
         renderer.render(scene, camera);
         raf = requestAnimationFrame(animate);
@@ -155,6 +265,10 @@ export default function KaraokeViewer({ onClose }: { onClose: () => void }) {
       (mount as any).__karaokeCleanup = () => {
         window.removeEventListener("resize", resize);
         cancelAnimationFrame(raf);
+        smokeGeo.dispose();
+        smokeMat.dispose();
+        confettiGeo.dispose();
+        confettiMat.dispose();
         controls.dispose();
         renderer.dispose();
         if (renderer.domElement.parentNode === mount) {
