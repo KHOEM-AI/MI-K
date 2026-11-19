@@ -8187,6 +8187,17 @@ export function createKaraokeGeometry(
     acStrip.position.set(room.w / 2 - 1.6, 2.68, -room.d / 2 + 0.55);
     roomGroup.add(acStrip);
 
+    // Per-room atmospheric point light
+    const roomLightColor =
+      room.tier === "premium" ? 0xffd700 :
+      room.tier === "vip"     ? 0xff1493 :
+                                0xffaa66;
+    const roomLight = new THREE.PointLight(roomLightColor, 1.5, 8);
+    roomLight.position.set(0, 2.2, 0);
+    roomLight.name = "roomLight";
+    roomLight.userData.roomTier = room.tier;
+    roomGroup.add(roomLight);
+
     // ============ ROUND 2: LUXURY DETAILS ============
 
     // ---- Wall pictures (art frames) ----
@@ -8440,6 +8451,47 @@ export function createKaraokeGeometry(
   stageFront.position.set(0, 0.5, 9.5);
   group.add(stageFront);
 
+  // ---------- DANCE FLOOR (LED tiles) ----------
+  const danceTiles: Array<{ mesh: import("three").Mesh; color: string; delay: number }> = [];
+  const danceTileColors = ["#ff1493", "#00e5ff", "#ffd700", "#7c3aed", "#00ff88"];
+  for (let dx = -3; dx <= 3; dx++) {
+    for (let dz = -1; dz <= 1; dz++) {
+      const tileColor = danceTileColors[(dx + dz + 3) % danceTileColors.length];
+      const tile = new THREE.Mesh(
+        new THREE.BoxGeometry(1.0, 0.08, 1.0),
+        new THREE.MeshStandardMaterial({
+          color: tileColor, emissive: tileColor, emissiveIntensity: 0.6,
+          roughness: 0.4, metalness: 0.2,
+        })
+      );
+      tile.position.set(dx * 1.05, 0.14, 12.5 + dz * 1.05);
+      tile.name = "danceTile";
+      tile.userData.tileColor = tileColor;
+      tile.userData.tileDelay = Math.abs(dx) + Math.abs(dz);
+      group.add(tile);
+      danceTiles.push({
+        mesh: tile,
+        color: tileColor,
+        delay: Math.abs(dx) + Math.abs(dz),
+      });
+    }
+  }
+  // Dance floor frame (gold border)
+  for (const [fw, fd, fx, fz] of [
+    [7.5, 0.15, 0, 11.4], [7.5, 0.15, 0, 13.6],
+    [0.15, 3.2, -3.7, 12.5], [0.15, 3.2, 3.7, 12.5],
+  ]) {
+    const frame = new THREE.Mesh(
+      new THREE.BoxGeometry(fw, 0.15, fd),
+      gold
+    );
+    frame.position.set(fx, 0.15, fz);
+    group.add(frame);
+  }
+
+  // Store tile info for animation
+  group.userData.danceTiles = danceTiles;
+
   // Stage backdrop screen (LED wall)
   const backdrop = new THREE.Mesh(
     new THREE.BoxGeometry(8, 4, 0.15),
@@ -8625,6 +8677,58 @@ export function createKaraokeGeometry(
     shelf.position.set(-W / 2 + 0.9, 1.3 + s * 0.3, 0);
     group.add(shelf);
   }
+
+  // Bar stools (6 along the counter)
+  const stoolSeatMat = new THREE.MeshStandardMaterial({ color: "#8b0000", roughness: 0.6, metalness: 0.1 });
+  for (let bi = 0; bi < 6; bi++) {
+    const stoolZ = -3 + bi * 1.2;
+    // Base
+    const stoolBase = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.25, 0.3, 0.08, 16),
+      gold
+    );
+    stoolBase.position.set(-W / 2 + 2.0, 0.04, stoolZ);
+    group.add(stoolBase);
+    // Pole
+    const stoolPole = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.05, 0.05, 0.85, 8),
+      new THREE.MeshStandardMaterial({ color: "#222", metalness: 0.9, roughness: 0.2 })
+    );
+    stoolPole.position.set(-W / 2 + 2.0, 0.47, stoolZ);
+    group.add(stoolPole);
+    // Seat
+    const stoolSeat = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.28, 0.28, 0.12, 16),
+      stoolSeatMat
+    );
+    stoolSeat.position.set(-W / 2 + 2.0, 0.95, stoolZ);
+    group.add(stoolSeat);
+    // Back
+    const stoolBack = new THREE.Mesh(
+      new THREE.BoxGeometry(0.55, 0.5, 0.08),
+      stoolSeatMat
+    );
+    stoolBack.position.set(-W / 2 + 2.25, 1.2, stoolZ);
+    group.add(stoolBack);
+  }
+
+  // Bartender (detailed)
+  const bartender = buildDetailedHuman(THREE, {
+    role: "waiter", gender: "male", primaryColor: "#050505",
+    hairStyle: "short", skinTone: "#d8a878",
+  });
+  bartender.position.set(-W / 2 + 1.0, 0, -1);
+  bartender.rotation.y = Math.PI / 2;
+  group.add(bartender);
+
+  // Bartender 2 (female)
+  const bartender2 = buildDetailedHuman(THREE, {
+    role: "hostess", gender: "female", primaryColor: "#c71585",
+    hairStyle: "bun", skinTone: "#f0c8a0",
+  });
+  bartender2.position.set(-W / 2 + 1.0, 0, 3);
+  bartender2.rotation.y = Math.PI / 2;
+  group.add(bartender2);
 
   // ---------- RESTROOM DOOR (corner) ----------
   const wcDoor = new THREE.Mesh(new THREE.BoxGeometry(1.6, 2.4, 0.1), new THREE.MeshStandardMaterial({ color: "#1a0a0a", roughness: 0.5 }));
