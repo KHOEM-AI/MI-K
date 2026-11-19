@@ -405,6 +405,20 @@ export default function KaraokeViewer({ onClose }: { onClose: () => void }) {
           machineLed.material.emissiveIntensity = 2.0 + Math.sin(t * 8) * 1.5;
         }
 
+        // Fireplace flicker animation
+        karaoke.traverse((obj: any) => {
+          if (obj.name === "fireGlow") {
+            if (obj.material) {
+              const flicker = 2.5 + Math.sin(t * 15) * 0.6 + Math.sin(t * 23) * 0.4;
+              obj.material.emissiveIntensity = flicker;
+            }
+          }
+          if (obj.name === "fireLight") {
+            const baseFlicker = 2.0 + Math.sin(t * 12) * 0.5 + Math.sin(t * 19) * 0.3;
+            obj.intensity = baseFlicker;
+          }
+        });
+
         controls.update();
         renderer.render(scene, camera);
         raf = requestAnimationFrame(animate);

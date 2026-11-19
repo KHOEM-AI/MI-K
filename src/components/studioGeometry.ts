@@ -7637,6 +7637,62 @@ export function createKaraokeGeometry(
     group.add(led);
   }
 
+  // ---------- COAT CHECK ----------
+  const coatRack = new THREE.Mesh(
+    new THREE.BoxGeometry(0.15, 2.2, 4),
+    new THREE.MeshStandardMaterial({ color: "#3a1a0a", roughness: 0.7, metalness: 0.2 })
+  );
+  coatRack.position.set(-6, 1.1, D / 2 - 0.5);
+  group.add(coatRack);
+  // Gold top rail
+  const coatRail = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.06, 0.06, 4, 8),
+    gold
+  );
+  coatRail.rotation.x = Math.PI / 2;
+  coatRail.position.set(-6, 2.15, D / 2 - 0.5);
+  group.add(coatRail);
+  // 8 coat hangers + coats
+  const coatColors = ["#1a1a2a", "#8b0000", "#2a3a4a", "#4a2a1a", "#1a2a1a", "#5a4a1a", "#2a1a3a", "#3a3a3a"];
+  for (let ci = 0; ci < 8; ci++) {
+    const hangZ = D / 2 - 2.0 + ci * 0.45;
+    // Hanger hook
+    const coatHanger = new THREE.Mesh(
+      new THREE.TorusGeometry(0.04, 0.008, 4, 12, Math.PI),
+      new THREE.MeshStandardMaterial({ color: "#c0c0c0", metalness: 0.9, roughness: 0.2 })
+    );
+    coatHanger.rotation.y = Math.PI / 2;
+    coatHanger.position.set(-6, 2.08, hangZ);
+    group.add(coatHanger);
+    // Coat (hanging)
+    const coat = new THREE.Mesh(
+      new THREE.BoxGeometry(0.15, 1.3, 0.3),
+      new THREE.MeshStandardMaterial({
+        color: coatColors[ci], roughness: 0.85,
+      })
+    );
+    coat.position.set(-6, 1.4, hangZ);
+    group.add(coat);
+    // Collar
+    const collar = new THREE.Mesh(
+      new THREE.BoxGeometry(0.18, 0.1, 0.32),
+      new THREE.MeshStandardMaterial({
+        color: coatColors[ci], roughness: 0.7, metalness: 0.1,
+      })
+    );
+    collar.position.set(-6, 2.05, hangZ);
+    group.add(collar);
+  }
+  // Number plates above coats
+  const coatSign = new THREE.Mesh(
+    new THREE.BoxGeometry(0.1, 0.4, 3.5),
+    new THREE.MeshStandardMaterial({
+      color: "#ffd700", emissive: "#ffd700", emissiveIntensity: 1.8,
+    })
+  );
+  coatSign.position.set(-6, 2.5, D / 2 - 0.5);
+  group.add(coatSign);
+
   // ---------- PHOTO BOOTH ----------
   const boothGroup = new THREE.Group();
   boothGroup.position.set(-8.5, 0, 19);
@@ -9352,6 +9408,113 @@ export function createKaraokeGeometry(
   makeSecurity(-6, D / 2 - 0.5);
   makeSecurity(6, D / 2 - 0.5);
 
+  // ---------- STAIRCASE (to rooftop) ----------
+  // 12 steps ascending to y=4.5
+  for (let ss = 0; ss < 12; ss++) {
+    const stepY = 0.2 + ss * 0.36;
+    const stepZ = 15 + ss * 0.4;
+    const step = new THREE.Mesh(
+      new THREE.BoxGeometry(2.2, 0.15, 0.4),
+      new THREE.MeshStandardMaterial({ color: "#1a1410", roughness: 0.4, metalness: 0.5 })
+    );
+    step.position.set(15, stepY, stepZ);
+    step.name = "stairStep";
+    group.add(step);
+    // Gold edge strip
+    const edge = new THREE.Mesh(
+      new THREE.BoxGeometry(2.25, 0.04, 0.05),
+      gold
+    );
+    edge.position.set(15, stepY + 0.08, stepZ + 0.2);
+    group.add(edge);
+  }
+  // Railing (left side)
+  for (let rs = 0; rs < 12; rs++) {
+    const railY = 0.9 + rs * 0.36;
+    const railZ = 15 + rs * 0.4;
+    const post = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.03, 0.03, 0.7, 6),
+      gold
+    );
+    post.position.set(13.95, railY, railZ);
+    group.add(post);
+  }
+  // Top handrail
+  const handrail = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.04, 0.04, 4.7, 8),
+    gold
+  );
+  handrail.rotation.x = Math.PI / 2 - Math.atan2(4.3, 4.5);
+  handrail.position.set(13.95, 3.1, 17.2);
+  group.add(handrail);
+
+  // ---------- BEER PONG TABLE ----------
+  const beerPongTop = new THREE.Mesh(
+    new THREE.BoxGeometry(2.4, 0.08, 4.8),
+    new THREE.MeshStandardMaterial({ color: "#1a1410", roughness: 0.5, metalness: 0.3 })
+  );
+  beerPongTop.position.set(18, 0.85, 8);
+  group.add(beerPongTop);
+  // Gold rails
+  for (const [rw, rd, rx, rz] of [
+    [2.5, 0.05, 18, 5.6], [2.5, 0.05, 18, 10.4],
+    [0.05, 4.9, 16.75, 8], [0.05, 4.9, 19.25, 8],
+  ]) {
+    const rail = new THREE.Mesh(
+      new THREE.BoxGeometry(rw, 0.08, rd),
+      gold
+    );
+    rail.position.set(rx, 0.9, rz);
+    group.add(rail);
+  }
+  // 4 legs
+  for (const [lx, lz] of [[-1, -2], [1, -2], [-1, 2], [1, 2]]) {
+    const leg = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.05, 0.05, 0.85, 6),
+      new THREE.MeshStandardMaterial({ color: "#1a1410", metalness: 0.6, roughness: 0.3 })
+    );
+    leg.position.set(18 + lx, 0.42, 8 + lz);
+    group.add(leg);
+  }
+  // Beer pong cups (10 each side = 20 total)
+  const cupPositions: Array<[number, number]> = [];
+  // Triangle formation
+  for (let row = 0; row < 4; row++) {
+    for (let col = 0; col <= row; col++) {
+      cupPositions.push([-0.75 + col * 0.5 - row * 0.25, 2.0 - row * 0.3]);
+      cupPositions.push([-0.75 + col * 0.5 - row * 0.25, -2.0 + row * 0.3]);
+    }
+  }
+  cupPositions.forEach(([cx, cz]) => {
+    const cup = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.12, 0.09, 0.25, 12, 1, true),
+      new THREE.MeshStandardMaterial({
+        color: "#ff3366", roughness: 0.4,
+        transparent: true, opacity: 0.85, side: THREE.DoubleSide,
+      })
+    );
+    cup.position.set(18 + cx, 1.0, 8 + cz);
+    group.add(cup);
+    // Beer liquid inside
+    const beer = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.1, 0.08, 0.15, 10),
+      new THREE.MeshStandardMaterial({
+        color: "#f5a623", transparent: true, opacity: 0.75, roughness: 0.3,
+      })
+    );
+    beer.position.set(18 + cx, 0.98, 8 + cz);
+    group.add(beer);
+  });
+  // 2 ping pong balls
+  for (const bx of [-0.5, 0.5]) {
+    const ball = new THREE.Mesh(
+      new THREE.SphereGeometry(0.05, 10, 8),
+      new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.3 })
+    );
+    ball.position.set(18 + bx, 0.95, 8);
+    group.add(ball);
+  }
+
   // ---------- ROOFTOP TERRACE (front right) ----------
   const rooftopPlatform = new THREE.Mesh(
     new THREE.BoxGeometry(6, 0.2, 4),
@@ -9539,6 +9702,73 @@ export function createKaraokeGeometry(
     const shelf = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.06, 8), gold);
     shelf.position.set(-W / 2 + 0.9, 1.3 + s * 0.3, 0);
     group.add(shelf);
+  }
+
+  // ---------- BEER TAPS (A) ----------
+  for (let bt = 0; bt < 4; bt++) {
+    const tapZ = -2 + bt * 1.3;
+    // Tap body
+    const tapBody = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.06, 0.08, 0.25, 10),
+      new THREE.MeshStandardMaterial({ color: "#c0c0c0", metalness: 0.95, roughness: 0.1 })
+    );
+    tapBody.position.set(-W / 2 + 1.0, 1.15, tapZ);
+    group.add(tapBody);
+    // Tap handle
+    const beerTapHandle = new THREE.Mesh(
+      new THREE.BoxGeometry(0.06, 0.3, 0.1),
+      new THREE.MeshStandardMaterial({ color: "#1a1a2a", roughness: 0.5, metalness: 0.4 })
+    );
+    beerTapHandle.position.set(-W / 2 + 1.0, 1.4, tapZ);
+    beerTapHandle.rotation.x = 0.2;
+    group.add(beerTapHandle);
+    // Tap handle top (colored ball)
+    const tapTopColor = ["#d4af37", "#c0392b", "#16a085", "#2980b9"][bt];
+    const tapTop = new THREE.Mesh(
+      new THREE.SphereGeometry(0.05, 10, 8),
+      new THREE.MeshStandardMaterial({ color: tapTopColor, roughness: 0.4, metalness: 0.3 })
+    );
+    tapTop.position.set(-W / 2 + 1.0, 1.6, tapZ);
+    group.add(tapTop);
+  }
+
+  // ---------- WINE RACK (B) ----------
+  // Vertical rack on back wall
+  const wineRackBack = new THREE.Mesh(
+    new THREE.BoxGeometry(0.15, 3.2, 4),
+    new THREE.MeshStandardMaterial({ color: "#3a1a0a", roughness: 0.7, metalness: 0.1 })
+  );
+  wineRackBack.position.set(-W / 2 + 0.15, 2.2, -2);
+  group.add(wineRackBack);
+  // 4 horizontal shelves
+  for (let ws = 0; ws < 4; ws++) {
+    const wineShelf = new THREE.Mesh(
+      new THREE.BoxGeometry(0.6, 0.08, 4),
+      gold
+    );
+    wineShelf.position.set(-W / 2 + 0.5, 0.9 + ws * 0.7, -2);
+    group.add(wineShelf);
+    // Wine bottles on each shelf (5 per shelf)
+    for (let wb = 0; wb < 5; wb++) {
+      const wineColors = ["#8e1a1a", "#3a1a4a", "#1a3a2a", "#c9a227", "#2a1a1a"];
+      const wineBottle = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.04, 0.055, 0.35, 10),
+        new THREE.MeshStandardMaterial({
+          color: wineColors[wb % 5], roughness: 0.25, metalness: 0.35,
+        })
+      );
+      wineBottle.rotation.z = Math.PI / 2;
+      wineBottle.position.set(-W / 2 + 0.5, 1.05 + ws * 0.7, -3.4 + wb * 0.7);
+      group.add(wineBottle);
+      // Bottle cap (gold foil)
+      const cap = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.045, 0.045, 0.05, 8),
+        gold
+      );
+      cap.rotation.z = Math.PI / 2;
+      cap.position.set(-W / 2 + 0.75, 1.05 + ws * 0.7, -3.4 + wb * 0.7);
+      group.add(cap);
+    }
   }
 
   // Bar stools (6 along the counter)
@@ -9794,6 +10024,89 @@ export function createKaraokeGeometry(
   callButton.rotation.x = Math.PI / 2;
   callButton.position.set(8, 1.2, 15.1);
   group.add(callButton);
+
+  // ---------- FIREPLACE LOUNGE (corner) ----------
+  const fireplaceBase = new THREE.Mesh(
+    new THREE.BoxGeometry(4, 1.2, 1),
+    new THREE.MeshStandardMaterial({ color: "#2a1a0a", roughness: 0.6, metalness: 0.2 })
+  );
+  fireplaceBase.position.set(-16, 0.6, -17);
+  group.add(fireplaceBase);
+  // Fireplace opening
+  const fireplaceOpening = new THREE.Mesh(
+    new THREE.BoxGeometry(2.5, 0.8, 0.15),
+    new THREE.MeshStandardMaterial({ color: "#0a0505", roughness: 0.9 })
+  );
+  fireplaceOpening.position.set(-16, 0.65, -16.9);
+  group.add(fireplaceOpening);
+  // Fire (glowing)
+  const fireGlow = new THREE.Mesh(
+    new THREE.PlaneGeometry(2.2, 0.7),
+    new THREE.MeshStandardMaterial({
+      color: "#ff6600", emissive: "#ff6600", emissiveIntensity: 3.0,
+    })
+  );
+  fireGlow.position.set(-16, 0.65, -16.85);
+  fireGlow.name = "fireGlow";
+  group.add(fireGlow);
+  // Fire point light
+  const fireLight = new THREE.PointLight(0xff6600, 2.0, 8);
+  fireLight.position.set(-16, 0.9, -16.7);
+  fireLight.name = "fireLight";
+  group.add(fireLight);
+  // Mantel
+  const mantel = new THREE.Mesh(
+    new THREE.BoxGeometry(4.2, 0.15, 1.2),
+    gold
+  );
+  mantel.position.set(-16, 1.25, -17);
+  group.add(mantel);
+  // Logs (visible)
+  for (const logX of [-1, 0, 1]) {
+    const log = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.1, 0.1, 0.7, 8),
+      new THREE.MeshStandardMaterial({ color: "#3a1a0a", roughness: 0.9 })
+    );
+    log.rotation.z = Math.PI / 2;
+    log.position.set(-16 + logX * 0.5, 0.35, -16.9);
+    group.add(log);
+  }
+  // 4 lounge chairs around fireplace
+  for (let fc = 0; fc < 4; fc++) {
+    const ang = (fc / 4) * Math.PI * 2;
+    const chairX = -16 + Math.cos(ang) * 3;
+    const chairZ = -17 + Math.sin(ang) * 3;
+    // Chair base
+    const chairBase = new THREE.Mesh(
+      new THREE.BoxGeometry(0.7, 0.15, 0.7),
+      new THREE.MeshStandardMaterial({ color: "#3a1a0a", roughness: 0.7 })
+    );
+    chairBase.position.set(chairX, 0.35, chairZ);
+    group.add(chairBase);
+    // Chair cushion
+    const cushion = new THREE.Mesh(
+      new THREE.BoxGeometry(0.6, 0.15, 0.6),
+      new THREE.MeshStandardMaterial({ color: "#8b0000", roughness: 0.7 })
+    );
+    cushion.position.set(chairX, 0.5, chairZ);
+    group.add(cushion);
+    // Chair back
+    const back = new THREE.Mesh(
+      new THREE.BoxGeometry(0.7, 0.8, 0.15),
+      new THREE.MeshStandardMaterial({ color: "#3a1a0a", roughness: 0.7 })
+    );
+    back.position.set(chairX - Math.cos(ang) * 0.3, 0.8, chairZ - Math.sin(ang) * 0.3);
+    back.rotation.y = Math.atan2(Math.sin(ang), Math.cos(ang));
+    group.add(back);
+  }
+  // Rug under fireplace area
+  const fireplaceRug = new THREE.Mesh(
+    new THREE.CircleGeometry(3.5, 32),
+    new THREE.MeshStandardMaterial({ color: "#4a1a1a", roughness: 0.9 })
+  );
+  fireplaceRug.rotation.x = -Math.PI / 2;
+  fireplaceRug.position.set(-16, 0.06, -17);
+  group.add(fireplaceRug);
 
   // ---------- MIRROR WALL (premium side, reflective) ----------
   const mirrorWall = new THREE.Mesh(new THREE.BoxGeometry(0.1, 3, D - 4), mirrorMat);
