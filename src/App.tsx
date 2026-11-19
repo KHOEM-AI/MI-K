@@ -10,6 +10,7 @@ type Asset = {
 
 const ModelViewer = lazy(() => import("./components/ModelViewer"));
 const Studio3D = lazy(() => import("./components/Studio3D"));
+const Character3D = lazy(() => import("./components/Character3D"));
 
 // Prefetch Studio3D on hover to make opening instant
 const prefetchStudio3D = () => {
@@ -87,6 +88,7 @@ export default function App() {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [storageReady, setStorageReady] = useState(false);
   const [studioOpen, setStudioOpen] = useState(false);
+  const [charactersOpen, setCharactersOpen] = useState(false);
   const [theme, setTheme] = useState<"day" | "night">(() => {
     try {
       return localStorage.getItem("khoem-ai-theme") === "day"
@@ -370,6 +372,13 @@ export default function App() {
         >
           {studioOpen ? "Close Studio" : "Open 3D Studio"}
         </button>
+        <button
+          type="button"
+          className="upload-button"
+          onClick={() => setCharactersOpen((open) => !open)}
+        >
+          {charactersOpen ? "Close Characters" : "Open Characters"}
+        </button>
       </section>
 
       {studioOpen && (
@@ -382,6 +391,12 @@ export default function App() {
               setSearch("");
             }}
           />
+        </Suspense>
+      )}
+
+      {charactersOpen && (
+        <Suspense fallback={<div className="studio-panel">Loading Characters...</div>}>
+          <Character3D />
         </Suspense>
       )}
 
