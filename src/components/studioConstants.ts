@@ -214,6 +214,7 @@ export const presets: { name: string; shape: Shape }[] = [
   { name: "Cathedral", shape: "cathedral" },
   { name: "Synagogue", shape: "synagogue" },
   { name: "Monastery", shape: "monastery" },
+  { name: "Karaoke / Pub (Large)", shape: "karaoke" },
 ];
 
 

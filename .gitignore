@@ -1,31 +1,39 @@
+# Dependencies
 node_modules/
+
+# Build output
 dist/
+dist-ssr/
+
+# Local env
+.env
+.env.local
+.env.*.local
+
+# OS
 .DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
 *.log
+npm-debug.log*
+
+# Backups & local artifacts
+*.backup
 *.bak
-*.v2-backup
-*.v3-backup
-*.v4-backup
-*.v5-backup
-*.v6-backup
-*.v7-backup
+*.pre-*
+*.v[0-9]*-backup
+*.v[0-9][0-9]*-backup
+backup_v*/
 backup_*/
+typecheck-errors.txt
+patch-*.py
+repair-*.py
 test_write.py
-add_v2_dispatch.py
-*.v9-backup
-*.v10-backup
-*.v11-backup
-*.v12-backup
-*.v13-backup
-*.v15-backup
-*.v16-backup
-*.v17-backup
-*.v18-backup
-*.v19-backup
-*.v20-backup
-*.v21-backup
-*.v22-backup
-*.v23-backup
-*.v24-backup
-*.v25-backup
-*.v26-backup
+*.orig-mik

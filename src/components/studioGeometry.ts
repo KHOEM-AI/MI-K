@@ -4915,6 +4915,127 @@ export function createFoodGeometry(
 // NATURE GEOMETRIES (Grass, Trees, Insects, Fruits, Flowers)
 // ============================================================
 
+// ===== NATURE v2 helpers (prefix natv2_ to avoid name clashes) =====
+type NatTHREE = typeof import("three");
+
+function natv2_noise(x: number, y: number, z: number): number {
+  const s = Math.sin(x * 12.9898 + y * 78.233 + z * 37.719) * 43758.5453;
+  return s - Math.floor(s); // 0..1, pure function of position (no cracks, no Math.random)
+}
+function natv2_rng(seed: number): () => number {
+  let s = (seed * 2654435761) >>> 0 || 1;
+  return () => {
+    s ^= s << 13; s >>>= 0;
+    s ^= s >>> 17;
+    s ^= s << 5; s >>>= 0;
+    return (s % 100000) / 100000;
+  };
+}
+function natv2_mat(THREE: NatTHREE, color: string, rough = 0.8, extra: Record<string, unknown> = {}) {
+  return new THREE.MeshStandardMaterial({ color, roughness: rough, ...extra });
+}
+function natv2_shade(THREE: NatTHREE, hex: string, dl: number, ds = 0): string {
+  const c = new THREE.Color(hex);
+  c.offsetHSL(0, ds, dl);
+  return "#" + c.getHexString();
+}
+function natv2_lathe(THREE: NatTHREE, pts: [number, number][], mat: import("three").Material, seg = 28) {
+  return new THREE.Mesh(new THREE.LatheGeometry(pts.map(([r, y]) => new THREE.Vector2(r, y)), seg), mat);
+}
+function natv2_petalGeo(THREE: NatTHREE, len: number, wid: number) {
+  const s = new THREE.Shape();
+  s.moveTo(0, 0);
+  s.bezierCurveTo(wid, len * 0.15, wid * 1.05, len * 0.85, 0, len);
+  s.bezierCurveTo(-wid * 1.05, len * 0.85, -wid, len * 0.15, 0, 0);
+  return new THREE.ShapeGeometry(s, 10);
+}
+function natv2_leafGeo(THREE: NatTHREE, len: number, wid: number) {
+  const s = new THREE.Shape();
+  s.moveTo(0, 0);
+  s.quadraticCurveTo(wid, len * 0.45, 0, len);
+  s.quadraticCurveTo(-wid, len * 0.45, 0, 0);
+  return new THREE.ShapeGeometry(s, 8);
+}
+/** flat petal/leaf lying outward along -Z of a pivot, rotated by yaw, lifted by tilt */
+function natv2_placeFlat(THREE: NatTHREE, geo: import("three").BufferGeometry, mat: import("three").Material, yaw: number, tilt: number, pos: [number, number, number]) {
+  const g = new THREE.Group();
+  g.position.set(pos[0], pos[1], pos[2]);
+  g.rotation.y = yaw;
+  const t = new THREE.Group();
+  t.rotation.x = tilt;
+  const m = new THREE.Mesh(geo, mat);
+  m.rotation.x = -Math.PI / 2;
+  t.add(m);
+  g.add(t);
+  return g;
+}
+function natv2_blob(THREE: NatTHREE, r: number, mat: import("three").Material, amp = 0.18, detail = 2) {
+  const geo = new THREE.SphereGeometry(r, 8 + detail * 6, 6 + detail * 5);
+  const p = geo.attributes.position;
+  for (let i = 0; i < p.count; i++) {
+    const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+    const k = 1 + (natv2_noise(Math.round(x * 40) / 40, Math.round(y * 40) / 40, Math.round(z * 40) / 40) - 0.5) * amp;
+    p.setXYZ(i, x * k, y * k * 0.92, z * k);
+  }
+  geo.computeVertexNormals();
+  return new THREE.Mesh(geo, mat);
+}
+function natv2_trunk(THREE: NatTHREE, h: number, rb: number, rt: number, mat: import("three").Material) {
+  return natv2_lathe(THREE, [[0.001, 0], [rb * 1.45, 0], [rb * 1.12, h * 0.07], [rb, h * 0.16], [(rb + rt) / 2, h * 0.55], [rt, h * 0.96], [0.001, h]], mat, 14);
+}
+function natv2_branch(THREE: NatTHREE, from: [number, number, number], to: [number, number, number], r: number, mat: import("three").Material) {
+  const a = new THREE.Vector3(...from), b = new THREE.Vector3(...to);
+  const len = a.distanceTo(b);
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.6, r, len, 7), mat);
+  m.position.copy(a).add(b).multiplyScalar(0.5);
+  m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize());
+  return m;
+}
+function natv2_blade(THREE: NatTHREE, h: number, w: number, bend: number) {
+  const seg = 5, pos: number[] = [], idx: number[] = [];
+  for (let i = 0; i <= seg; i++) {
+    const t = i / seg, y = t * h, x = bend * t * t * h * 0.6, hw = (w * (1 - t * 0.92)) / 2;
+    pos.push(x - hw, y, 0, x + hw, y, 0);
+    if (i < seg) { const a = i * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  return g;
+}
+function natv2_tuft(THREE: NatTHREE, group: import("three").Group, base: string, n: number, rad: number, hMin: number, hMax: number, seed: number) {
+  const rnd = natv2_rng(seed);
+  const mats = [natv2_shade(THREE, base, -0.05), base, natv2_shade(THREE, base, 0.06, 0.04)].map((c) => natv2_mat(THREE, c, 0.85, { side: THREE.DoubleSide }));
+  for (let i = 0; i < n; i++) {
+    const a = rnd() * Math.PI * 2, r = Math.sqrt(rnd()) * rad;
+    const h = hMin + rnd() * (hMax - hMin);
+    const b = new THREE.Mesh(natv2_blade(THREE, h, 0.05 + rnd() * 0.03, (rnd() - 0.5) * 1.1), mats[i % 3]);
+    b.position.set(Math.cos(a) * r, 0, Math.sin(a) * r);
+    b.rotation.y = rnd() * Math.PI * 2;
+    b.rotation.z = (rnd() - 0.5) * 0.35;
+    group.add(b);
+  }
+}
+function natv2_wing(THREE: NatTHREE, side: 1 | -1, shape: import("three").Shape, mat: import("three").Material, tilt: number, at: [number, number, number]) {
+  const piv = new THREE.Group();
+  piv.position.set(...at);
+  piv.rotation.x = -side * tilt;
+  const m = new THREE.Mesh(new THREE.ShapeGeometry(shape, 12), mat);
+  m.rotation.x = side * (Math.PI / 2);
+  piv.add(m);
+  return piv;
+}
+function natv2_legs(THREE: NatTHREE, group: import("three").Group, mat: import("three").Material, xs: number[], y: number, len: number, rad: number) {
+  for (const s of [-1, 1]) {
+    xs.forEach((x, i) => {
+      const k = (i - (xs.length - 1) / 2) * 0.05; // splay front legs forward, back legs backward
+      group.add(natv2_branch(THREE, [x, y, s * len * 0.15], [x + k, y + len * 0.2, s * len * 0.85], rad, mat));
+      group.add(natv2_branch(THREE, [x + k, y + len * 0.2, s * len * 0.85], [x + k * 2.2, y - len * 0.95, s * len * 1.2], rad * 0.8, mat));
+    });
+  }
+}
+
 export function createNatureGeometry(
   THREE: typeof import("three"),
   type:
@@ -4928,267 +5049,435 @@ export function createNatureGeometry(
   roughness?: number
 ): import("three").Group {
   const group = new THREE.Group();
+  const bark = natv2_mat(THREE, "#6b4a2b", 0.95);
+  const barkDark = natv2_mat(THREE, "#4e3420", 0.95);
+  const leafGreen = "#2f7d32";
+  const stemMat = natv2_mat(THREE, "#3f8a2e", 0.85);
+  const leafMat = natv2_mat(THREE, "#2f8a34", 0.7, { side: THREE.DoubleSide });
+  const fruitRough = roughness ?? 0.4;
 
   if (type === "grass_short") {
-    const grassMat = new THREE.MeshStandardMaterial({ color: color || "#4d8a2d", roughness: roughness ?? 0.9, side: THREE.DoubleSide });
-    for (let i = 0; i < 14; i++) {
-      const blade = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.25 + Math.random() * 0.1, 4), grassMat);
-      const angle = Math.random() * Math.PI * 2;
-      const r = Math.random() * 0.5;
-      blade.position.set(Math.cos(angle) * r, 0.13, Math.sin(angle) * r);
-      blade.rotation.z = (Math.random() - 0.5) * 0.4;
-      blade.rotation.y = Math.random() * Math.PI;
-      group.add(blade);
-    }
+    natv2_tuft(THREE, group, color || "#58a838", 26, 0.38, 0.22, 0.42, 11);
   } else if (type === "grass_tall") {
-    const grassMat = new THREE.MeshStandardMaterial({ color: color || "#3a7a1d", roughness: roughness ?? 0.9, side: THREE.DoubleSide });
-    for (let i = 0; i < 20; i++) {
-      const blade = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.7 + Math.random() * 0.4, 4), grassMat);
-      const angle = Math.random() * Math.PI * 2;
-      const r = Math.random() * 0.6;
-      blade.position.set(Math.cos(angle) * r, 0.4, Math.sin(angle) * r);
-      blade.rotation.z = (Math.random() - 0.5) * 0.3;
-      blade.rotation.y = Math.random() * Math.PI;
-      group.add(blade);
-    }
+    natv2_tuft(THREE, group, color || "#3f8f2a", 34, 0.5, 0.7, 1.25, 23);
   } else if (type === "tree_small") {
-    const trunkMat = new THREE.MeshStandardMaterial({ color: "#6b4423", roughness: 0.9 });
-    const leafMat = new THREE.MeshStandardMaterial({ color: color || "#2d6a2d", roughness: 0.85 });
-    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.18, 1.2, 8), trunkMat);
-    trunk.position.y = 0.6;
-    group.add(trunk);
-    const foliage = new THREE.Mesh(new THREE.SphereGeometry(0.6, 12, 10), leafMat);
-    foliage.position.y = 1.6;
-    group.add(foliage);
+    const base = color || "#3f9a3c";
+    const t = natv2_trunk(THREE, 1.3, 0.11, 0.07, bark);
+    group.add(t);
+    group.add(natv2_branch(THREE, [0, 0.9, 0], [0.32, 1.45, 0.1], 0.05, bark));
+    const blobs: [number, number, number, number, number][] = [[0, 1.75, 0, 0.62, 0], [0.4, 1.5, 0.1, 0.38, -0.05], [-0.34, 1.55, -0.12, 0.4, 0.04], [0.05, 2.1, 0.05, 0.36, 0.07]];
+    blobs.forEach(([x, y, z, r, dl]) => { const b = natv2_blob(THREE, r, natv2_mat(THREE, natv2_shade(THREE, base, dl), 0.85)); b.position.set(x, y, z); group.add(b); });
   } else if (type === "tree_large") {
-    const trunkMat = new THREE.MeshStandardMaterial({ color: "#6b4423", roughness: 0.9 });
-    const leafMat = new THREE.MeshStandardMaterial({ color: color || "#1e4d1e", roughness: 0.85 });
-    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.45, 3, 12), trunkMat);
-    trunk.position.y = 1.5;
-    group.add(trunk);
-    const foliage = new THREE.Mesh(new THREE.SphereGeometry(1.3, 16, 12), leafMat);
-    foliage.position.y = 3.5;
-    foliage.scale.set(1.2, 1, 1.2);
-    group.add(foliage);
-    const foliage2 = new THREE.Mesh(new THREE.SphereGeometry(0.9, 12, 10), leafMat);
-    foliage2.position.set(0.8, 4, 0.5);
-    group.add(foliage2);
+    const base = color || "#2d7a33";
+    group.add(natv2_trunk(THREE, 3.2, 0.34, 0.2, bark));
+    group.add(natv2_branch(THREE, [0, 2.3, 0], [1.0, 3.5, 0.3], 0.14, bark));
+    group.add(natv2_branch(THREE, [0, 2.6, 0], [-0.95, 3.7, -0.2], 0.13, bark));
+    group.add(natv2_branch(THREE, [0, 2.9, 0], [0.1, 4.0, -0.9], 0.11, bark));
+    const blobs: [number, number, number, number, number][] = [
+      [0, 4.1, 0, 1.25, 0], [1.1, 3.7, 0.3, 0.9, -0.05], [-1.0, 3.9, -0.2, 0.95, 0.04],
+      [0.1, 4.3, -0.95, 0.8, 0.06], [-0.2, 3.6, 0.9, 0.85, -0.04], [0.4, 4.9, 0.1, 0.75, 0.08],
+    ];
+    blobs.forEach(([x, y, z, r, dl]) => { const b = natv2_blob(THREE, r, natv2_mat(THREE, natv2_shade(THREE, base, dl), 0.85), 0.22); b.position.set(x, y, z); group.add(b); });
   } else if (type === "tree_low") {
-    const trunkMat = new THREE.MeshStandardMaterial({ color: "#6b4423", roughness: 0.9 });
-    const leafMat = new THREE.MeshStandardMaterial({ color: color || "#2d6a2d", roughness: 0.85 });
-    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 1.5, 10), trunkMat);
-    trunk.position.y = 0.75;
-    group.add(trunk);
-    const foliage = new THREE.Mesh(new THREE.ConeGeometry(1, 1, 12), leafMat);
-    foliage.position.y = 1.8;
-    group.add(foliage);
+    const base = color || "#2f7d3a";
+    group.add(natv2_trunk(THREE, 1.0, 0.2, 0.14, bark));
+    for (let i = 0; i < 4; i++) {
+      const r = 1.15 - i * 0.24;
+      const c = new THREE.Mesh(new THREE.ConeGeometry(r, 0.8, 18), natv2_mat(THREE, natv2_shade(THREE, base, i * 0.03), 0.85));
+      c.position.y = 1.1 + i * 0.5;
+      c.rotation.y = i * 0.5;
+      group.add(c);
+    }
   } else if (type === "tree_high") {
-    const trunkMat = new THREE.MeshStandardMaterial({ color: "#5d3a1a", roughness: 0.9 });
-    const leafMat = new THREE.MeshStandardMaterial({ color: color || "#1e5a1e", roughness: 0.85 });
-    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 2.5, 10), trunkMat);
-    trunk.position.y = 1.25;
-    group.add(trunk);
-    for (let i = 0; i < 3; i++) {
-      const cone = new THREE.Mesh(new THREE.ConeGeometry(1 - i * 0.2, 1.5, 12), leafMat);
-      cone.position.y = 2.5 + i * 0.8;
-      group.add(cone);
+    const base = color || "#1f6a35";
+    group.add(natv2_trunk(THREE, 2.2, 0.22, 0.12, barkDark));
+    for (let i = 0; i < 6; i++) {
+      const r = 1.05 - i * 0.14;
+      const c = new THREE.Mesh(new THREE.ConeGeometry(r, 1.0, 20), natv2_mat(THREE, natv2_shade(THREE, base, i * 0.025), 0.85));
+      c.position.y = 1.7 + i * 0.62;
+      c.rotation.y = i * 0.7;
+      group.add(c);
     }
+    const tip = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.4, 8), natv2_mat(THREE, natv2_shade(THREE, base, 0.12), 0.8));
+    tip.position.y = 5.55;
+    group.add(tip);
   } else if (type === "butterfly") {
-    const bodyMat = new THREE.MeshStandardMaterial({ color: "#2a2a2a", roughness: 0.5 });
-    const wingMat = new THREE.MeshStandardMaterial({ color: color || "#ff69b4", roughness: 0.4, side: THREE.DoubleSide });
-    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.3, 8), bodyMat);
+    const wingColor = color || "#ff6fb0";
+    const bodyMat = natv2_mat(THREE, "#2b2020", 0.6);
+    const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.03, 0.28, 4, 10), bodyMat);
     body.rotation.z = Math.PI / 2;
     group.add(body);
-    for (const side of [-1, 1]) {
-      const wing = new THREE.Mesh(new THREE.CircleGeometry(0.2, 12), wingMat);
-      wing.position.set(0, 0, side * 0.15);
-      wing.rotation.x = side * 0.3;
-      group.add(wing);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 8), bodyMat);
+    head.position.x = 0.23;
+    group.add(head);
+    for (const s of [-1, 1]) {
+      const a = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.2, 4), bodyMat);
+      a.position.set(0.32, 0.07, s * 0.05);
+      a.rotation.set(s * 0.3, 0, -0.9);
+      group.add(a);
+      const tip = new THREE.Mesh(new THREE.SphereGeometry(0.013, 6, 5), bodyMat);
+      tip.position.set(0.39, 0.15, s * 0.07);
+      group.add(tip);
     }
+    const up = new THREE.Shape();
+    up.moveTo(0, 0); up.bezierCurveTo(0.12, 0.05, 0.3, 0.25, 0.34, 0.5); up.bezierCurveTo(0.2, 0.55, -0.1, 0.5, -0.12, 0.2); up.lineTo(0, 0);
+    const lo = new THREE.Shape();
+    lo.moveTo(0, 0); lo.bezierCurveTo(-0.05, 0.1, -0.3, 0.12, -0.34, 0.3); lo.bezierCurveTo(-0.32, 0.5, -0.05, 0.4, 0, 0);
+    const wMat = natv2_mat(THREE, wingColor, 0.45, { side: THREE.DoubleSide });
+    const w2Mat = natv2_mat(THREE, natv2_shade(THREE, wingColor, -0.18), 0.45, { side: THREE.DoubleSide });
+    for (const s of [-1, 1] as const) {
+      group.add(natv2_wing(THREE, s, up, wMat, 0.8, [0.08, 0, 0]));
+      group.add(natv2_wing(THREE, s, lo, w2Mat, 0.7, [0.04, 0, 0]));
+    }
+    group.position.y = 0.4;
   } else if (type === "bee") {
-    const bodyMat = new THREE.MeshStandardMaterial({ color: "#ffcc00", roughness: 0.5 });
-    const stripeMat = new THREE.MeshStandardMaterial({ color: "#1a1a1a", roughness: 0.5 });
-    const body = new THREE.Mesh(new THREE.SphereGeometry(0.15, 12, 10), bodyMat);
-    group.add(body);
-    for (let i = 0; i < 2; i++) {
-      const stripe = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.02, 6, 12), stripeMat);
-      stripe.rotation.x = Math.PI / 2;
-      stripe.position.y = -0.05 + i * 0.1;
-      group.add(stripe);
+    const yellow = natv2_mat(THREE, color || "#ffc400", 0.55);
+    const black = natv2_mat(THREE, "#1c1a18", 0.6);
+    const thorax = new THREE.Mesh(new THREE.SphereGeometry(0.13, 16, 12), black);
+    thorax.position.x = 0.12;
+    group.add(thorax);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.09, 14, 10), black);
+    head.position.x = 0.27;
+    group.add(head);
+    for (const s of [-1, 1]) {
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 6), natv2_mat(THREE, "#ffffff", 0.3));
+      eye.position.set(0.32, 0.03, s * 0.055);
+      group.add(eye);
+      const an = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.13, 4), black);
+      an.position.set(0.33, 0.1, s * 0.04);
+      an.rotation.z = -0.7;
+      group.add(an);
     }
-    for (const side of [-1, 1]) {
-      const wing = new THREE.Mesh(new THREE.CircleGeometry(0.1, 8), new THREE.MeshStandardMaterial({ color: "#ffffff", transparent: true, opacity: 0.7, side: THREE.DoubleSide }));
-      wing.position.set(0.05, 0.1, side * 0.12);
-      wing.rotation.x = side * 0.5;
-      group.add(wing);
-    }
-  } else if (type === "ladybug") {
-    const bodyMat = new THREE.MeshStandardMaterial({ color: color || "#cc0000", roughness: 0.4 });
-    const spotMat = new THREE.MeshStandardMaterial({ color: "#1a1a1a", roughness: 0.5 });
-    const body = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 12), bodyMat);
-    body.scale.set(1, 0.6, 1);
-    group.add(body);
-    for (let i = 0; i < 6; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const r = Math.random() * 0.12;
-      const spot = new THREE.Mesh(new THREE.SphereGeometry(0.03, 6, 4), spotMat);
-      spot.position.set(Math.cos(angle) * r, 0.12, Math.sin(angle) * r);
-      group.add(spot);
-    }
-  } else if (type === "dragonfly") {
-    const bodyMat = new THREE.MeshStandardMaterial({ color: color || "#4a90d9", roughness: 0.4 });
-    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.5, 8), bodyMat);
-    body.rotation.z = Math.PI / 2;
-    group.add(body);
-    for (const side of [-1, 1]) {
-      for (const offset of [-0.1, 0.1]) {
-        const wing = new THREE.Mesh(new THREE.CircleGeometry(0.2, 12), new THREE.MeshStandardMaterial({ color: "#aaddff", transparent: true, opacity: 0.6, side: THREE.DoubleSide }));
-        wing.position.set(offset, 0, side * 0.2);
-        wing.rotation.x = side * 0.2;
-        group.add(wing);
-      }
-    }
-  } else if (type === "ant") {
-    const bodyMat = new THREE.MeshStandardMaterial({ color: "#1a1a1a", roughness: 0.7 });
+    const abd = new THREE.Mesh(new THREE.SphereGeometry(0.17, 18, 14), yellow);
+    abd.scale.set(1.35, 0.9, 0.9);
+    abd.position.x = -0.15;
+    group.add(abd);
     for (let i = 0; i < 3; i++) {
-      const segment = new THREE.Mesh(new THREE.SphereGeometry(0.1 - i * 0.02, 10, 8), bodyMat);
-      segment.position.x = -0.15 + i * 0.15;
-      group.add(segment);
+      const band = new THREE.Mesh(new THREE.TorusGeometry(0.152 - i * 0.012, 0.022, 8, 20), black);
+      band.rotation.y = Math.PI / 2;
+      band.position.x = -0.1 - i * 0.12;
+      band.scale.set(1, 0.9, 1);
+      group.add(band);
     }
-    for (const side of [-1, 1]) {
-      for (const x of [-0.1, 0.1]) {
-        const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.2, 4), bodyMat);
-        leg.position.set(x, 0.1, side * 0.08);
-        leg.rotation.z = side * 0.5;
-        group.add(leg);
-      }
+    const sting = new THREE.Mesh(new THREE.ConeGeometry(0.02, 0.09, 6), black);
+    sting.rotation.z = Math.PI / 2;
+    sting.position.x = -0.42;
+    group.add(sting);
+    const wingM = natv2_mat(THREE, "#dff3ff", 0.2, { transparent: true, opacity: 0.6, side: THREE.DoubleSide });
+    const ws = new THREE.Shape();
+    ws.moveTo(0, 0); ws.bezierCurveTo(0.12, 0.05, 0.12, 0.3, -0.02, 0.32); ws.bezierCurveTo(-0.14, 0.25, -0.08, 0.05, 0, 0);
+    for (const s of [-1, 1] as const) group.add(natv2_wing(THREE, s, ws, wingM, 0.7, [0.1, 0.1, 0]));
+    natv2_legs(THREE, group, black, [0.06, 0.12, 0.18], -0.1, 0.12, 0.008);
+    group.position.y = 0.4;
+  } else if (type === "ladybug") {
+    const red = natv2_mat(THREE, color || "#d6201f", 0.3, { metalness: 0.1 });
+    const blk = natv2_mat(THREE, "#161616", 0.5);
+    const shell = new THREE.Mesh(new THREE.SphereGeometry(0.22, 24, 16, 0, Math.PI * 2, 0, Math.PI / 2), red);
+    shell.scale.set(1.15, 0.85, 1);
+    group.add(shell);
+    const A = 0.253, B = 0.187, C = 0.22; // shell ellipsoid radii (x, y, z)
+    for (let i = 0; i <= 16; i++) { // centre seam from tail to head
+      const a = -1.35 + (i / 16) * 2.5;
+      const sm = new THREE.Mesh(new THREE.SphereGeometry(0.0085, 6, 5), blk);
+      sm.position.set(A * Math.sin(a), B * Math.cos(a) + 0.003, 0);
+      group.add(sm);
     }
-  } else if (type === "apple") {
-    const appleMat = new THREE.MeshStandardMaterial({ color: color || "#e63946", roughness: 0.4 });
-    const apple = new THREE.Mesh(new THREE.SphereGeometry(0.3, 16, 12), appleMat);
-    apple.position.y = 0.3;
-    apple.scale.set(1, 0.9, 1);
-    group.add(apple);
-    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.15, 6), new THREE.MeshStandardMaterial({ color: "#5d3a1a" }));
-    stem.position.y = 0.65;
-    group.add(stem);
-    const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 6), new THREE.MeshStandardMaterial({ color: "#2d6a2d" }));
-    leaf.position.set(0.1, 0.62, 0);
-    leaf.scale.set(1.5, 0.2, 0.6);
-    group.add(leaf);
-  } else if (type === "orange") {
-    const orangeMat = new THREE.MeshStandardMaterial({ color: color || "#ff8800", roughness: 0.4 });
-    const orange = new THREE.Mesh(new THREE.SphereGeometry(0.32, 16, 12), orangeMat);
-    orange.position.y = 0.32;
-    group.add(orange);
-    const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 6), new THREE.MeshStandardMaterial({ color: "#2d6a2d" }));
-    leaf.position.set(0.1, 0.68, 0);
-    leaf.scale.set(1.5, 0.2, 0.6);
-    group.add(leaf);
-  } else if (type === "banana") {
-    const bananaMat = new THREE.MeshStandardMaterial({ color: color || "#ffdd44", roughness: 0.5 });
-    const banana = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.08, 8, 12, Math.PI * 1.2), bananaMat);
-    banana.position.y = 0.2;
-    banana.rotation.x = Math.PI / 2;
-    group.add(banana);
-  } else if (type === "grape") {
-    const grapeMat = new THREE.MeshStandardMaterial({ color: color || "#6a3a8a", roughness: 0.3 });
-    const clusters: [number, number, number][] = [];
-    for (let i = 0; i < 8; i++) {
-      const angle = (i / 8) * Math.PI * 2;
-      const r = 0.15;
-      clusters.push([Math.cos(angle) * r, 0.2 + (i % 3) * 0.12, Math.sin(angle) * r]);
-    }
-    clusters.forEach(([x, y, z]) => {
-      const grape = new THREE.Mesh(new THREE.SphereGeometry(0.09, 10, 8), grapeMat);
-      grape.position.set(x, y, z);
-      group.add(grape);
+    const spots: [number, number][] = [[0.8, 0.85], [0.8, -0.85], [0.8, 2.3], [0.8, -2.3], [1.2, 1.57], [1.2, -1.57]];
+    spots.forEach(([th, ph]) => {
+      const x = A * Math.sin(th) * Math.cos(ph), y = B * Math.cos(th), z = C * Math.sin(th) * Math.sin(ph);
+      const sp = new THREE.Mesh(new THREE.SphereGeometry(0.036, 10, 6), blk);
+      sp.position.set(x, y, z);
+      sp.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(x / (A * A), y / (B * B), z / (C * C)).normalize());
+      sp.scale.set(1, 0.3, 1);
+      group.add(sp);
     });
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.085, 14, 10), blk);
+    head.position.set(0.24, 0.05, 0);
+    group.add(head);
+    for (const s of [-1, 1]) {
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.018, 6, 5), natv2_mat(THREE, "#ffffff", 0.3));
+      eye.position.set(0.3, 0.08, s * 0.045);
+      group.add(eye);
+    }
+    natv2_legs(THREE, group, blk, [-0.1, 0.05, 0.16], 0.03, 0.1, 0.008);
+    group.position.y = 0.07;
+  } else if (type === "dragonfly") {
+    const bc = color || "#2a79d1";
+    const bodyMat = natv2_mat(THREE, bc, 0.35, { metalness: 0.3 });
+    const body = natv2_lathe(THREE, [[0.001, -0.5], [0.02, -0.49], [0.03, -0.3], [0.036, -0.05], [0.06, 0.05], [0.065, 0.15], [0.001, 0.2]], bodyMat, 12);
+    body.rotation.z = -Math.PI / 2;
+    group.add(body);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.07, 12, 10), natv2_mat(THREE, natv2_shade(THREE, bc, -0.1), 0.3));
+    head.position.x = 0.2;
+    group.add(head);
+    for (const s of [-1, 1]) {
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 8), natv2_mat(THREE, "#1e3a5f", 0.2, { metalness: 0.4 }));
+      eye.position.set(0.22, 0.02, s * 0.06);
+      group.add(eye);
+    }
+    const wingM = natv2_mat(THREE, "#bfe6ff", 0.15, { transparent: true, opacity: 0.55, side: THREE.DoubleSide });
+    const w = new THREE.Shape();
+    w.moveTo(0, 0); w.bezierCurveTo(0.09, 0.1, 0.1, 0.55, 0, 0.7); w.bezierCurveTo(-0.1, 0.55, -0.09, 0.1, 0, 0);
+    for (const s of [-1, 1] as const) {
+      group.add(natv2_wing(THREE, s, w, wingM, 0.2, [0.1, 0.05, 0]));
+      group.add(natv2_wing(THREE, s, w, wingM, 0.2, [-0.02, 0.05, 0]));
+    }
+    group.position.y = 0.4;
+  } else if (type === "ant") {
+    const blk = natv2_mat(THREE, color || "#2a1d17", 0.45, { metalness: 0.15 });
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.075, 12, 10), blk);
+    head.position.x = 0.2;
+    head.scale.set(1, 0.9, 0.9);
+    group.add(head);
+    const th = new THREE.Mesh(new THREE.SphereGeometry(0.07, 12, 10), blk);
+    th.position.x = 0.06;
+    th.scale.set(1.3, 0.9, 0.85);
+    group.add(th);
+    const ab = new THREE.Mesh(new THREE.SphereGeometry(0.12, 14, 12), blk);
+    ab.position.x = -0.12;
+    ab.scale.set(1.35, 0.95, 0.95);
+    group.add(ab);
+    for (const s of [-1, 1]) {
+      const a1 = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.12, 4), blk);
+      a1.position.set(0.27, 0.07, s * 0.04);
+      a1.rotation.z = -0.9;
+      a1.rotation.x = s * 0.35;
+      group.add(a1);
+    }
+    natv2_legs(THREE, group, blk, [0.12, 0.04, -0.02], 0.1, 0.16, 0.009);
+    group.position.y = 0.16;
+  } else if (type === "apple") {
+    const c = color || "#d92a2a";
+    const m = new THREE.MeshPhysicalMaterial({ color: c, roughness: fruitRough, clearcoat: 0.5, clearcoatRoughness: 0.25 });
+    group.add(natv2_lathe(THREE, [[0.001, 0.07], [0.1, 0.04], [0.22, 0.03], [0.32, 0.12], [0.355, 0.28], [0.33, 0.43], [0.24, 0.55], [0.12, 0.58], [0.05, 0.53], [0.001, 0.5]], m, 36));
+    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.02, 0.17, 6), natv2_mat(THREE, "#5a3a1c", 0.9));
+    stem.position.set(0.012, 0.58, 0);
+    stem.rotation.z = -0.15;
+    group.add(stem);
+    group.add(natv2_placeFlat(THREE, natv2_leafGeo(THREE, 0.22, 0.09), leafMat, 0.6, 0.45, [0.03, 0.6, 0.0]));
+  } else if (type === "orange") {
+    const c = color || "#f58a0b";
+    const geo = new THREE.SphereGeometry(0.33, 40, 28);
+    const p = geo.attributes.position;
+    for (let i = 0; i < p.count; i++) {
+      const x = p.getX(i), y = p.getY(i), z = p.getZ(i), l = Math.hypot(x, y, z);
+      const k = 1 + (natv2_noise(Math.round(x * 60), Math.round(y * 60), Math.round(z * 60)) - 0.5) * 0.025;
+      p.setXYZ(i, (x / l) * 0.33 * k, (y / l) * 0.32 * k, (z / l) * 0.33 * k);
+    }
+    geo.computeVertexNormals();
+    const o = new THREE.Mesh(geo, natv2_mat(THREE, c, fruitRough + 0.2));
+    o.position.y = 0.32;
+    group.add(o);
+    const navel = new THREE.Mesh(new THREE.CircleGeometry(0.05, 12), natv2_mat(THREE, natv2_shade(THREE, c, -0.2), 0.8));
+    navel.rotation.x = -Math.PI / 2;
+    navel.position.y = 0.645;
+    group.add(navel);
+    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.016, 0.07, 6), natv2_mat(THREE, "#4d7a2a", 0.8));
+    stem.position.y = 0.66;
+    group.add(stem);
+    group.add(natv2_placeFlat(THREE, natv2_leafGeo(THREE, 0.24, 0.1), leafMat, 0.2, 0.35, [0.0, 0.66, 0]));
+    group.add(natv2_placeFlat(THREE, natv2_leafGeo(THREE, 0.2, 0.08), leafMat, 3.4, 0.5, [0.0, 0.66, 0]));
+  } else if (type === "banana") {
+    const c = color || "#f5d83a";
+    const bm = new THREE.MeshPhysicalMaterial({ color: c, roughness: fruitRough + 0.1, clearcoat: 0.2 });
+    const tipMat = natv2_mat(THREE, "#3b2a14", 0.8);
+    const stemM = natv2_mat(THREE, "#6e7d2e", 0.85);
+    for (let k = 0; k < 3; k++) {
+      const pts: import("three").Vector3[] = [];
+      for (let i = 0; i <= 12; i++) {
+        const t = i / 12, a = -0.2 + t * 1.5;
+        pts.push(new THREE.Vector3(Math.sin(a) * 0.55, 0.1 + (1 - Math.cos(a)) * 0.4, 0));
+      }
+      const curve = new THREE.CatmullRomCurve3(pts);
+      const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 30, 0.07, 6, false), bm);
+      tube.scale.set(1, 1, 1 - k * 0.0);
+      const holder = new THREE.Group();
+      holder.add(tube);
+      const endA = curve.getPoint(0), endB = curve.getPoint(1);
+      const tipA = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 6), tipMat);
+      tipA.position.copy(endA);
+      const tipB = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.045, 0.14, 6), stemM);
+      tipB.position.copy(endB).add(new THREE.Vector3(0.05, 0.08, 0));
+      tipB.rotation.z = -0.7;
+      holder.add(tipA, tipB);
+      holder.rotation.y = (k - 1) * 0.5;
+      holder.position.set(0, k * 0.06, 0);
+      group.add(holder);
+    }
+    group.position.x = -0.15;
+  } else if (type === "grape") {
+    const c = color || "#6e2f9a";
+    const gm = new THREE.MeshPhysicalMaterial({ color: c, roughness: 0.25, clearcoat: 0.7, clearcoatRoughness: 0.15 });
+    const rnd = natv2_rng(5);
+    let n = 0;
+    for (let row = 0; row < 6; row++) {
+      const count = Math.max(1, 6 - row), y = 0.68 - row * 0.1, rad = 0.07 + row * -0.0;
+      const ring = 0.04 + (5 - row) * 0.028;
+      for (let i = 0; i < count; i++) {
+        const a = (i / count) * Math.PI * 2 + row * 0.7;
+        const gr = new THREE.Mesh(new THREE.SphereGeometry(0.075 - row * 0.003, 14, 12), gm);
+        gr.position.set(Math.cos(a) * ring, y + (rnd() - 0.5) * 0.02, Math.sin(a) * ring);
+        group.add(gr); n++;
+      }
+      void rad;
+    }
+    const inner = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 10), gm);
+    inner.position.y = 0.6;
+    group.add(inner);
+    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.02, 0.2, 6), natv2_mat(THREE, "#5b4a22", 0.9));
+    stem.position.set(0.02, 0.9, 0);
+    stem.rotation.z = -0.2;
+    group.add(stem);
+    group.add(natv2_placeFlat(THREE, natv2_leafGeo(THREE, 0.32, 0.17), leafMat, 0.5, 0.35, [0.04, 0.98, 0]));
+    void n;
   } else if (type === "mango") {
-    const mangoMat = new THREE.MeshStandardMaterial({ color: color || "#ffaa33", roughness: 0.4 });
-    const mango = new THREE.Mesh(new THREE.SphereGeometry(0.28, 16, 12), mangoMat);
-    mango.position.y = 0.3;
-    mango.scale.set(1, 1.2, 0.8);
-    group.add(mango);
-    const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 6), new THREE.MeshStandardMaterial({ color: "#2d6a2d" }));
-    leaf.position.set(0.08, 0.65, 0);
-    leaf.scale.set(1.5, 0.2, 0.6);
-    group.add(leaf);
+    const c = color || "#f5a020";
+    const geo = new THREE.SphereGeometry(0.3, 28, 20);
+    geo.scale(1.05, 1.28, 0.82);
+    const p = geo.attributes.position, cols: number[] = [];
+    const cb = new THREE.Color(c), cg = new THREE.Color("#7caf2a"), cr = new THREE.Color("#e3552b");
+    const tmp = new THREE.Color();
+    for (let i = 0; i < p.count; i++) {
+      const x = p.getX(i), y = p.getY(i);
+      p.setX(i, x + y * 0.12 + (y > 0 ? 0 : 0.03)); // gentle S-curve
+      tmp.copy(cb).lerp(cg, Math.max(0, y / 0.4) * 0.6).lerp(cr, Math.max(0, -x / 0.35) * 0.35 + Math.max(0, -y / 0.4) * 0.1);
+      cols.push(tmp.r, tmp.g, tmp.b);
+    }
+    geo.setAttribute("color", new THREE.Float32BufferAttribute(cols, 3));
+    geo.computeVertexNormals();
+    const mg = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: fruitRough }));
+    mg.position.y = 0.4;
+    mg.rotation.z = 0.12;
+    group.add(mg);
+    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.018, 0.1, 6), natv2_mat(THREE, "#5e5a22", 0.85));
+    stem.position.set(0.08, 0.8, 0);
+    group.add(stem);
+    group.add(natv2_placeFlat(THREE, natv2_leafGeo(THREE, 0.34, 0.07), leafMat, 0.4, 0.55, [0.08, 0.84, 0]));
   } else if (type === "watermelon") {
-    const rindMat = new THREE.MeshStandardMaterial({ color: "#2d6a2d", roughness: 0.7 });
-    const fleshMat = new THREE.MeshStandardMaterial({ color: "#ff4444", roughness: 0.5 });
-    const seedMat = new THREE.MeshStandardMaterial({ color: "#1a1a1a", roughness: 0.6 });
-    const rind = new THREE.Mesh(new THREE.SphereGeometry(0.5, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2), rindMat);
-    rind.position.y = 0.25;
+    const R = 0.5;
+    const stripeGeo = new THREE.SphereGeometry(R, 40, 18, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2);
+    const p = stripeGeo.attributes.position, cols: number[] = [];
+    const g1 = new THREE.Color("#1f6a2a"), g2 = new THREE.Color("#4fa04a"), tc = new THREE.Color();
+    for (let i = 0; i < p.count; i++) {
+      const a = Math.atan2(p.getZ(i), p.getX(i)), v = Math.sin(a * 8 + Math.sin(p.getY(i) * 9) * 0.7);
+      tc.copy(g1).lerp(g2, v > 0 ? 0.0 : 0.85);
+      cols.push(tc.r, tc.g, tc.b);
+    }
+    stripeGeo.setAttribute("color", new THREE.Float32BufferAttribute(cols, 3));
+    const rind = new THREE.Mesh(stripeGeo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.55, side: THREE.DoubleSide }));
+    rind.position.y = R;
     group.add(rind);
-    const flesh = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.05, 20), fleshMat);
-    flesh.position.y = 0.28;
+    const pith = new THREE.Mesh(new THREE.RingGeometry(R * 0.92, R * 0.995, 48), natv2_mat(THREE, "#e9f2d0", 0.7, { side: THREE.DoubleSide }));
+    pith.rotation.x = -Math.PI / 2;
+    pith.position.y = R + 0.001;
+    group.add(pith);
+    const flesh = new THREE.Mesh(new THREE.CircleGeometry(R * 0.925, 48), natv2_mat(THREE, "#ff3b4d", 0.45, { side: THREE.DoubleSide }));
+    flesh.rotation.x = -Math.PI / 2;
+    flesh.position.y = R + 0.002;
     group.add(flesh);
-    for (let i = 0; i < 6; i++) {
-      const angle = (i / 6) * Math.PI * 2;
-      const seed = new THREE.Mesh(new THREE.SphereGeometry(0.03, 6, 4), seedMat);
-      seed.position.set(Math.cos(angle) * 0.2, 0.3, Math.sin(angle) * 0.2);
-      group.add(seed);
+    const core = new THREE.Mesh(new THREE.CircleGeometry(R * 0.4, 36), natv2_mat(THREE, "#ff6b78", 0.45, { side: THREE.DoubleSide }));
+    core.rotation.x = -Math.PI / 2;
+    core.position.y = R + 0.003;
+    group.add(core);
+    const seedM = natv2_mat(THREE, "#161210", 0.4);
+    for (let i = 0; i < 14; i++) {
+      const a = (i / 14) * Math.PI * 2 + 0.2, r = R * (i % 2 ? 0.58 : 0.72);
+      const sd = new THREE.Mesh(new THREE.SphereGeometry(0.022, 8, 6), seedM);
+      sd.position.set(Math.cos(a) * r, R + 0.008, Math.sin(a) * r);
+      sd.scale.set(1.6, 0.4, 0.9);
+      sd.rotation.y = -a + Math.PI / 2;
+      group.add(sd);
     }
   } else if (type === "daisy") {
-    const stemMat = new THREE.MeshStandardMaterial({ color: "#2d6a2d", roughness: 0.9 });
-    const petalMat = new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.6 });
-    const centerMat = new THREE.MeshStandardMaterial({ color: "#ffdd00", roughness: 0.5 });
-    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.8, 8), stemMat);
-    stem.position.y = 0.4;
-    group.add(stem);
-    for (let i = 0; i < 10; i++) {
-      const angle = (i / 10) * Math.PI * 2;
-      const petal = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6), petalMat);
-      petal.position.set(Math.cos(angle) * 0.2, 0.9, Math.sin(angle) * 0.2);
-      petal.scale.set(1, 0.3, 0.5);
-      group.add(petal);
-    }
-    const center = new THREE.Mesh(new THREE.SphereGeometry(0.1, 10, 8), centerMat);
-    center.position.y = 0.9;
-    group.add(center);
+    const pc = color || "#ffffff";
+    group.add(natv2_lathe(THREE, [[0.001, 0], [0.035, 0], [0.028, 0.5], [0.022, 1.0], [0.001, 1.0]], stemMat, 8));
+    group.add(natv2_placeFlat(THREE, natv2_leafGeo(THREE, 0.38, 0.09), leafMat, 0.3, 0.35, [0, 0.12, 0]));
+    group.add(natv2_placeFlat(THREE, natv2_leafGeo(THREE, 0.32, 0.08), leafMat, 3.6, 0.4, [0, 0.2, 0]));
+    const pm = natv2_mat(THREE, pc, 0.55, { side: THREE.DoubleSide });
+    const pg = natv2_petalGeo(THREE, 0.26, 0.06);
+    const head = new THREE.Group();
+    head.position.y = 1.0;
+    head.rotation.x = 0.95;
+    for (let i = 0; i < 22; i++) head.add(natv2_placeFlat(THREE, pg, pm, (i / 22) * Math.PI * 2, 0.08 + (i % 2) * 0.12, [0, 0, 0]));
+    const center = new THREE.Mesh(new THREE.SphereGeometry(0.08, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2), natv2_mat(THREE, "#f6b800", 0.6));
+    center.scale.y = 0.7;
+    head.add(center);
+    group.add(head);
   } else if (type === "orchid") {
-    const stemMat = new THREE.MeshStandardMaterial({ color: "#2d6a2d", roughness: 0.9 });
-    const petalMat = new THREE.MeshStandardMaterial({ color: color || "#da70d6", roughness: 0.5 });
-    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.2, 8), stemMat);
-    stem.position.y = 0.6;
-    group.add(stem);
-    for (let i = 0; i < 3; i++) {
-      const flower = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 10), petalMat);
-      flower.position.set((i - 1) * 0.2, 1.2 + i * 0.15, 0);
-      group.add(flower);
-    }
+    const pc = color || "#d764c8";
+    const curve = new THREE.CatmullRomCurve3([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0.02, 0.5, 0), new THREE.Vector3(0.12, 0.95, 0), new THREE.Vector3(0.3, 1.2, 0)]);
+    group.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 20, 0.022, 6, false), stemMat));
+    group.add(natv2_placeFlat(THREE, natv2_leafGeo(THREE, 0.55, 0.07), leafMat, 0.2, 0.9, [0, 0.03, 0]));
+    group.add(natv2_placeFlat(THREE, natv2_leafGeo(THREE, 0.5, 0.07), leafMat, 3.0, 0.8, [0, 0.03, 0]));
+    group.add(natv2_placeFlat(THREE, natv2_leafGeo(THREE, 0.45, 0.06), leafMat, 5.2, 0.85, [0, 0.03, 0]));
+    const pm = natv2_mat(THREE, pc, 0.4, { side: THREE.DoubleSide });
+    const dark = natv2_mat(THREE, natv2_shade(THREE, pc, -0.22), 0.5, { side: THREE.DoubleSide });
+    const big = natv2_petalGeo(THREE, 0.2, 0.09), narrow = natv2_petalGeo(THREE, 0.2, 0.04);
+    [0.45, 0.7, 0.92].forEach((t, k) => {
+      const at = curve.getPoint(t), sc = 1 - k * 0.22;
+      const fl = new THREE.Group();
+      fl.position.copy(at);
+      fl.scale.setScalar(sc);
+      fl.rotation.x = 0.9;
+      fl.rotation.z = k * 0.5;
+      [Math.PI / 2, -Math.PI / 2].forEach((a) => fl.add(natv2_placeFlat(THREE, big, pm, a + 0.0, 0.05, [0, 0, 0])));
+      [0.0, 2.5, -2.5].forEach((a) => fl.add(natv2_placeFlat(THREE, narrow, pm, a, 0.15, [0, 0, 0])));
+      const lip = new THREE.Mesh(new THREE.SphereGeometry(0.06, 10, 8), dark);
+      lip.scale.set(1, 0.5, 1.4);
+      lip.position.set(0, -0.01, 0.06);
+      fl.add(lip);
+      group.add(fl);
+    });
   } else if (type === "hibiscus") {
-    const stemMat = new THREE.MeshStandardMaterial({ color: "#2d6a2d", roughness: 0.9 });
-    const petalMat = new THREE.MeshStandardMaterial({ color: color || "#ff3366", roughness: 0.5 });
-    const centerMat = new THREE.MeshStandardMaterial({ color: "#ffdd00", roughness: 0.5 });
-    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.8, 8), stemMat);
-    stem.position.y = 0.4;
-    group.add(stem);
-    for (let i = 0; i < 5; i++) {
-      const angle = (i / 5) * Math.PI * 2;
-      const petal = new THREE.Mesh(new THREE.SphereGeometry(0.2, 10, 8), petalMat);
-      petal.position.set(Math.cos(angle) * 0.2, 0.9, Math.sin(angle) * 0.2);
-      petal.scale.set(1, 0.4, 0.6);
-      petal.rotation.y = -angle;
-      group.add(petal);
+    const pc = color || "#ff2f5f";
+    group.add(natv2_lathe(THREE, [[0.001, 0], [0.05, 0], [0.035, 0.45], [0.03, 0.8], [0.001, 0.8]], stemMat, 8));
+    group.add(natv2_placeFlat(THREE, natv2_leafGeo(THREE, 0.36, 0.14), leafMat, 0.5, 0.45, [0, 0.35, 0]));
+    group.add(natv2_placeFlat(THREE, natv2_leafGeo(THREE, 0.32, 0.12), leafMat, 3.7, 0.5, [0, 0.5, 0]));
+    const pm = natv2_mat(THREE, pc, 0.4, { side: THREE.DoubleSide });
+    const pg = natv2_petalGeo(THREE, 0.36, 0.24);
+    const fl = new THREE.Group();
+    fl.position.y = 0.82;
+    fl.rotation.x = 0.8;
+    for (let i = 0; i < 5; i++) fl.add(natv2_placeFlat(THREE, pg, pm, (i / 5) * Math.PI * 2, 0.5, [0, 0, 0]));
+    const throat = new THREE.Mesh(new THREE.CircleGeometry(0.08, 16), natv2_mat(THREE, natv2_shade(THREE, pc, -0.25), 0.5, { side: THREE.DoubleSide }));
+    throat.rotation.x = -Math.PI / 2;
+    throat.position.y = 0.005;
+    fl.add(throat);
+    const col = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.014, 0.3, 6), natv2_mat(THREE, "#fff1a8", 0.6));
+    col.position.y = 0.13;
+    col.rotation.z = -0.25;
+    fl.add(col);
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2, dot = new THREE.Mesh(new THREE.SphereGeometry(0.018, 6, 5), natv2_mat(THREE, "#f3c200", 0.5));
+      dot.position.set(-0.05 + Math.cos(a) * 0.025, 0.2 + i * 0.012, Math.sin(a) * 0.025);
+      fl.add(dot);
     }
-    const center = new THREE.Mesh(new THREE.SphereGeometry(0.08, 10, 8), centerMat);
-    center.position.y = 0.9;
-    group.add(center);
+    const tip = new THREE.Mesh(new THREE.SphereGeometry(0.02, 8, 6), natv2_mat(THREE, "#c0132f", 0.5));
+    tip.position.set(-0.075, 0.29, 0);
+    fl.add(tip);
+    group.add(fl);
   } else if (type === "bougainvillea") {
-    const stemMat = new THREE.MeshStandardMaterial({ color: "#5d3a1a", roughness: 0.9 });
-    const bractMat = new THREE.MeshStandardMaterial({ color: color || "#ff1493", roughness: 0.5 });
-    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 1, 8), stemMat);
-    trunk.position.y = 0.5;
-    group.add(trunk);
-    const clusters: [number, number, number][] = [
-      [0, 1.2, 0], [0.2, 1.3, 0.1], [-0.2, 1.2, -0.1], [0.1, 1.4, -0.2], [-0.1, 1.35, 0.2],
-    ];
-    clusters.forEach(([x, y, z]) => {
-      const cluster = new THREE.Mesh(new THREE.SphereGeometry(0.15, 10, 8), bractMat);
-      cluster.position.set(x, y, z);
-      group.add(cluster);
+    const pc = color || "#e0188a";
+    const rnd = natv2_rng(9);
+    group.add(natv2_trunk(THREE, 0.8, 0.07, 0.045, bark));
+    const bract = natv2_petalGeo(THREE, 0.22, 0.12);
+    const bm = natv2_mat(THREE, pc, 0.55, { side: THREE.DoubleSide });
+    const bm2 = natv2_mat(THREE, natv2_shade(THREE, pc, 0.08), 0.55, { side: THREE.DoubleSide });
+    const ends: [number, number, number][] = [[0.45, 1.15, 0.05], [-0.4, 1.2, 0.1], [0.05, 1.45, -0.35]];
+    ends.forEach((e) => {
+      group.add(natv2_branch(THREE, [0, 0.7, 0], e, 0.028, bark));
+      for (let c = 0; c < 6; c++) {
+        const t = 0.3 + c * 0.14, cx = e[0] * t + (rnd() - 0.5) * 0.12, cy = 0.7 + (e[1] - 0.7) * t + 0.05, cz = e[2] * t + (rnd() - 0.5) * 0.12;
+        const cl = new THREE.Group();
+        cl.position.set(cx, cy, cz);
+        cl.rotation.set((rnd() - 0.5) * 0.8, rnd() * 6.28, 0);
+        for (let b = 0; b < 3; b++) cl.add(natv2_placeFlat(THREE, bract, b % 2 ? bm : bm2, (b / 3) * Math.PI * 2 + 0.3, 0.6, [0, 0, 0]));
+        const fl = new THREE.Mesh(new THREE.SphereGeometry(0.018, 6, 5), natv2_mat(THREE, "#fff6e0", 0.5));
+        fl.position.y = 0.02;
+        cl.add(fl);
+        group.add(cl);
+      }
+      group.add(natv2_placeFlat(THREE, natv2_leafGeo(THREE, 0.2, 0.08), leafMat, rnd() * 6.28, 0.5, [e[0] * 0.55, 0.7 + (e[1] - 0.7) * 0.55, e[2] * 0.55]));
     });
   }
 
@@ -5198,6 +5487,7 @@ export function createNatureGeometry(
       child.receiveShadow = true;
     }
   });
+  void metalness; void leafGreen;
   return group;
 }
 
@@ -7261,5 +7551,521 @@ export function createReligiousGeometry(
       child.receiveShadow = true;
     }
   });
+  return group;
+}
+
+
+// ============================================================
+// KARAOKE / PUB — Large scale, 3-tier rooms, full staff
+// ============================================================
+export function createKaraokeGeometry(
+  THREE: typeof import("three"),
+  type: "karaoke" | "karaoke_premium" | "karaoke_vip" | "karaoke_standard" | "karaoke_full",
+  color?: string,
+  metalness?: number,
+  roughness?: number
+): import("three").Group {
+  const group = new THREE.Group();
+  const gold = new THREE.MeshStandardMaterial({ color: "#d4af37", metalness: 0.9, roughness: 0.2 });
+  const goldSoft = new THREE.MeshStandardMaterial({ color: "#c9a227", metalness: 0.7, roughness: 0.35 });
+  const darkWood = new THREE.MeshStandardMaterial({ color: "#3b2412", roughness: 0.7 });
+  const marble = new THREE.MeshStandardMaterial({ color: "#e8e8e8", roughness: 0.25, metalness: 0.1 });
+  const mirrorMat = new THREE.MeshStandardMaterial({ color: "#c0d4e0", metalness: 1.0, roughness: 0.05, envMapIntensity: 1.2 });
+  const leather = new THREE.MeshStandardMaterial({ color: color || "#4a1a1a", roughness: 0.6, metalness: 0.1 });
+  const leatherGray = new THREE.MeshStandardMaterial({ color: "#3a3a3a", roughness: 0.7 });
+  const neonPink = new THREE.MeshStandardMaterial({ color: "#ff1493", emissive: "#ff1493", emissiveIntensity: 2.2 });
+  const neonCyan = new THREE.MeshStandardMaterial({ color: "#00e5ff", emissive: "#00e5ff", emissiveIntensity: 2.2 });
+  const neonGold = new THREE.MeshStandardMaterial({ color: "#ffd700", emissive: "#ffd700", emissiveIntensity: 1.8 });
+  const ledStrip = new THREE.MeshStandardMaterial({ color: "#7c3aed", emissive: "#7c3aed", emissiveIntensity: 1.5 });
+  const skinMat = new THREE.MeshStandardMaterial({ color: "#e8b88a", roughness: 0.6 });
+  const dressMat = new THREE.MeshStandardMaterial({ color: "#ff1f6d", roughness: 0.4, metalness: 0.2 });
+  const suitMat = new THREE.MeshStandardMaterial({ color: "#1a1a2e", roughness: 0.5 });
+  const whiteShirt = new THREE.MeshStandardMaterial({ color: "#f5f5f5", roughness: 0.7 });
+  const securityMat = new THREE.MeshStandardMaterial({ color: "#0a0a0a", roughness: 0.6 });
+  const glassMat = new THREE.MeshStandardMaterial({ color: "#a8d8ea", metalness: 0.5, roughness: 0.05, transparent: true, opacity: 0.55 });
+
+  const W = 40, D = 40, H = 8; // Large scale
+
+  // ---------- FLOOR (dark marble with gold trim) ----------
+  const floor = new THREE.Mesh(new THREE.BoxGeometry(W, 0.2, D), new THREE.MeshStandardMaterial({ color: "#1a1410", roughness: 0.3, metalness: 0.4 }));
+  floor.position.y = 0.1;
+  floor.receiveShadow = true;
+  group.add(floor);
+
+  // Gold floor inlay pattern
+  for (let i = -4; i <= 4; i++) {
+    const strip = new THREE.Mesh(new THREE.BoxGeometry(W - 2, 0.22, 0.08), gold);
+    strip.position.set(0, 0.11, i * 4.5);
+    group.add(strip);
+  }
+  for (let i = -4; i <= 4; i++) {
+    const strip = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.22, D - 2), gold);
+    strip.position.set(i * 4.5, 0.11, 0);
+    group.add(strip);
+  }
+
+  // ---------- OUTER WALLS ----------
+  const wallMat = new THREE.MeshStandardMaterial({ color: "#2a1a14", roughness: 0.6 });
+  const wallBack = new THREE.Mesh(new THREE.BoxGeometry(W, H, 0.3), wallMat);
+  wallBack.position.set(0, H / 2, -D / 2);
+  group.add(wallBack);
+  const wallLeft = new THREE.Mesh(new THREE.BoxGeometry(0.3, H, D), wallMat);
+  wallLeft.position.set(-W / 2, H / 2, 0);
+  group.add(wallLeft);
+  const wallRight = new THREE.Mesh(new THREE.BoxGeometry(0.3, H, D), wallMat);
+  wallRight.position.set(W / 2, H / 2, 0);
+  group.add(wallRight);
+  // Front wall with big entrance hole (frame only)
+  const frontTop = new THREE.Mesh(new THREE.BoxGeometry(W, 2, 0.3), wallMat);
+  frontTop.position.set(0, H - 1, D / 2);
+  group.add(frontTop);
+  for (const sx of [-1, 1]) {
+    const side = new THREE.Mesh(new THREE.BoxGeometry(W / 2 - 3, H, 0.3), wallMat);
+    side.position.set(sx * (W / 4 + 1.5), H / 2, D / 2);
+    group.add(side);
+  }
+
+  // ---------- CEILING ----------
+  const ceiling = new THREE.Mesh(new THREE.BoxGeometry(W, 0.2, D), new THREE.MeshStandardMaterial({ color: "#0a0608", roughness: 0.9 }));
+  ceiling.position.y = H;
+  group.add(ceiling);
+
+  // LED strips on ceiling (grid)
+  for (let i = -4; i <= 4; i++) {
+    const led = new THREE.Mesh(new THREE.BoxGeometry(W - 1, 0.05, 0.05), ledStrip);
+    led.position.set(0, H - 0.12, i * 4.5);
+    group.add(led);
+  }
+
+  // ---------- BIG NEON SIGN "KARAOKE" (above entrance) ----------
+  const signBg = new THREE.Mesh(new THREE.BoxGeometry(14, 2.2, 0.2), new THREE.MeshStandardMaterial({ color: "#1a0010", roughness: 0.5 }));
+  signBg.position.set(0, H - 2.5, D / 2 - 0.2);
+  group.add(signBg);
+  // "K A R A O K E" — 7 glowing blocks
+  for (let i = 0; i < 7; i++) {
+    const letter = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.6, 0.1), i % 2 ? neonPink : neonCyan);
+    letter.position.set(-5.4 + i * 1.8, H - 2.5, D / 2 - 0.05);
+    group.add(letter);
+  }
+  // Underline
+  const underline = new THREE.Mesh(new THREE.BoxGeometry(13, 0.1, 0.1), neonGold);
+  underline.position.set(0, H - 3.4, D / 2 - 0.05);
+  group.add(underline);
+
+  // ---------- DISCO BALL (center, high) ----------
+  const ballHolder = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.5, 6), gold);
+  ballHolder.position.set(0, H - 0.5, 0);
+  group.add(ballHolder);
+  const discoBall = new THREE.Mesh(
+    new THREE.IcosahedronGeometry(0.9, 1),
+    new THREE.MeshStandardMaterial({ color: "#e0e8ff", metalness: 1.0, roughness: 0.02, emissive: "#5566aa", emissiveIntensity: 0.4 })
+  );
+  discoBall.position.set(0, H - 1.2, 0);
+  discoBall.name = "discoBall";
+  group.add(discoBall);
+  // Sparkle cube faces (small glowing)
+  for (let i = 0; i < 12; i++) {
+    const ang = (i / 12) * Math.PI * 2;
+    const sparkle = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.15, 0.15), neonGold);
+    sparkle.position.set(Math.cos(ang) * 0.85, H - 1.2 + Math.sin(i) * 0.3, Math.sin(ang) * 0.85);
+    group.add(sparkle);
+  }
+
+  // ---------- ROOMS (3 tiers x 3 rooms = 9 rooms) ----------
+  // Layout: 3 rows (Premium front, VIP mid, Standard back)
+  // Each room is a U-shaped lounge with sofas + table
+  const rooms: Array<{ tier: string; x: number; z: number; w: number; d: number; sofaColor: any; tableMat: any; wallMat: any }> = [];
+  const tierConfig = [
+    { tier: "premium", z: -12, sofa: gold, table: marble, wall: mirrorMat },
+    { tier: "vip",     z:  0,  sofa: leather, table: darkWood, wall: wallMat },
+    { tier: "standard",z: 12,  sofa: leatherGray, table: darkWood, wall: wallMat },
+  ];
+  for (let row = 0; row < 3; row++) {
+    for (let col = 0; col < 3; col++) {
+      const cfg = tierConfig[row];
+      rooms.push({
+        tier: cfg.tier,
+        x: -12 + col * 12,
+        z: cfg.z,
+        w: 9,
+        d: 7,
+        sofaColor: cfg.sofa,
+        tableMat: cfg.table,
+        wallMat: cfg.wall,
+      });
+    }
+  }
+
+  rooms.forEach((room) => {
+    const roomGroup = new THREE.Group();
+    roomGroup.position.set(room.x, 0, room.z);
+
+    // Half-height wall (open front)
+    const backWall = new THREE.Mesh(new THREE.BoxGeometry(room.w, 3, 0.2), room.wallMat);
+    backWall.position.set(0, 1.5, -room.d / 2);
+    roomGroup.add(backWall);
+    const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.2, 3, room.d), room.wallMat);
+    leftWall.position.set(-room.w / 2, 1.5, 0);
+    roomGroup.add(leftWall);
+    const rightWall = new THREE.Mesh(new THREE.BoxGeometry(0.2, 3, room.d), room.wallMat);
+    rightWall.position.set(room.w / 2, 1.5, 0);
+    roomGroup.add(rightWall);
+
+    // Neon strip on back wall
+    const strip = new THREE.Mesh(new THREE.BoxGeometry(room.w - 0.4, 0.08, 0.05), room.tier === "premium" ? neonGold : room.tier === "vip" ? neonPink : ledStrip);
+    strip.position.set(0, 2.7, -room.d / 2 + 0.12);
+    roomGroup.add(strip);
+
+    // U-shaped sofas (3 pieces)
+    const sofaBack = new THREE.Mesh(new THREE.BoxGeometry(room.w - 0.6, 0.7, 0.8), room.sofaColor);
+    sofaBack.position.set(0, 0.35, -room.d / 2 + 0.8);
+    roomGroup.add(sofaBack);
+    const sofaBackTop = new THREE.Mesh(new THREE.BoxGeometry(room.w - 0.6, 0.5, 0.25), room.sofaColor);
+    sofaBackTop.position.set(0, 0.95, -room.d / 2 + 0.5);
+    roomGroup.add(sofaBackTop);
+
+    for (const sx of [-1, 1]) {
+      const side = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.7, room.d - 2), room.sofaColor);
+      side.position.set(sx * (room.w / 2 - 0.8), 0.35, 0);
+      roomGroup.add(side);
+      const sideTop = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.5, room.d - 2), room.sofaColor);
+      sideTop.position.set(sx * (room.w / 2 - 0.8), 0.95, 0);
+      roomGroup.add(sideTop);
+    }
+
+    // Table (glass for premium, marble for vip, wood for standard)
+    const tableTop = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.1, 1.2), room.tableMat);
+    tableTop.position.set(0, 0.7, 0.3);
+    roomGroup.add(tableTop);
+    if (room.tier === "premium") {
+      // Glass table with gold trim
+      const trim = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.12, 1.3), gold);
+      trim.position.set(0, 0.72, 0.3);
+      roomGroup.add(trim);
+    }
+    for (const sx of [-0.9, 0.9]) {
+      for (const sz of [-0.35, 0.95]) {
+        const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.7, 8), gold);
+        leg.position.set(sx, 0.35, sz);
+        roomGroup.add(leg);
+      }
+    }
+
+    // Drinks on table
+    for (let k = 0; k < 3; k++) {
+      const glass = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 0.18, 8), glassMat);
+      glass.position.set(-0.6 + k * 0.6, 0.85, 0.3);
+      roomGroup.add(glass);
+      const liquid = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 0.1, 8), new THREE.MeshStandardMaterial({ color: k === 0 ? "#c0392b" : k === 1 ? "#f39c12" : "#8e44ad", roughness: 0.3 }));
+      liquid.position.set(-0.6 + k * 0.6, 0.82, 0.3);
+      roomGroup.add(liquid);
+    }
+
+    // Bottle on table
+    const bottle = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 0.35, 10), new THREE.MeshStandardMaterial({ color: "#1a1a2a", roughness: 0.2, metalness: 0.3 }));
+    bottle.position.set(0.7, 0.95, 0.3);
+    roomGroup.add(bottle);
+
+    // VIP / tier label on back wall
+    const label = new THREE.Mesh(
+      new THREE.BoxGeometry(room.tier === "premium" ? 2.2 : room.tier === "vip" ? 1.0 : 1.6, 0.4, 0.05),
+      room.tier === "premium" ? neonGold : room.tier === "vip" ? neonPink : neonCyan
+    );
+    label.position.set(0, 2.2, -room.d / 2 + 0.12);
+    roomGroup.add(label);
+
+    // Room entrance indicator (small light above front opening)
+    const entryLight = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6), room.tier === "premium" ? neonGold : room.tier === "vip" ? neonPink : neonCyan);
+    entryLight.position.set(0, 2.9, room.d / 2 - 0.2);
+    roomGroup.add(entryLight);
+
+    group.add(roomGroup);
+  });
+
+  // ---------- STAGE (center front) ----------
+  const stage = new THREE.Mesh(new THREE.BoxGeometry(8, 0.5, 3), new THREE.MeshStandardMaterial({ color: "#1a1410", roughness: 0.4, metalness: 0.5 }));
+  stage.position.set(0, 0.35, 8);
+  group.add(stage);
+  const stageFront = new THREE.Mesh(new THREE.BoxGeometry(8.2, 0.15, 0.15), neonPink);
+  stageFront.position.set(0, 0.5, 9.5);
+  group.add(stageFront);
+
+  // Singer with microphone on stage
+  const singer = new THREE.Group();
+  singer.position.set(-1, 0.6, 8);
+  // legs
+  for (const sx of [-0.18, 0.18]) {
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 1.1, 8), new THREE.MeshStandardMaterial({ color: "#1a1a2e" }));
+    leg.position.set(sx, 0.55, 0);
+    singer.add(leg);
+  }
+  // body
+  const singerBody = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.32, 0.9, 10), new THREE.MeshStandardMaterial({ color: "#8e44ad", roughness: 0.4, metalness: 0.2 }));
+  singerBody.position.y = 1.55;
+  singer.add(singerBody);
+  // head
+  const singerHead = new THREE.Mesh(new THREE.SphereGeometry(0.22, 12, 10), skinMat);
+  singerHead.position.y = 2.25;
+  singer.add(singerHead);
+  // arm holding mic
+  const armR = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.7, 6), skinMat);
+  armR.position.set(0.35, 1.7, 0.1);
+  armR.rotation.z = -0.5;
+  singer.add(armR);
+  // microphone
+  const mic = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 0.18, 8), new THREE.MeshStandardMaterial({ color: "#222", metalness: 0.9, roughness: 0.2 }));
+  mic.position.set(0.6, 2.0, 0.3);
+  mic.rotation.x = 0.3;
+  singer.add(mic);
+  // mic tip glow
+  const micTip = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 6), neonGold);
+  micTip.position.set(0.62, 2.1, 0.32);
+  singer.add(micTip);
+  singer.traverse((c: any) => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
+  group.add(singer);
+
+  // ---------- TRADITIONAL INSTRUMENTS (stage side) ----------
+  // Khmer Gong (គង) — big bronze circle
+  const gongFrame = new THREE.Mesh(new THREE.TorusGeometry(0.7, 0.08, 8, 24), gold);
+  gongFrame.position.set(3.2, 1.4, 8);
+  group.add(gongFrame);
+  const gongDisc = new THREE.Mesh(new THREE.CircleGeometry(0.65, 24), new THREE.MeshStandardMaterial({ color: "#b8860b", metalness: 0.9, roughness: 0.3, side: THREE.DoubleSide }));
+  gongDisc.position.set(3.2, 1.4, 8.01);
+  group.add(gongDisc);
+  // Roneat (រនាត) — wooden xylophone
+  const roneatFrame = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.15, 0.9), darkWood);
+  roneatFrame.position.set(-3.5, 1.0, 8);
+  group.add(roneatFrame);
+  for (let i = 0; i < 12; i++) {
+    const bar = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.05, 0.7 - i * 0.03), goldSoft);
+    bar.position.set(-4.5 + i * 0.18, 1.1, 8);
+    group.add(bar);
+  }
+  // Tro Khmer (ទ្រខ្មែរ) — 2-string fiddle (simplified)
+  const troBody = new THREE.Mesh(new THREE.SphereGeometry(0.25, 12, 10), darkWood);
+  troBody.position.set(3.5, 0.9, 6.5);
+  group.add(troBody);
+  const troNeck = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.2, 6), darkWood);
+  troNeck.position.set(3.5, 1.6, 6.5);
+  group.add(troNeck);
+  // Sralai (ស្រឡៃ) — oboe-like
+  const sralai = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.08, 0.5, 8), darkWood);
+  sralai.position.set(-2.5, 1.0, 6.5);
+  sralai.rotation.z = 0.2;
+  group.add(sralai);
+
+  // ---------- HOSTESSES (6 ladies) ----------
+  function makeHostess(x: number, z: number, facing: number) {
+    const h = new THREE.Group();
+    h.position.set(x, 0, z);
+    h.rotation.y = facing;
+    for (const sx of [-0.12, 0.12]) {
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 1.0, 8), skinMat);
+      leg.position.set(sx, 0.5, 0);
+      h.add(leg);
+    }
+    // dress
+    const dress = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.35, 0.9, 10), dressMat);
+    dress.position.y = 1.45;
+    h.add(dress);
+    // arms
+    for (const sx of [-0.25, 0.25]) {
+      const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.7, 6), skinMat);
+      arm.position.set(sx, 1.6, 0);
+      arm.rotation.z = sx > 0 ? 0.15 : -0.15;
+      h.add(arm);
+    }
+    // head
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 10), skinMat);
+    head.position.y = 2.1;
+    h.add(head);
+    // hair
+    const hair = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 10), new THREE.MeshStandardMaterial({ color: "#1a0a05", roughness: 0.6 }));
+    hair.position.y = 2.15;
+    hair.scale.set(1, 0.8, 1);
+    h.add(hair);
+    // small golden plate (tray) in hand
+    const tray = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.02, 12), gold);
+    tray.position.set(0.3, 1.35, 0.15);
+    h.add(tray);
+    // bottle on tray
+    const bot = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 0.25, 8), new THREE.MeshStandardMaterial({ color: "#1a1a2a", metalness: 0.4, roughness: 0.2 }));
+    bot.position.set(0.3, 1.5, 0.15);
+    h.add(bot);
+    h.traverse((c: any) => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
+    group.add(h);
+  }
+  // 2 at entrance
+  makeHostess(-3.5, D / 2 - 1.5, Math.PI);
+  makeHostess(3.5, D / 2 - 1.5, Math.PI);
+  // 2 in premium area
+  makeHostess(-14, -12 + 4, 0);
+  makeHostess(14, -12 + 4, 0);
+  // 2 in VIP area
+  makeHostess(-14, 4, 0);
+  makeHostess(14, 4, 0);
+
+  // ---------- GUESTS (sitting on sofas, 12 total) ----------
+  function makeGuest(x: number, z: number, facing: number, color: string) {
+    const g = new THREE.Group();
+    g.position.set(x, 0, z);
+    g.rotation.y = facing;
+    const bodyMat = new THREE.MeshStandardMaterial({ color, roughness: 0.6 });
+    const legs = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.15, 0.5), new THREE.MeshStandardMaterial({ color: "#222", roughness: 0.7 }));
+    legs.position.y = 0.45;
+    g.add(legs);
+    const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.25, 0.7, 10), bodyMat);
+    torso.position.y = 1.0;
+    g.add(torso);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 10), skinMat);
+    head.position.y = 1.55;
+    g.add(head);
+    // hair
+    const hair = new THREE.Mesh(new THREE.SphereGeometry(0.17, 10, 8), new THREE.MeshStandardMaterial({ color: "#0a0505", roughness: 0.7 }));
+    hair.position.y = 1.6;
+    hair.scale.set(1, 0.7, 1);
+    g.add(hair);
+    // glass in hand
+    const glass = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 0.15, 8), glassMat);
+    glass.position.set(0.3, 1.05, 0.2);
+    g.add(glass);
+    g.traverse((c: any) => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
+    group.add(g);
+  }
+  // Guests in rooms
+  const guestColors = ["#8e44ad", "#c0392b", "#2980b9", "#16a085", "#d35400", "#7f8c8d", "#e91e63", "#3f51b5", "#009688", "#ff5722", "#9c27b0", "#607d8b"];
+  let gi = 0;
+  rooms.forEach((r) => {
+    // 1-2 guests per room, sitting on sofa
+    makeGuest(r.x - 2.5, r.z + 0.5, 0, guestColors[gi++ % guestColors.length]);
+    makeGuest(r.x + 2.5, r.z + 0.5, 0, guestColors[gi++ % guestColors.length]);
+  });
+
+  // ---------- WAITERS (3, one per tier) ----------
+  function makeWaiter(x: number, z: number, color: string) {
+    const w = new THREE.Group();
+    w.position.set(x, 0, z);
+    for (const sx of [-0.12, 0.12]) {
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 1.0, 8), new THREE.MeshStandardMaterial({ color: "#111", roughness: 0.6 }));
+      leg.position.set(sx, 0.5, 0);
+      w.add(leg);
+    }
+    const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.24, 0.85, 10), new THREE.MeshStandardMaterial({ color, roughness: 0.5 }));
+    torso.position.y = 1.4;
+    w.add(torso);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 10), skinMat);
+    head.position.y = 2.0;
+    w.add(head);
+    // tray
+    const tray = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.02, 12), gold);
+    tray.position.set(0.35, 1.35, 0.2);
+    w.add(tray);
+    // 2 glasses on tray
+    for (let k = 0; k < 2; k++) {
+      const glass = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 0.15, 8), glassMat);
+      glass.position.set(0.35 + (k - 0.5) * 0.15, 1.45, 0.2);
+      w.add(glass);
+    }
+    w.traverse((c: any) => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
+    group.add(w);
+  }
+  makeWaiter(-8, -6, "#1a1a2e");
+  makeWaiter(8, 2, "#1a1a2e");
+  makeWaiter(-8, 10, "#1a1a2e");
+
+  // ---------- TECHNICIAN (1, near stage) ----------
+  const tech = new THREE.Group();
+  tech.position.set(5.5, 0, 6);
+  for (const sx of [-0.12, 0.12]) {
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1.0, 8), new THREE.MeshStandardMaterial({ color: "#222" }));
+    leg.position.set(sx, 0.5, 0);
+    tech.add(leg);
+  }
+  const techTorso = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.26, 0.85, 10), new THREE.MeshStandardMaterial({ color: "#2c3e50", roughness: 0.6 }));
+  techTorso.position.y = 1.4;
+  tech.add(techTorso);
+  const techHead = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 10), skinMat);
+  techHead.position.y = 2.0;
+  tech.add(techHead);
+  // headset
+  const headset = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.02, 6, 16), new THREE.MeshStandardMaterial({ color: "#111", metalness: 0.7, roughness: 0.3 }));
+  headset.rotation.x = Math.PI / 2;
+  headset.position.y = 2.05;
+  tech.add(headset);
+  tech.traverse((c: any) => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
+  group.add(tech);
+
+  // ---------- SECURITY (2, at entrance) ----------
+  function makeSecurity(x: number, z: number) {
+    const s = new THREE.Group();
+    s.position.set(x, 0, z);
+    for (const sx of [-0.14, 0.14]) {
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 1.1, 8), securityMat);
+      leg.position.set(sx, 0.55, 0);
+      s.add(leg);
+    }
+    const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.28, 0.95, 10), securityMat);
+    torso.position.y = 1.55;
+    s.add(torso);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.17, 12, 10), skinMat);
+    head.position.y = 2.2;
+    s.add(head);
+    // cap
+    const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.19, 0.12, 12), securityMat);
+    cap.position.y = 2.32;
+    s.add(cap);
+    // glasses (sunglasses)
+    const sunglasses = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.08, 0.08), new THREE.MeshStandardMaterial({ color: "#000", metalness: 0.9, roughness: 0.1 }));
+    sunglasses.position.set(0, 2.2, 0.14);
+    s.add(sunglasses);
+    s.traverse((c: any) => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
+    group.add(s);
+  }
+  makeSecurity(-6, D / 2 - 0.5);
+  makeSecurity(6, D / 2 - 0.5);
+
+  // ---------- BAR COUNTER (side) ----------
+  const bar = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.0, 8), new THREE.MeshStandardMaterial({ color: "#1a1410", roughness: 0.3, metalness: 0.4 }));
+  bar.position.set(-W / 2 + 1, 0.5, 0);
+  group.add(bar);
+  const barTop = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.1, 8.2), marble);
+  barTop.position.set(-W / 2 + 1, 1.05, 0);
+  group.add(barTop);
+  // Bottles on bar shelves
+  for (let i = 0; i < 12; i++) {
+    const bot = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 0.35, 10), new THREE.MeshStandardMaterial({
+      color: ["#8e1a1a", "#1a3a1a", "#c9a227", "#3a1a6a"][i % 4],
+      roughness: 0.2, metalness: 0.4,
+    }));
+    bot.position.set(-W / 2 + 1, 1.3 + Math.floor(i / 6) * 0.3, -3 + (i % 6) * 1.1);
+    group.add(bot);
+  }
+  // Shelf under bottles
+  for (let s = 0; s < 2; s++) {
+    const shelf = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.06, 8), gold);
+    shelf.position.set(-W / 2 + 0.9, 1.3 + s * 0.3, 0);
+    group.add(shelf);
+  }
+
+  // ---------- RESTROOM DOOR (corner) ----------
+  const wcDoor = new THREE.Mesh(new THREE.BoxGeometry(1.6, 2.4, 0.1), new THREE.MeshStandardMaterial({ color: "#1a0a0a", roughness: 0.5 }));
+  wcDoor.position.set(W / 2 - 2, 1.2, -D / 2 + 0.2);
+  group.add(wcDoor);
+  // WC sign
+  const wcSign = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.4, 0.08), neonCyan);
+  wcSign.position.set(W / 2 - 2, 2.8, -D / 2 + 0.2);
+  group.add(wcSign);
+
+  // ---------- MIRROR WALL (premium side, reflective) ----------
+  const mirrorWall = new THREE.Mesh(new THREE.BoxGeometry(0.1, 3, D - 4), mirrorMat);
+  mirrorWall.position.set(W / 2 - 0.2, 1.5, 0);
+  group.add(mirrorWall);
+
+  // ---------- FINAL: shadows ----------
+  group.traverse((c: any) => {
+    if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; }
+  });
+
+  group.name = "karaoke";
   return group;
 }

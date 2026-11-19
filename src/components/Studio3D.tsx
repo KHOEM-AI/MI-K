@@ -3,7 +3,7 @@ import { Eye, EyeOff, Lock, Unlock, Pencil, HelpCircle, X, Camera, Trash2, Copy,
 import { saveAsset } from "../lib/storage.mjs";
 import { UI3DPreview } from "./UI3DPreview";
 import { presets, MATERIAL_PRESETS, PLANT_COLOR_PRESETS, SKY_COLOR_PRESETS, WATER_COLOR_PRESETS, zero, one, createId } from "./studioConstants";
-import { createGeometry, createCarGeometry, createFurnitureGeometry, createPlantGeometry, createPlantGeometry2, createPlantGeometry3, createPlantGeometry4, createEnvironmentGeometry, createEnvironmentGeometry2, createEnvironmentGeometry3, createSkyGeometry, createSpaceGeometry, createSpaceGeometry2, createStructureGeometry, createStructureGeometry2, createStructureGeometry3, createMonumentGeometry, createBuildingGeometry, createBuildingGeometry2, createBuildingGeometry3, createHospitalGeometry, createBankGeometry, createCivicGeometry, createCommercialGeometry, createReligiousGeometry, createEnergyGeometry, createTransportGeometry, createPersonalTransportGeometry, createFoodGeometry, createNatureGeometry, createFruitGeometry2, createPlantExtraGeometry, createParkGeometry, createStreetGeometry, createGardenGeometry, createMineralGeometry, createLuxuryCarGeometry, createAircraftGeometry, createBoatGeometry, createAnimalGeometry, createCharacterGeometry, createKhoemGeometry, createHighwayGeometry, createBridgeGeometry, createTrafficLightGeometry, createStreetLightGeometry, disposeMesh } from "./studioGeometry";
+import { createGeometry, createCarGeometry, createFurnitureGeometry, createPlantGeometry, createPlantGeometry2, createPlantGeometry3, createPlantGeometry4, createEnvironmentGeometry, createEnvironmentGeometry2, createEnvironmentGeometry3, createSkyGeometry, createSpaceGeometry, createSpaceGeometry2, createStructureGeometry, createStructureGeometry2, createStructureGeometry3, createMonumentGeometry, createBuildingGeometry, createBuildingGeometry2, createBuildingGeometry3, createHospitalGeometry, createBankGeometry, createCivicGeometry, createCommercialGeometry, createReligiousGeometry, createEnergyGeometry, createTransportGeometry, createPersonalTransportGeometry, createFoodGeometry, createNatureGeometry, createFruitGeometry2, createPlantExtraGeometry, createParkGeometry, createStreetGeometry, createGardenGeometry, createMineralGeometry, createLuxuryCarGeometry, createAircraftGeometry, createBoatGeometry, createAnimalGeometry, createCharacterGeometry, createKhoemGeometry, createHighwayGeometry, createBridgeGeometry, createTrafficLightGeometry, createStreetLightGeometry, disposeMesh, createKaraokeGeometry } from "./studioGeometry";
 import { CameraPresets } from "./CameraPresets";
 import { SceneLightingPanel } from "./SceneLightingPanel";
 import { MaterialPanel } from "./MaterialPanel";
@@ -827,6 +827,8 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
               obj = createPlantExtraGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
             } else if (item.shape === "pineapple" || item.shape === "coconut" || item.shape === "strawberry" || item.shape === "cherry" || item.shape === "lemon" || item.shape === "peach") {
               obj = createFruitGeometry2(THREE, item.shape, item.color, item.metalness, item.roughness);
+            } else if (item.shape === "karaoke" || item.shape === "karaoke_premium" || item.shape === "karaoke_vip" || item.shape === "karaoke_standard" || item.shape === "karaoke_full") {
+                obj = createKaraokeGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
             } else if (item.shape === "book" || item.shape === "lamppost" || item.shape === "bench" || item.shape === "mailbox" || item.shape === "fountain2" || item.shape === "swing" || item.shape === "slide" || item.shape === "sandbox") {
               obj = createParkGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
             } else if (item.shape === "streetsign" || item.shape === "trafficcone" || item.shape === "barrier" || item.shape === "firehydrant" || item.shape === "trashcan" || item.shape === "bench2" || item.shape === "picnictable" || item.shape === "bbqgrill") {
@@ -1954,6 +1956,16 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             return;
           }
 
+          if (item.shape === "karaoke" || item.shape === "karaoke_premium" || item.shape === "karaoke_vip" || item.shape === "karaoke_standard" || item.shape === "karaoke_full") {
+            const karaokeGroup = createKaraokeGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            karaokeGroup.position.set(item.position.x, item.position.y, item.position.z);
+            karaokeGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            karaokeGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            karaokeGroup.name = item.name;
+            exportScene.add(karaokeGroup);
+            return;
+          }
+
           if (item.shape === "book" || item.shape === "lamppost" || item.shape === "bench" || item.shape === "mailbox" || item.shape === "fountain2" || item.shape === "swing" || item.shape === "slide" || item.shape === "sandbox") {
             const parkGroup = createParkGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
             parkGroup.position.set(item.position.x, item.position.y, item.position.z);
@@ -3015,6 +3027,16 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             fruit2Group.scale.set(item.scale.x, item.scale.y, item.scale.z);
             fruit2Group.name = item.name;
             exportScene!.add(fruit2Group);
+            return;
+          }
+
+          if (item.shape === "karaoke" || item.shape === "karaoke_premium" || item.shape === "karaoke_vip" || item.shape === "karaoke_standard" || item.shape === "karaoke_full") {
+            const karaokeGroup = createKaraokeGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            karaokeGroup.position.set(item.position.x, item.position.y, item.position.z);
+            karaokeGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            karaokeGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            karaokeGroup.name = item.name;
+            exportScene!.add(karaokeGroup);
             return;
           }
 
