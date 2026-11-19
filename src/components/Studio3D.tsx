@@ -837,6 +837,16 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
               obj = createGardenGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
             } else if (item.shape === "crystal" || item.shape === "geode" || item.shape === "fossil" || item.shape === "meteorite" || item.shape === "gemstone" || item.shape === "pearl" || item.shape === "shell" || item.shape === "coral") {
               obj = createMineralGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            } else if (item.shape === "hospital_urban_tall" || item.shape === "hospital_urban_low" || item.shape === "hospital_rural_tall" || item.shape === "hospital_rural_low") {
+              obj = createHospitalGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            } else if (item.shape === "bank_urban_tall" || item.shape === "bank_urban_low" || item.shape === "bank_rural_tall" || item.shape === "bank_rural_low") {
+              obj = createBankGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            } else if (item.shape === "school" || item.shape === "university" || item.shape === "library" || item.shape === "policestation" || item.shape === "firestation" || item.shape === "postoffice" || item.shape === "courthouse" || item.shape === "cityhall") {
+              obj = createCivicGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            } else if (item.shape === "factory" || item.shape === "warehouse" || item.shape === "officebuilding" || item.shape === "hotel" || item.shape === "restaurant" || item.shape === "supermarket" || item.shape === "shoppingmall" || item.shape === "cinema") {
+              obj = createCommercialGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            } else if (item.shape === "temple2" || item.shape === "shrine" || item.shape === "pagoda" || item.shape === "mosque" || item.shape === "church" || item.shape === "cathedral" || item.shape === "synagogue" || item.shape === "monastery") {
+              obj = createReligiousGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
             } else if (item.shape === "khoem") {
               obj = createKhoemGeometry(THREE, item.color, item.metalness, item.roughness);
             } else if (item.shape === "highway") {
