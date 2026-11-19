@@ -7774,13 +7774,159 @@ export function createKaraokeGeometry(
     label.position.set(0, 2.2, -room.d / 2 + 0.12);
     roomGroup.add(label);
 
-    // Room entrance indicator (small light above front opening)
+    // Room entrance indicator
     const entryLight = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6), room.tier === "premium" ? neonGold : room.tier === "vip" ? neonPink : neonCyan);
     entryLight.position.set(0, 2.9, room.d / 2 - 0.2);
     roomGroup.add(entryLight);
 
+    // TV on back wall (VIP + Premium only)
+    if (room.tier === "premium" || room.tier === "vip") {
+      const tvSize = room.tier === "premium" ? 2.6 : 1.9;
+      const tvFrame = new THREE.Mesh(
+        new THREE.BoxGeometry(tvSize + 0.15, tvSize * 0.58 + 0.15, 0.08),
+        new THREE.MeshStandardMaterial({ color: "#0a0a0a", roughness: 0.3, metalness: 0.7 })
+      );
+      tvFrame.position.set(0, 2.0, -room.d / 2 + 0.15);
+      roomGroup.add(tvFrame);
+      const tvScreen = new THREE.Mesh(
+        new THREE.PlaneGeometry(tvSize, tvSize * 0.58),
+        new THREE.MeshStandardMaterial({
+          color: room.tier === "premium" ? "#2a1a3a" : "#1a2a4a",
+          emissive: room.tier === "premium" ? "#ffaa44" : "#4488ff",
+          emissiveIntensity: 1.0,
+          roughness: 0.4,
+        })
+      );
+      tvScreen.position.set(0, 2.0, -room.d / 2 + 0.21);
+      roomGroup.add(tvScreen);
+      const barColors = ["#ff4466", "#44ff88", "#4488ff", "#ffcc00", "#ff44ff"];
+      for (let tb = 0; tb < 5; tb++) {
+        const bar = new THREE.Mesh(
+          new THREE.PlaneGeometry(tvSize * 0.15, tvSize * 0.45),
+          new THREE.MeshStandardMaterial({ color: barColors[tb], emissive: barColors[tb], emissiveIntensity: 1.3 })
+        );
+        bar.position.set(-tvSize * 0.35 + tb * (tvSize * 0.175), 2.0, -room.d / 2 + 0.22);
+        roomGroup.add(bar);
+      }
+    }
+
+    // Cabinet / sideboard (back-left)
+    const cabMat = room.tier === "premium" ? goldSoft : darkWood;
+    const cabinet = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.85, 0.45), cabMat);
+    cabinet.position.set(-room.w / 2 + 1.4, 0.43, -room.d / 2 + 0.35);
+    roomGroup.add(cabinet);
+    const cabTrim = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.05, 0.5), gold);
+    cabTrim.position.set(-room.w / 2 + 1.4, 0.88, -room.d / 2 + 0.35);
+    roomGroup.add(cabTrim);
+    for (const ccx of [-0.8, 0.8]) {
+      for (const ccz of [-0.15, 0.15]) {
+        const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.4, 6), gold);
+        leg.position.set(-room.w / 2 + 1.4 + ccx, 0.2, -room.d / 2 + 0.35 + ccz);
+        roomGroup.add(leg);
+      }
+    }
+    for (let cb = 0; cb < 5; cb++) {
+      const bottle = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.045, 0.055, 0.28, 8),
+        new THREE.MeshStandardMaterial({
+          color: ["#8e1a1a", "#1a5a1a", "#c9a227", "#3a1a6a", "#1a1a2a"][cb],
+          roughness: 0.2, metalness: 0.4,
+        })
+      );
+      bottle.position.set(-room.w / 2 + 0.75 + cb * 0.32, 1.05, -room.d / 2 + 0.35);
+      roomGroup.add(bottle);
+    }
+
+    // Side table (back-right)
+    const sideTable = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.35, 0.35, 0.05, 16),
+      room.tier === "premium" ? marble : darkWood
+    );
+    sideTable.position.set(room.w / 2 - 1.1, 0.68, -room.d / 2 + 0.5);
+    roomGroup.add(sideTable);
+    for (let sa = 0; sa < 3; sa++) {
+      const ang = (sa / 3) * Math.PI * 2;
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.68, 6), gold);
+      leg.position.set(room.w / 2 - 1.1 + Math.cos(ang) * 0.22, 0.34, -room.d / 2 + 0.5 + Math.sin(ang) * 0.22);
+      roomGroup.add(leg);
+    }
+    const vase = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.07, 0.11, 0.22, 10),
+      new THREE.MeshStandardMaterial({ color: "#8b0000", roughness: 0.3, metalness: 0.4 })
+    );
+    vase.position.set(room.w / 2 - 1.1, 0.82, -room.d / 2 + 0.5);
+    roomGroup.add(vase);
+
+    // Floor lamps (ពូភ្លើង) — 2 per room
+    const lampColor = room.tier === "premium" ? "#ffd700" : room.tier === "vip" ? "#ff1493" : "#a0a0a0";
+    for (const lx of [-1, 1]) {
+      const lampBase = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.18, 0.06, 12), gold);
+      lampBase.position.set(lx * (room.w / 2 - 0.4), 0.03, room.d / 2 - 0.4);
+      roomGroup.add(lampBase);
+      const lampPole = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 1.7, 8), gold);
+      lampPole.position.set(lx * (room.w / 2 - 0.4), 0.88, room.d / 2 - 0.4);
+      roomGroup.add(lampPole);
+      const lampShade = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.2, 0.26, 0.32, 12, 1, true),
+        new THREE.MeshStandardMaterial({
+          color: lampColor, emissive: lampColor, emissiveIntensity: 1.6,
+          side: THREE.DoubleSide, transparent: true, opacity: 0.85,
+        })
+      );
+      lampShade.position.set(lx * (room.w / 2 - 0.4), 1.8, room.d / 2 - 0.4);
+      roomGroup.add(lampShade);
+      const glow = new THREE.Mesh(
+        new THREE.SphereGeometry(0.09, 8, 6),
+        new THREE.MeshStandardMaterial({ color: "#ffffff", emissive: "#ffffff", emissiveIntensity: 2.5 })
+      );
+      glow.position.set(lx * (room.w / 2 - 0.4), 1.62, room.d / 2 - 0.4);
+      roomGroup.add(glow);
+    }
+
+    // Cocktail table
+    const cocktail = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.35, 0.35, 0.05, 16),
+      room.tier === "premium" ? marble : darkWood
+    );
+    cocktail.position.set(0, 0.55, 1.3);
+    roomGroup.add(cocktail);
+    const cockLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.55, 8), gold);
+    cockLeg.position.set(0, 0.28, 1.3);
+    roomGroup.add(cockLeg);
+    const cockBase = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.03, 12), gold);
+    cockBase.position.set(0, 0.02, 1.3);
+    roomGroup.add(cockBase);
+    const cockGlass = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 0.15, 8), glassMat);
+    cockGlass.position.set(0, 0.65, 1.3);
+    roomGroup.add(cockGlass);
+
     group.add(roomGroup);
   });
+
+  // ---------- Walkway floor lamps (ពូភ្លើង) ----------
+  const walkwayLampPositions: [number, number][] = [
+    [-16, -5.5], [-8, -5.5], [0, -5.5], [8, -5.5], [16, -5.5],
+    [-16, 5.5], [-8, 5.5], [0, 5.5], [8, 5.5], [16, 5.5],
+  ];
+  for (const [wx, wz] of walkwayLampPositions) {
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 0.08, 12), gold);
+    base.position.set(wx, 0.04, wz); group.add(base);
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 2.2, 8), gold);
+    pole.position.set(wx, 1.15, wz); group.add(pole);
+    const shade = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.25, 0.32, 0.4, 12, 1, true),
+      new THREE.MeshStandardMaterial({
+        color: "#ffcc44", emissive: "#ffcc44", emissiveIntensity: 1.5,
+        side: THREE.DoubleSide, transparent: true, opacity: 0.85,
+      })
+    );
+    shade.position.set(wx, 2.35, wz); group.add(shade);
+    const glow = new THREE.Mesh(
+      new THREE.SphereGeometry(0.12, 8, 6),
+      new THREE.MeshStandardMaterial({ color: "#fff8dc", emissive: "#fff8dc", emissiveIntensity: 2.5 })
+    );
+    glow.position.set(wx, 2.1, wz); group.add(glow);
+  }
 
   // ---------- STAGE (center front) ----------
   const stage = new THREE.Mesh(new THREE.BoxGeometry(8, 0.5, 3), new THREE.MeshStandardMaterial({ color: "#1a1410", roughness: 0.4, metalness: 0.5 }));
