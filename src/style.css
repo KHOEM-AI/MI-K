@@ -1031,3 +1031,62 @@ body {
     height: 240px;
   }
 }
+
+/* ===== KHOEM-AI UI POLISH v1 (appended block, safe to remove) ===== */
+:root { --k-focus: #64bfff; }
+:root[data-theme="day"] { --k-focus: #0b6bcb; }
+
+html { -webkit-text-size-adjust: 100%; }
+body { padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+/* Khmer-safe controls: same font as the page, room for stacked vowels */
+button, input, select, textarea { font-family: inherit; line-height: 1.5; }
+button, select, label { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+
+/* Visible keyboard focus */
+button:focus-visible, select:focus-visible, input:focus-visible,
+textarea:focus-visible, summary:focus-visible {
+  outline: 2px solid var(--k-focus);
+  outline-offset: 2px;
+}
+
+/* Press feedback */
+.upload-button, .filter {
+  transition: transform .12s ease, filter .15s ease, background-color .15s ease;
+}
+.upload-button:active, .filter:active { transform: scale(.97); }
+.upload-button:disabled, .filter:disabled { cursor: not-allowed; }
+@media (hover: hover) {
+  .upload-button:not(:disabled):hover, .filter:not(:disabled):hover { filter: brightness(1.1); }
+}
+
+/* Icons: crisp edges, never squashed inside flex rows */
+.k-icon { flex-shrink: 0; shape-rendering: geometricPrecision; transition: transform .15s ease; }
+button svg { flex-shrink: 0; }
+button:active .k-icon { transform: scale(.92); }
+
+/* Panels */
+.studio-panel, .studio-launch { box-shadow: 0 6px 24px rgba(0, 0, 0, .25); }
+:root[data-theme="day"] .studio-panel,
+:root[data-theme="day"] .studio-launch { box-shadow: 0 4px 16px rgba(20, 40, 80, .12); }
+
+@media (max-width: 640px) {
+  .studio-panel, .studio-launch { padding: 14px; margin: 12px 0; border-radius: 12px; }
+  .studio-tabs { gap: 8px; }
+  .studio-tabs > button { flex: 1 1 auto; min-height: 44px; }
+  /* canvas follows the screen height (older browsers keep the fixed heights above) */
+  .studio-canvas { height: clamp(260px, 52dvh, 520px); min-height: 0; }
+  .studio-hint { font-size: 11px; }
+  /* colour swatches were 28px: too small for a finger */
+  .studio-controls button[style*="border-radius: 50%"] { width: 40px !important; height: 40px !important; }
+}
+
+/* phone held sideways: give the 3D view most of the screen */
+@media (max-height: 480px) and (orientation: landscape) {
+  .studio-canvas { height: 80vh; height: 80dvh; min-height: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .upload-button, .filter, .k-icon { transition: none; }
+}
+/* ===== END KHOEM-AI UI POLISH v1 ===== */
