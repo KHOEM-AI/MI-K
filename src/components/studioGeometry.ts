@@ -7637,6 +7637,92 @@ export function createKaraokeGeometry(
     group.add(led);
   }
 
+  // ---------- PHOTO BOOTH ----------
+  const boothGroup = new THREE.Group();
+  boothGroup.position.set(-8.5, 0, 19);
+  boothGroup.rotation.y = Math.PI / 2;
+
+  // Backdrop frame (black with silver trim)
+  const boothBackdrop = new THREE.Mesh(
+    new THREE.BoxGeometry(3.0, 3.5, 0.15),
+    new THREE.MeshStandardMaterial({ color: "#0a0a0a", roughness: 0.4, metalness: 0.5 })
+  );
+  boothBackdrop.position.set(0, 1.75, -0.1);
+  boothGroup.add(boothBackdrop);
+  const boothTrim = new THREE.Mesh(
+    new THREE.BoxGeometry(3.1, 0.08, 0.18),
+    gold
+  );
+  boothTrim.position.set(0, 3.55, -0.1);
+  boothGroup.add(boothTrim);
+
+  // Star backdrop (glowing dots on black)
+  for (let bs = 0; bs < 25; bs++) {
+    const star = new THREE.Mesh(
+      new THREE.SphereGeometry(0.03, 6, 4),
+      new THREE.MeshStandardMaterial({
+        color: "#ffffff", emissive: "#ffffff", emissiveIntensity: 2.5,
+      })
+    );
+    star.position.set(
+      -1.4 + Math.random() * 2.8,
+      0.3 + Math.random() * 3.2,
+      -0.02
+    );
+    boothGroup.add(star);
+  }
+
+  // Tripod (3 legs)
+  for (let tl = 0; tl < 3; tl++) {
+    const ang = (tl / 3) * Math.PI * 2;
+    const leg = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.02, 0.02, 1.4, 6),
+      new THREE.MeshStandardMaterial({ color: "#1a1a1a", metalness: 0.9, roughness: 0.2 })
+    );
+    leg.position.set(Math.cos(ang) * 0.35, 0.7, 0.8 + Math.sin(ang) * 0.35);
+    leg.rotation.z = Math.cos(ang) * 0.25;
+    leg.rotation.x = Math.sin(ang) * 0.25;
+    boothGroup.add(leg);
+  }
+
+  // Camera body
+  const cameraBody = new THREE.Mesh(
+    new THREE.BoxGeometry(0.35, 0.22, 0.3),
+    new THREE.MeshStandardMaterial({ color: "#050505", roughness: 0.4, metalness: 0.7 })
+  );
+  cameraBody.position.set(0, 1.5, 0.8);
+  boothGroup.add(cameraBody);
+  // Camera lens
+  const cameraLens = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.08, 0.08, 0.12, 16),
+    new THREE.MeshStandardMaterial({ color: "#050505", metalness: 0.95, roughness: 0.1 })
+  );
+  cameraLens.rotation.x = Math.PI / 2;
+  cameraLens.position.set(0, 1.5, 0.68);
+  boothGroup.add(cameraLens);
+  // Lens glass (blue glow)
+  const lensGlass = new THREE.Mesh(
+    new THREE.CircleGeometry(0.06, 16),
+    new THREE.MeshStandardMaterial({
+      color: "#4488ff", emissive: "#4488ff", emissiveIntensity: 1.5,
+      metalness: 0.9, roughness: 0.05,
+    })
+  );
+  lensGlass.position.set(0, 1.5, 0.62);
+  boothGroup.add(lensGlass);
+  // Flash light
+  const flash = new THREE.Mesh(
+    new THREE.BoxGeometry(0.15, 0.08, 0.08),
+    new THREE.MeshStandardMaterial({
+      color: "#fff8dc", emissive: "#fff8dc", emissiveIntensity: 2.5,
+    })
+  );
+  flash.position.set(0, 1.65, 0.85);
+  flash.name = "photoFlash";
+  boothGroup.add(flash);
+
+  group.add(boothGroup);
+
   // ---------- WATER WALL (left of entrance) ----------
   // Frame
   const waterWallFrame = new THREE.Mesh(
@@ -8813,6 +8899,58 @@ export function createKaraokeGeometry(
       });
     }
   }
+  // ---------- DANCE FLOOR LASERS ----------
+  const laserColors = ["#ff1493", "#00e5ff", "#ffd700", "#7c3aed", "#00ff88", "#ff69b4"];
+  const lasers: import("three").Mesh[] = [];
+  for (let li = 0; li < 6; li++) {
+    const beam = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.03, 0.06, 6.0, 6),
+      new THREE.MeshStandardMaterial({
+        color: laserColors[li], emissive: laserColors[li],
+        emissiveIntensity: 2.5, transparent: true, opacity: 0.7,
+      })
+    );
+    const ang = (li / 6) * Math.PI * 2;
+    beam.position.set(Math.cos(ang) * 1.5, 3.0, 12.5 + Math.sin(ang) * 1.5);
+    beam.rotation.x = Math.PI / 4;
+    beam.rotation.z = Math.cos(ang) * 0.6;
+    beam.rotation.y = -ang;
+    beam.name = "laserBeam";
+    beam.userData.laserAngle = ang;
+    beam.userData.laserColor = laserColors[li];
+    group.add(beam);
+    lasers.push(beam);
+  }
+  // Laser emitter head
+  const laserHead = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.4, 0.4, 0.15, 12),
+    new THREE.MeshStandardMaterial({ color: "#0a0a0a", metalness: 0.9, roughness: 0.2 })
+  );
+  laserHead.position.set(0, H - 0.4, 12.5);
+  group.add(laserHead);
+
+  // ---------- CEILING STARS (Points) ----------
+  const starCount = 150;
+  const starGeo = new THREE.BufferGeometry();
+  const starPositions = new Float32Array(starCount * 3);
+  for (let si = 0; si < starCount; si++) {
+    starPositions[si * 3] = -W / 2 + Math.random() * W;
+    starPositions[si * 3 + 1] = H - 0.3;
+    starPositions[si * 3 + 2] = -D / 2 + Math.random() * D;
+  }
+  starGeo.setAttribute("position", new THREE.BufferAttribute(starPositions, 3));
+  const starMat = new THREE.PointsMaterial({
+    color: 0xffffff,
+    size: 0.15,
+    transparent: true,
+    opacity: 0.85,
+    sizeAttenuation: true,
+    depthWrite: false,
+  });
+  const ceilingStars = new THREE.Points(starGeo, starMat);
+  ceilingStars.name = "ceilingStars";
+  group.add(ceilingStars);
+
   // DANCE neon sign above dance floor
   const danceNeon = new THREE.Mesh(
     new THREE.BoxGeometry(4.5, 0.5, 0.1),
@@ -9113,6 +9251,73 @@ export function createKaraokeGeometry(
   makeSecurity(-6, D / 2 - 0.5);
   makeSecurity(6, D / 2 - 0.5);
 
+  // ---------- ROOFTOP TERRACE (front right) ----------
+  const rooftopPlatform = new THREE.Mesh(
+    new THREE.BoxGeometry(6, 0.2, 4),
+    new THREE.MeshStandardMaterial({ color: "#1a1410", roughness: 0.4, metalness: 0.5 })
+  );
+  rooftopPlatform.position.set(12, 4.5, 12);
+  group.add(rooftopPlatform);
+
+  // Gold railing around rooftop
+  for (const [rw, rd, rx, rz] of [
+    [6, 0.08, 12, 10.0], [6, 0.08, 12, 14.0],
+    [0.08, 4, 9.0, 12], [0.08, 4, 15.0, 12],
+  ]) {
+    const rail = new THREE.Mesh(
+      new THREE.BoxGeometry(rw, 0.9, rd),
+      gold
+    );
+    rail.position.set(rx, 5.0, rz);
+    group.add(rail);
+  }
+
+  // 2 small tables on rooftop
+  for (const tz of [11, 13]) {
+    const table = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.4, 0.4, 0.06, 16),
+      new THREE.MeshStandardMaterial({ color: "#c0c0c0", metalness: 0.9, roughness: 0.15 })
+    );
+    table.position.set(12, 5.0, tz);
+    group.add(table);
+    // Table leg
+    const tleg = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.03, 0.03, 0.5, 6),
+      gold
+    );
+    tleg.position.set(12, 4.75, tz);
+    group.add(tleg);
+    // 2 chairs
+    for (const cx of [-0.8, 0.8]) {
+      const chair = new THREE.Mesh(
+        new THREE.BoxGeometry(0.3, 0.06, 0.3),
+        new THREE.MeshStandardMaterial({ color: "#8b0000", roughness: 0.7 })
+      );
+      chair.position.set(12 + cx, 4.9, tz);
+      group.add(chair);
+      const chairBack = new THREE.Mesh(
+        new THREE.BoxGeometry(0.3, 0.35, 0.05),
+        new THREE.MeshStandardMaterial({ color: "#8b0000", roughness: 0.7 })
+      );
+      chairBack.position.set(12 + cx, 5.1, tz + 0.13);
+      group.add(chairBack);
+    }
+  }
+
+  // Rooftop string lights (small warm dots along railing)
+  for (let rl = 0; rl < 12; rl++) {
+    const dot = new THREE.Mesh(
+      new THREE.SphereGeometry(0.06, 6, 4),
+      new THREE.MeshStandardMaterial({
+        color: "#fff8dc", emissive: "#fff8dc", emissiveIntensity: 2.5,
+      })
+    );
+    dot.position.set(9.5 + rl * 0.45, 5.5, 9.9);
+    dot.name = "stringLight";
+    dot.userData.stringDelay = rl * 0.2;
+    group.add(dot);
+  }
+
   // ---------- BAR COUNTER (side) ----------
   const bar = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.0, 8), new THREE.MeshStandardMaterial({ color: "#1a1410", roughness: 0.3, metalness: 0.4 }));
   bar.position.set(-W / 2 + 1, 0.5, 0);
@@ -9267,6 +9472,66 @@ export function createKaraokeGeometry(
   );
   mirrorFrame.position.set(W / 2 - 3.5, 1.7, -D / 2 + 0.10);
   group.add(mirrorFrame);
+
+  // ---------- VIP ENTRANCE (separate corridor) ----------
+  const vipCorridorFloor = new THREE.Mesh(
+    new THREE.BoxGeometry(3, 0.1, 6),
+    new THREE.MeshStandardMaterial({ color: "#4a0a0a", roughness: 0.3, metalness: 0.4 })
+  );
+  vipCorridorFloor.position.set(-16, 0.15, 15);
+  group.add(vipCorridorFloor);
+  // Gold border on floor
+  const vipBorder = new THREE.Mesh(
+    new THREE.BoxGeometry(3.1, 0.12, 6.1),
+    gold
+  );
+  vipBorder.position.set(-16, 0.12, 15);
+  group.add(vipBorder);
+
+  // VIP gate posts
+  for (const gpz of [12.2, 17.8]) {
+    const post = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.12, 0.15, 3.5, 8),
+      gold
+    );
+    post.position.set(-16, 1.75, gpz);
+    group.add(post);
+    const postTop = new THREE.Mesh(
+      new THREE.SphereGeometry(0.2, 12, 10),
+      gold
+    );
+    postTop.position.set(-16, 3.6, gpz);
+    group.add(postTop);
+  }
+
+  // VIP gate arch
+  const arch = new THREE.Mesh(
+    new THREE.TorusGeometry(2.8, 0.12, 8, 24, Math.PI),
+    gold
+  );
+  arch.rotation.x = Math.PI / 2;
+  arch.rotation.z = Math.PI / 2;
+  arch.position.set(-16, 3.5, 15);
+  group.add(arch);
+
+  // VIP neon sign at top
+  const vipGate = new THREE.Mesh(
+    new THREE.BoxGeometry(0.1, 0.6, 2.2),
+    new THREE.MeshStandardMaterial({
+      color: "#ffd700", emissive: "#ffd700", emissiveIntensity: 2.5,
+    })
+  );
+  vipGate.position.set(-16, 4.3, 15);
+  vipGate.name = "vipNeon";
+  group.add(vipGate);
+
+  // Red carpet inside corridor
+  const vipCarpet = new THREE.Mesh(
+    new THREE.BoxGeometry(1.8, 0.05, 5.5),
+    new THREE.MeshStandardMaterial({ color: "#8b0000", roughness: 0.85 })
+  );
+  vipCarpet.position.set(-16, 0.2, 15);
+  group.add(vipCarpet);
 
   // ---------- MIRROR WALL (premium side, reflective) ----------
   const mirrorWall = new THREE.Mesh(new THREE.BoxGeometry(0.1, 3, D - 4), mirrorMat);

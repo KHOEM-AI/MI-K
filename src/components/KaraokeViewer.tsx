@@ -270,6 +270,38 @@ export default function KaraokeViewer({ onClose }: { onClose: () => void }) {
           }
         });
 
+        // Laser beams rotate + pulse
+        karaoke.traverse((obj: any) => {
+          if (obj.name === "laserBeam") {
+            const baseAng = obj.userData.laserAngle || 0;
+            obj.rotation.z = Math.cos(baseAng) * 0.6 + Math.sin(t * 1.2) * 0.4;
+            obj.rotation.y = -baseAng + Math.cos(t * 0.8) * 0.5;
+            if (obj.material) {
+              obj.material.emissiveIntensity = 1.8 + Math.sin(t * 3 + baseAng) * 1.2;
+            }
+          }
+          if (obj.name === "photoFlash") {
+            if (obj.material) {
+              const flashPhase = Math.sin(t * 1.5);
+              obj.material.emissiveIntensity = flashPhase > 0.9 ? 5.0 : 0.5;
+            }
+          }
+          if (obj.name === "stringLight") {
+            const delay = obj.userData.stringDelay || 0;
+            if (obj.material) {
+              obj.material.emissiveIntensity = 1.8 + Math.sin(t * 2 + delay) * 0.8;
+            }
+          }
+          if (obj.name === "vipNeon") {
+            if (obj.material) {
+              obj.material.emissiveIntensity = 2.0 + Math.sin(t * 2.8) * 1.0;
+            }
+          }
+          if (obj.name === "ceilingStars" && obj.material) {
+            obj.material.opacity = 0.6 + Math.sin(t * 1.5) * 0.3;
+          }
+        });
+
         controls.update();
         renderer.render(scene, camera);
         raf = requestAnimationFrame(animate);
