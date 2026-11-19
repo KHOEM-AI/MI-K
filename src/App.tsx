@@ -12,6 +12,7 @@ const ModelViewer = lazy(() => import("./components/ModelViewer"));
 const Studio3D = lazy(() => import("./components/Studio3D"));
 const Character3D = lazy(() => import("./components/Character3D"));
 const Vehicles3D = lazy(() => import("./vehicles3d/Vehicles3D"));
+const KaraokeViewer = lazy(() => import("./components/KaraokeViewer"));
 
 // Prefetch Studio3D on hover to make opening instant
 const prefetchStudio3D = () => {
@@ -22,7 +23,14 @@ const prefetchStudio3D = () => {
 
 
 
-type KIconName = "sun" | "moon" | "flashlight" | "car" | "cube";
+type KIconName =
+  | "sun"
+  | "moon"
+  | "flashlight"
+  | "car"
+  | "people"
+  | "cube"
+  | "karaoke";
 
 function KIcon({ name }: { name: KIconName }) {
   return (
@@ -62,10 +70,30 @@ function KIcon({ name }: { name: KIconName }) {
           <circle cx="33" cy="37" r="3" />
         </>
       )}
+      {name === "people" && (
+        <>
+          <circle cx="24" cy="12" r="6" />
+          <path d="M12 41v-5a12 12 0 0 1 24 0v5" />
+          <path d="M8 20a5 5 0 1 0 0-10 M4 39v-4a8 8 0 0 1 6-7" />
+          <path d="M40 20a5 5 0 1 1 0-10 M44 39v-4a8 8 0 0 0-6-7" />
+        </>
+      )}
       {name === "cube" && (
         <>
           <path d="m24 4 18 10v20L24 44 6 34V14L24 4Z" />
           <path d="m6 14 18 10 18-10 M24 24v20 M15 9l18 10" />
+        </>
+      )}
+      {name === "karaoke" && (
+        <>
+          <rect x="14" y="8" width="12" height="18" rx="6" />
+          <path d="M14 13h12 M14 17h12 M14 21h12" />
+          <path d="M9 20a11 11 0 0 0 22 0" />
+          <path d="M20 31v6 M14 37h12" />
+          <circle cx="37" cy="17" r="2.2" />
+          <path d="M39 17V8l4 1.5" />
+          <circle cx="41" cy="27" r="2.2" />
+          <path d="M43 27v-9l4 1.5" />
         </>
       )}
     </svg>
@@ -91,6 +119,7 @@ export default function App() {
   const [studioOpen, setStudioOpen] = useState(false);
   const [charactersOpen, setCharactersOpen] = useState(false);
   const [vehiclesOpen, setVehiclesOpen] = useState(false);
+  const [karaokeOpen, setKaraokeOpen] = useState(false);
   const [theme, setTheme] = useState<"day" | "night">(() => {
     try {
       return localStorage.getItem("khoem-ai-theme") === "day"
@@ -397,11 +426,58 @@ export default function App() {
       )}
 
       <section className="studio-panel">
-        <button onClick={() => setVehiclesOpen((o) => !o)}>🚗🧍 KHOEM-AI 3D</button>
+        <button
+          type="button"
+          title="Vehicles and People 3D"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            padding: "8px 14px",
+            borderRadius: 8,
+            border: "none",
+            marginRight: 8,
+            color: "#fff",
+            fontSize: 14,
+            background: vehiclesOpen ? "#4f7cff" : "rgba(255,255,255,0.14)",
+          }}
+          onClick={() => setVehiclesOpen((o) => !o)}
+        >
+          <KIcon name="car" />
+          <KIcon name="people" />
+          KHOEM-AI 3D
+        </button>
+
+        <button
+          type="button"
+          title="Karaoke / Pub 3D"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            padding: "8px 14px",
+            borderRadius: 8,
+            border: "none",
+            marginRight: 8,
+            color: "#fff",
+            fontSize: 14,
+            background: karaokeOpen ? "#4f7cff" : "rgba(255,255,255,0.14)",
+          }}
+          onClick={() => setKaraokeOpen((o) => !o)}
+        >
+          <KIcon name="karaoke" />
+          Karaoke 3D
+        </button>
       </section>
       {vehiclesOpen && (
         <Suspense fallback={<div className="studio-panel">Loading 3D...</div>}>
           <Vehicles3D onClose={() => setVehiclesOpen(false)} />
+        </Suspense>
+      )}
+
+      {karaokeOpen && (
+        <Suspense fallback={<div className="studio-panel">Loading Karaoke 3D...</div>}>
+          <KaraokeViewer onClose={() => setKaraokeOpen(false)} />
         </Suspense>
       )}
 
