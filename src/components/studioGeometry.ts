@@ -7637,6 +7637,62 @@ export function createKaraokeGeometry(
     group.add(led);
   }
 
+  // ---------- WATER WALL (left of entrance) ----------
+  // Frame
+  const waterWallFrame = new THREE.Mesh(
+    new THREE.BoxGeometry(0.25, 4.0, 3.5),
+    new THREE.MeshStandardMaterial({ color: "#1a1410", roughness: 0.5, metalness: 0.4 })
+  );
+  waterWallFrame.position.set(-8.5, 2.0, 17);
+  group.add(waterWallFrame);
+
+  // Back plate (water surface)
+  const waterWall = new THREE.Mesh(
+    new THREE.PlaneGeometry(3.2, 3.8),
+    new THREE.MeshStandardMaterial({
+      color: "#4fc3f7", metalness: 0.6, roughness: 0.15,
+      transparent: true, opacity: 0.75,
+      emissive: "#4fc3f7", emissiveIntensity: 0.3,
+    })
+  );
+  waterWall.rotation.y = Math.PI / 2;
+  waterWall.position.set(-8.35, 2.0, 17);
+  group.add(waterWall);
+
+  // Water flow drops (vertical strips)
+  for (let wi = 0; wi < 12; wi++) {
+    const drop = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.04, 0.04, 3.6, 6),
+      new THREE.MeshStandardMaterial({
+        color: "#a8dcf0", transparent: true, opacity: 0.55,
+        metalness: 0.8, roughness: 0.05,
+      })
+    );
+    const wz = 15.5 + (wi / 12) * 3.0;
+    drop.position.set(-8.32, 2.0, wz);
+    drop.name = "waterDrop";
+    drop.userData.waterOffset = wi * 0.5;
+    group.add(drop);
+  }
+
+  // Gold bottom catch basin
+  const waterBasin = new THREE.Mesh(
+    new THREE.BoxGeometry(0.5, 0.3, 3.5),
+    gold
+  );
+  waterBasin.position.set(-8.3, 0.15, 17);
+  group.add(waterBasin);
+
+  // Small sign above
+  const waterSign = new THREE.Mesh(
+    new THREE.BoxGeometry(0.08, 0.4, 2.0),
+    new THREE.MeshStandardMaterial({
+      color: "#4fc3f7", emissive: "#4fc3f7", emissiveIntensity: 2.0,
+    })
+  );
+  waterSign.position.set(-8.4, 4.2, 17);
+  group.add(waterSign);
+
   // ---------- PHOTO WALL ----------
   // Frame structure on right side near entrance
   const photoWallFrame = new THREE.Mesh(
@@ -7782,6 +7838,80 @@ export function createKaraokeGeometry(
   const underline = new THREE.Mesh(new THREE.BoxGeometry(13, 0.1, 0.1), neonGold);
   underline.position.set(0, H - 3.4, D / 2 - 0.05);
   group.add(underline);
+
+  // ---------- CEILING + CHANDELIER (over dance floor) ----------
+  // Ceiling trim ring above dance floor
+  const ceilingRing = new THREE.Mesh(
+    new THREE.TorusGeometry(4.5, 0.15, 8, 32),
+    gold
+  );
+  ceilingRing.rotation.x = Math.PI / 2;
+  ceilingRing.position.set(0, H - 0.3, 12.5);
+  group.add(ceilingRing);
+
+  // Chandelier center (over dance floor)
+  const chandelierCenter = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.15, 0.15, 0.4, 10),
+    gold
+  );
+  chandelierCenter.position.set(0, H - 0.6, 12.5);
+  group.add(chandelierCenter);
+
+  // Chandelier arms (8 radiating)
+  for (let ca = 0; ca < 8; ca++) {
+    const angle = (ca / 8) * Math.PI * 2;
+    const arm = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.04, 0.04, 1.8, 6),
+      gold
+    );
+    arm.position.set(
+      Math.cos(angle) * 0.9,
+      H - 0.9,
+      12.5 + Math.sin(angle) * 0.9
+    );
+    arm.rotation.z = Math.PI / 2;
+    arm.rotation.y = -angle;
+    group.add(arm);
+
+    // Crystal drop at end
+    const crystal = new THREE.Mesh(
+      new THREE.OctahedronGeometry(0.15, 0),
+      new THREE.MeshStandardMaterial({
+        color: "#e0e8ff", metalness: 1.0, roughness: 0.02,
+        emissive: "#aab8d0", emissiveIntensity: 0.4,
+      })
+    );
+    crystal.position.set(
+      Math.cos(angle) * 1.8,
+      H - 1.1,
+      12.5 + Math.sin(angle) * 1.8
+    );
+    crystal.name = "chandelierCrystal";
+    crystal.userData.crystalDelay = ca * 0.3;
+    group.add(crystal);
+
+    // Small light at end
+    const candle = new THREE.Mesh(
+      new THREE.SphereGeometry(0.08, 8, 6),
+      new THREE.MeshStandardMaterial({
+        color: "#fff8dc", emissive: "#fff8dc", emissiveIntensity: 3.0,
+      })
+    );
+    candle.position.set(
+      Math.cos(angle) * 1.8,
+      H - 1.2,
+      12.5 + Math.sin(angle) * 1.8
+    );
+    group.add(candle);
+  }
+
+  // Chandelier top finial
+  const chandelierTop = new THREE.Mesh(
+    new THREE.ConeGeometry(0.25, 0.5, 8),
+    gold
+  );
+  chandelierTop.position.set(0, H - 0.3, 12.5);
+  group.add(chandelierTop);
 
   // ---------- DISCO BALL (center, high) ----------
   const ballHolder = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.5, 6), gold);
@@ -8471,6 +8601,82 @@ export function createKaraokeGeometry(
     foil.position.set(-0.95, 1.35, 1.3);
     foil.rotation.z = 0.25;
     roomGroup.add(foil);
+
+    // ---- ROOM SERVICE CART ----
+    const serviceCartTop = new THREE.Mesh(
+      new THREE.BoxGeometry(0.6, 0.06, 0.4),
+      new THREE.MeshStandardMaterial({
+        color: room.tier === "premium" ? "#c0c0c0" : "#8a8a8a",
+        metalness: 0.9, roughness: 0.2,
+      })
+    );
+    serviceCartTop.position.set(-room.w / 2 + 0.9, 0.75, 1.5);
+    roomGroup.add(serviceCartTop);
+
+    // Cart legs (4)
+    for (const [cx, cz] of [[-0.25, -0.15], [0.25, -0.15], [-0.25, 0.15], [0.25, 0.15]]) {
+      const leg = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.02, 0.02, 0.7, 6),
+        new THREE.MeshStandardMaterial({ color: "#050505", metalness: 0.9, roughness: 0.2 })
+      );
+      leg.position.set(-room.w / 2 + 0.9 + cx, 0.4, 1.5 + cz);
+      roomGroup.add(leg);
+    }
+
+    // Wheels (4)
+    for (const [cx, cz] of [[-0.25, -0.15], [0.25, -0.15], [-0.25, 0.15], [0.25, 0.15]]) {
+      const wheel = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.05, 0.05, 0.04, 10),
+        new THREE.MeshStandardMaterial({ color: "#050505", roughness: 0.8 })
+      );
+      wheel.rotation.z = Math.PI / 2;
+      wheel.position.set(-room.w / 2 + 0.9 + cx, 0.05, 1.5 + cz);
+      roomGroup.add(wheel);
+    }
+
+    // Plate of food on cart
+    const plate = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.12, 0.12, 0.02, 16),
+      new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.3 })
+    );
+    plate.position.set(-room.w / 2 + 0.9, 0.80, 1.5);
+    roomGroup.add(plate);
+
+    // Food (bowl of noodles)
+    const noodleBowl = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.09, 0.06, 0.08, 12),
+      new THREE.MeshStandardMaterial({ color: "#f5f5dc", roughness: 0.7 })
+    );
+    noodleBowl.position.set(-room.w / 2 + 0.9, 0.85, 1.5);
+    roomGroup.add(noodleBowl);
+
+    // Chopsticks
+    for (const csoff of [-0.02, 0.02]) {
+      const chopstick = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.008, 0.008, 0.25, 4),
+        new THREE.MeshStandardMaterial({ color: "#8b6914", roughness: 0.6 })
+      );
+      chopstick.rotation.z = Math.PI / 2;
+      chopstick.rotation.y = 0.3;
+      chopstick.position.set(-room.w / 2 + 0.9 + csoff, 0.88, 1.5 + 0.05);
+      roomGroup.add(chopstick);
+    }
+
+    // Champagne bottle on cart
+    const cartBottle = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.04, 0.05, 0.28, 10),
+      new THREE.MeshStandardMaterial({ color: "#1a1a2a", roughness: 0.2, metalness: 0.5 })
+    );
+    cartBottle.position.set(-room.w / 2 + 0.95, 0.90, 1.62);
+    roomGroup.add(cartBottle);
+
+    // Cloth napkin (red)
+    const napkin = new THREE.Mesh(
+      new THREE.BoxGeometry(0.12, 0.01, 0.12),
+      new THREE.MeshStandardMaterial({ color: "#8b0000", roughness: 0.7 })
+    );
+    napkin.position.set(-room.w / 2 + 0.82, 0.81, 1.62);
+    roomGroup.add(napkin);
 
     // ---- Room number plate (above entrance) ----
     const roomNum = (room.z < -5 ? "3" : room.z < 5 ? "2" : "1") +

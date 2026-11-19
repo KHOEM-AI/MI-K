@@ -21,6 +21,9 @@ export default function KaraokeViewer({ onClose }: { onClose: () => void }) {
       const { OrbitControls } = await import(
         "three/examples/jsm/controls/OrbitControls.js"
       );
+      const { RoomEnvironment } = await import(
+        "three/examples/jsm/environments/RoomEnvironment.js"
+      );
       if (cancelled) return;
 
       const scene = new THREE.Scene();
@@ -49,6 +52,12 @@ export default function KaraokeViewer({ onClose }: { onClose: () => void }) {
 
       (window as any).__karaokeCamera = camera;
       (window as any).__karaokeControls = controls;
+
+      // Environment map for real mirror reflections (A)
+      const pmremGen = new THREE.PMREMGenerator(renderer);
+      const envRT = pmremGen.fromScene(new RoomEnvironment(), 0.04);
+      scene.environment = envRT.texture;
+      scene.environmentIntensity = 0.6;
 
       // Lighting
       scene.add(new THREE.AmbientLight(0xffffff, 1.0));
@@ -241,6 +250,22 @@ export default function KaraokeViewer({ onClose }: { onClose: () => void }) {
             const base = obj.userData.neonColor;
             if (obj.material) {
               obj.material.emissiveIntensity = 1.5 + Math.sin(t * 2.5) * 1.0;
+            }
+          }
+        });
+
+        // Water wall drops flow down
+        karaoke.traverse((obj: any) => {
+          if (obj.name === "waterDrop") {
+            const offset = obj.userData.waterOffset || 0;
+            obj.position.y = 2.0 + Math.sin(t * 3 + offset) * 0.5;
+          }
+          if (obj.name === "chandelierCrystal") {
+            const delay = obj.userData.crystalDelay || 0;
+            obj.rotation.y = t * 0.5 + delay;
+            obj.rotation.x = Math.sin(t * 0.7 + delay) * 0.3;
+            if (obj.material) {
+              obj.material.emissiveIntensity = 0.4 + Math.sin(t * 2 + delay) * 0.3;
             }
           }
         });
