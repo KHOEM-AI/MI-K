@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Eye, EyeOff, Lock, Unlock, Pencil, HelpCircle, X, Camera, Trash2, Copy, RotateCcw } from "lucide-react";
+import { Eye, EyeOff, Lock, Unlock, Pencil, HelpCircle, X, Camera, Trash2, Copy, RotateCcw, Save as KSave, Wind as KWind, Sprout as KSprout, Cloud as KCloud, RefreshCw as KRefresh } from "lucide-react";
 import { saveAsset } from "../lib/storage.mjs";
 import { UI3DPreview } from "./UI3DPreview";
 import { presets, MATERIAL_PRESETS, PLANT_COLOR_PRESETS, SKY_COLOR_PRESETS, WATER_COLOR_PRESETS, zero, one, createId } from "./studioConstants";
@@ -4250,7 +4250,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
                 borderStyle: "solid",
               }}
             >
-              <h3>🔄 Auto Backup មាន</h3>
+              <h3><KRefresh size={16} style={{ verticalAlign: "-2px", marginRight: 6 }} />Auto Backup មាន</h3>
               <p className="studio-note">
                 មាន Auto Backup ពី{" "}
                 {new Date(pendingAutobackup.savedAt).toLocaleString()} (
@@ -4492,7 +4492,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
                 checked={windEnabled}
                 onChange={(e) => setWindEnabled(e.target.checked)}
               />
-              🌬️ Wind Animation
+              <KWind size={16} /> Wind Animation
             </label>
             {windEnabled && (
               <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.9rem", color: "#a0aec0" }}>
@@ -4511,7 +4511,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             )}
 
             <div style={{ marginTop: "12px", padding: "12px", backgroundColor: "#0a1420", borderRadius: "8px", border: "1px solid #31516e" }}>
-              <h4 style={{ margin: "0 0 8px", fontSize: "0.9rem", color: "#4a90d9" }}>🌱 Plant Colors</h4>
+              <h4 style={{ margin: "0 0 8px", fontSize: "0.9rem", color: "#4a90d9" }}><KSprout size={16} style={{ verticalAlign: "-2px", marginRight: 6 }} />Plant Colors</h4>
               <p style={{ margin: "0 0 8px", fontSize: "0.75rem", color: "#a0aec0" }}>
                 ជ្រើសរើសវត្ថុរុក្ខជាតិមួយ រួចចុចពណ៌ខាងក្រោមដើម្បីផ្លាស់ពណ៌
               </p>
@@ -4538,7 +4538,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             </div>
 
             <div style={{ marginTop: "12px", padding: "12px", backgroundColor: "#0a1420", borderRadius: "8px", border: "1px solid #31516e" }}>
-              <h4 style={{ margin: "0 0 8px", fontSize: "0.9rem", color: "#4a90d9" }}>🌌 Sky Colors</h4>
+              <h4 style={{ margin: "0 0 8px", fontSize: "0.9rem", color: "#4a90d9" }}><KCloud size={16} style={{ verticalAlign: "-2px", marginRight: 6 }} />Sky Colors</h4>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                 {SKY_COLOR_PRESETS.map((preset) => (
                   <button
@@ -4617,7 +4617,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
               Scene Objects ({objects.length})
               {sceneReady && (
                 <span style={{ color: "#6b7280", fontSize: "0.7rem", marginLeft: "8px" }}>
-                  💾 Auto-Save
+                  <KSave size={12} style={{ verticalAlign: "-2px", marginRight: 6 }} />Auto-Save
                 </span>
               )}
               {selectedIds.length > 1 && (
