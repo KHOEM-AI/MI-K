@@ -11,6 +11,7 @@ type Asset = {
 const ModelViewer = lazy(() => import("./components/ModelViewer"));
 const Studio3D = lazy(() => import("./components/Studio3D"));
 const Character3D = lazy(() => import("./components/Character3D"));
+const Vehicles3D = lazy(() => import("./vehicles3d/Vehicles3D"));
 
 // Prefetch Studio3D on hover to make opening instant
 const prefetchStudio3D = () => {
@@ -89,6 +90,7 @@ export default function App() {
   const [storageReady, setStorageReady] = useState(false);
   const [studioOpen, setStudioOpen] = useState(false);
   const [charactersOpen, setCharactersOpen] = useState(false);
+  const [vehiclesOpen, setVehiclesOpen] = useState(false);
   const [theme, setTheme] = useState<"day" | "night">(() => {
     try {
       return localStorage.getItem("khoem-ai-theme") === "day"
@@ -391,6 +393,15 @@ export default function App() {
               setSearch("");
             }}
           />
+        </Suspense>
+      )}
+
+      <section className="studio-panel">
+        <button onClick={() => setVehiclesOpen((o) => !o)}>🚗🧍 KHOEM-AI 3D</button>
+      </section>
+      {vehiclesOpen && (
+        <Suspense fallback={<div className="studio-panel">Loading 3D...</div>}>
+          <Vehicles3D onClose={() => setVehiclesOpen(false)} />
         </Suspense>
       )}
 
