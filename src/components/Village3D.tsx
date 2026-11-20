@@ -86,6 +86,8 @@ import {
 } from "./villageSave";
 import { createAncientZone, updateAncientZone } from "./ancientRuins";
 import { createWildAnimals, updateWildAnimals, type WildAnimal } from "./wildAnimals";
+import { createForestZone, updateForestZone } from "./forestEnvironment";
+import { createForestWildlife, updateForestWildlife, type ForestAnimal } from "./forestWildlife";
 
 export default function Village3D() {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -124,6 +126,9 @@ export default function Village3D() {
   const [soundOn, setSoundOn] = useState(false);
   const ancientWindowMatsRef = useRef<THREE.MeshStandardMaterial[]>([]);
   const wildAnimalsRef = useRef<WildAnimal[]>([]);
+  const forestBeesRef = useRef<THREE.Mesh[]>([]);
+  const forestWaterRef = useRef<THREE.Mesh[]>([]);
+  const forestAnimalsRef = useRef<ForestAnimal[]>([]);
   const starsRef = useRef<THREE.Points | null>(null);
   const moonRef = useRef<THREE.Group | null>(null);
   const sunRef = useRef<THREE.DirectionalLight | null>(null);
@@ -447,6 +452,17 @@ export default function Village3D() {
     scene.add(wildAnimals.group);
     wildAnimalsRef.current = wildAnimals.animals;
 
+    // ========== តំបន់ព្រៃភ្នំ (អូរ, ទឹកជ្រោះ, ដើមឈើផ្លែ, ផ្កាវល្លិ៍, ឃ្មុំ, ថ្នាំបុរាណ) ==========
+    const forest = createForestZone(-300, 250);
+    scene.add(forest.group);
+    forestBeesRef.current = forest.bees;
+    forestWaterRef.current = forest.waterMeshes;
+
+    // ========== សត្វព្រៃបន្ថែម (ខ្ទីង, ក្ដាន់, ព្រើស, ង៉ែង) ==========
+    const forestWildlife = createForestWildlife(-300, 250);
+    scene.add(forestWildlife.group);
+    forestAnimalsRef.current = forestWildlife.animals;
+
     // ========== B: ផ្កាយ + ព្រះច័ន្ទ (សម្រាប់ពេលយប់) ==========
     const stars = createStars(1500, 800);
     scene.add(stars);
@@ -610,6 +626,16 @@ export default function Village3D() {
             m.emissiveIntensity += (target - m.emissiveIntensity) * 0.05;
           }
         });
+      }
+
+      // Update forest zone (ឃ្មុំ + ទឹក)
+      if (forestBeesRef.current.length > 0 || forestWaterRef.current.length > 0) {
+        updateForestZone(forestBeesRef.current, forestWaterRef.current, elapsedSec);
+      }
+
+      // Update forest wildlife
+      if (forestAnimalsRef.current.length > 0) {
+        updateForestWildlife(forestAnimalsRef.current, elapsedSec);
       }
 
       // Update ancient zone (windows បើកពេលយប់)
