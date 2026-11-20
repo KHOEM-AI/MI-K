@@ -46,6 +46,14 @@ import { createRain, updateRain, type RainSystem, createLightning, updateLightni
 import { createMarketLife, updateShoppers, type Shopper } from "./marketLife";
 import { createStars, updateStars, createMoon } from "./nightSky";
 import { TimeController, getTimeOfDay, applyTimeOfDay } from "./timeSystem";
+import {
+  createVillagers,
+  updateVillagers,
+  createHouseLights,
+  updateHouseLights,
+  type Villager,
+  type HouseLight,
+} from "./villageLife";
 
 export default function Village3D() {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -72,6 +80,8 @@ export default function Village3D() {
   const [timeHour, setTimeHour] = useState(10);
   const timeControllerRef = useRef<TimeController | null>(null);
   const ambientRef = useRef<THREE.AmbientLight | null>(null);
+  const villagersRef = useRef<Villager[]>([]);
+  const houseLightsRef = useRef<HouseLight[]>([]);
   const starsRef = useRef<THREE.Points | null>(null);
   const moonRef = useRef<THREE.Group | null>(null);
   const sunRef = useRef<THREE.DirectionalLight | null>(null);
@@ -299,6 +309,16 @@ export default function Village3D() {
     scene.add(marketLife.group);
     shoppersRef.current = marketLife.shoppers;
 
+    // ========== A: ជីវិតប្រជាជន (៣០ នាក់) ==========
+    const villagers = createVillagers(30);
+    scene.add(villagers.group);
+    villagersRef.current = villagers.villagers;
+
+    // ========== B: ភ្លើងផ្ទះ (៣០) ==========
+    const houseLights = createHouseLights(30);
+    scene.add(houseLights.group);
+    houseLightsRef.current = houseLights.lights;
+
     // ========== B: ផ្កាយ + ព្រះច័ន្ទ (សម្រាប់ពេលយប់) ==========
     const stars = createStars(1500, 800);
     scene.add(stars);
@@ -462,6 +482,17 @@ export default function Village3D() {
             m.emissiveIntensity += (target - m.emissiveIntensity) * 0.05;
           }
         });
+      }
+
+      // Update A: ជីវិតប្រជាជន
+      if (villagersRef.current.length > 0 && timeControllerRef.current) {
+        const h = timeControllerRef.current.getHour();
+        updateVillagers(villagersRef.current, h, elapsedSec);
+      }
+
+      // Update B: ភ្លើងផ្ទះ
+      if (houseLightsRef.current.length > 0 && timeControllerRef.current) {
+        updateHouseLights(houseLightsRef.current, timeControllerRef.current.getHour());
       }
 
       // Update B: ផ្កាយ + ព្រះច័ន្ទ
