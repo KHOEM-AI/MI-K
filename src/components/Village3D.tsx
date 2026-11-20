@@ -18,6 +18,16 @@ import {
   createVegetableGarden,
   createStreetLamps,
 } from "./villageGeometry";
+import {
+  createMountain,
+  createForest,
+  createLake,
+  createFishPond,
+  createBridge,
+  createChicken,
+  createMixedFarm,
+  createWindingRoad,
+} from "./natureElements";
 
 export default function Village3D() {
   const mountRef = useRef<HTMLDivElement>(null);
