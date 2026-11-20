@@ -827,3 +827,38 @@ export function createReception() {
 
   return reception;
 }
+
+// 34. ទូរទស្សន៍អក្សររត់ (Digital TV with Scrolling Text)
+export function createDigitalTV() {
+  const tv = new THREE.Group();
+  const frameMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+  
+  // ស៊ុមទូរទស្សន៍
+  const frame = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1, 0.1), frameMat);
+  tv.add(frame);
+
+  // បង្កើត Canvas សម្រាប់សរសេរអក្សរ
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+  
+  if (ctx) {
+    ctx.fillStyle = '#001122';
+    ctx.fillRect(0, 0, 512, 256);
+    ctx.fillStyle = '#00ffcc';
+    ctx.font = 'bold 40px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('KHOEM-AI HOSPITAL', 256, 128);
+  }
+  
+  const texture = new THREE.CanvasTexture(canvas);
+  const screenMat = new THREE.MeshStandardMaterial({ map: texture, emissive: 0xffffff, emissiveMap: texture, emissiveIntensity: 1 });
+  const screen = new THREE.Mesh(new THREE.PlaneGeometry(1.7, 0.9), screenMat);
+  screen.position.z = 0.06;
+  tv.add(screen);
+
+  // រក្សាទុក Canvas និង Context សម្រាប់ Animate
+  tv.userData = { canvas, ctx, texture };
+  return tv;
+}
