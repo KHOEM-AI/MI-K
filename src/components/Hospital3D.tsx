@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
 import { 
   createHospitalBuilding, createHospitalBed, createTree, createBench, 
   createAmbulance, createDoctor, createGarden, createPatient, 
@@ -30,6 +31,8 @@ const SvgFollow = () => (<svg width="20" height="20" viewBox="0 0 24 24" fill="n
 export default function Hospital3D() {
   const mountRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  const sceneRef = useRef<THREE.Scene | null>(null);
+  const [exportBusy, setExportBusy] = useState(false);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
   const helicopterRef = useRef<THREE.Group | null>(null);
@@ -106,6 +109,28 @@ export default function Hospital3D() {
     link.href = rendererRef.current.domElement.toDataURL("image/png");
     link.click();
   };
+  const exportGLB = async () => {
+    const scene = sceneRef.current;
+    if (!scene || exportBusy) return;
+    setExportBusy(true);
+    try {
+      const exporter = new GLTFExporter();
+      const result = await exporter.parseAsync(scene, { binary: true });
+      const blob = new Blob([result as ArrayBuffer], { type: "model/gltf-binary" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.download = `hospital-${Date.now()}.glb`;
+      link.href = url;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Export GLB failed:", err);
+      alert("Export បរាជ័យ");
+    } finally {
+      setExportBusy(false);
+    }
+  };
+
 
   const setBirdEye = () => {
     if (cameraRef.current && controlsRef.current) {
@@ -117,6 +142,7 @@ export default function Hospital3D() {
   useEffect(() => {
     if (!mountRef.current) return;
     const scene = new THREE.Scene();
+    sceneRef.current = scene;
     scene.background = new THREE.Color(0x87ceeb);
     scene.fog = new THREE.Fog(0x87ceeb, 100, 300); // បង្កើនចម្ងាយ Fog ដើម្បីមើលឃើញបរិវេណធំ
 

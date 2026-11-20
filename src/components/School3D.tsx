@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
 import { createSchoolBuilding, createFlagPole, createStudent, createTeacher } from "./schoolGeometry";
 import { createTree, createFlower, createBench } from "./hospitalGeometry";
 
@@ -9,16 +10,21 @@ export default function School3D() {
   const [isNight, setIsNight] = useState(false);
   const nightRef = useRef(isNight);
   nightRef.current = isNight;
+  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  const sceneRef = useRef<THREE.Scene | null>(null);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (!mountRef.current) return;
     const scene = new THREE.Scene();
+    sceneRef.current = scene;
     scene.background = new THREE.Color(0x87ceeb);
 
     const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.position.set(25, 18, 30); camera.lookAt(0, 6, 0);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
+    rendererRef.current = renderer;
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled = true;
     mountRef.current.appendChild(renderer.domElement);
@@ -98,9 +104,56 @@ export default function School3D() {
     };
   }, []);
 
+  const takeScreenshot = () => {
+    const renderer = rendererRef.current;
+    if (!renderer) return;
+    const dataURL = renderer.domElement.toDataURL("image/png");
+    const link = document.createElement("a");
+    link.download = `school-${Date.now()}.png`;
+    link.href = dataURL;
+    link.click();
+  };
+
+  const exportGLB = async () => {
+    const scene = sceneRef.current;
+    if (!scene || busy) return;
+    setBusy(true);
+    try {
+      const exporter = new GLTFExporter();
+      const result = await exporter.parseAsync(scene, { binary: true });
+      const blob = new Blob([result as ArrayBuffer], { type: "model/gltf-binary" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.download = `school-${Date.now()}.glb`;
+      link.href = url;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Export GLB failed:", err);
+      alert("Export បរាជ័យ");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <div style={{ position: "relative", width: "100%", height: "100vh" }}>
       <div ref={mountRef} style={{ width: "100%", height: "100%" }} />
+      <div style={{ position: "absolute", top: "20px", left: "20px", display: "flex", gap: 8 }}>
+        <button
+          onClick={takeScreenshot}
+          style={{ padding: "10px 16px", borderRadius: "8px", border: "none", backgroundColor: "#16a085", color: "#fff", cursor: "pointer", fontWeight: "bold", fontSize: "14px" }}
+        >
+          📸 Screenshot
+        </button>
+        <button
+          onClick={exportGLB}
+          disabled={busy}
+          style={{ padding: "10px 16px", borderRadius: "8px", border: "none", backgroundColor: busy ? "#7f8c8d" : "#8e44ad", color: "#fff", cursor: busy ? "wait" : "pointer", fontWeight: "bold", fontSize: "14px" }}
+        >
+          {busy ? "⏳ កំពុង Export..." : "🎬 Export GLB"}
+        </button>
+      </div>
       <button
         onClick={() => setIsNight(!isNight)}
         style={{ position: "absolute", top: "20px", right: "20px", padding: "10px 20px", borderRadius: "8px", border: "none", backgroundColor: isNight ? "#f1c40f" : "#2c3e50", color: isNight ? "#000" : "#fff", cursor: "pointer", fontWeight: "bold", fontSize: "16px" }}
