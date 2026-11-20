@@ -25,6 +25,7 @@ export default function Village3D() {
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+  useAutoQuality(rendererRef);
 
   useEffect(() => {
     const mount = mountRef.current;
