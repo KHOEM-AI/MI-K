@@ -24,6 +24,7 @@ test("3D tabs use own-made SVG icons: no emoji and no hard-coded blue", () => {
   for (const f of [
     "src/vehicles3d/Vehicles3D.tsx",
     "src/vehicles3d/HumanViewer.tsx",
+    "src/vehicles3d/VehicleViewer.tsx",
     "src/vehicles3d/icons.tsx",
   ]) {
     const s = read(f);
@@ -31,7 +32,7 @@ test("3D tabs use own-made SVG icons: no emoji and no hard-coded blue", () => {
     assert.ok(!s.includes("#4f7cff"), f + " has hard-coded blue");
   }
   const icons = read("src/vehicles3d/icons.tsx");
-  for (const n of ["car", "people", "male", "female", "turn", "motion", "reset", "play", "stop", "check", "warn"]) {
+  for (const n of ["car", "people", "male", "female", "turn", "motion", "reset", "play", "stop", "check", "warn", "import", "camera", "video", "palette", "bulb", "wheel"]) {
     assert.ok(icons.includes(`name === "${n}"`), "icon " + n);
   }
 });

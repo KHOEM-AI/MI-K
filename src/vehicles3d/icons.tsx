@@ -13,7 +13,13 @@ export type TabIconName =
   | "play"
   | "stop"
   | "check"
-  | "warn";
+  | "warn"
+  | "import"
+  | "camera"
+  | "video"
+  | "palette"
+  | "bulb"
+  | "wheel";
 
 export function TabIcon({ name, size = 20 }: { name: TabIconName; size?: number }) {
   return (
@@ -78,6 +84,47 @@ export function TabIcon({ name, size = 20 }: { name: TabIconName; size?: number 
       {name === "play" && <path d="M16 10 38 24 16 38V10Z" />}
       {name === "stop" && <rect x="12" y="12" width="24" height="24" rx="3" />}
       {name === "check" && <path d="m10 25 9 9 19-20" />}
+      {name === "import" && (
+        <>
+          <path d="M24 6v22 M14 20l10 10 10-10" />
+          <path d="M8 34v6h32v-6" />
+        </>
+      )}
+      {name === "camera" && (
+        <>
+          <rect x="6" y="14" width="36" height="26" rx="4" />
+          <circle cx="24" cy="27" r="7" />
+          <path d="m17 14 3-6h8l3 6" />
+        </>
+      )}
+      {name === "video" && (
+        <>
+          <rect x="4" y="12" width="28" height="24" rx="4" />
+          <path d="m32 21 12-7v20l-12-7" />
+        </>
+      )}
+      {name === "palette" && (
+        <>
+          <path d="M24 6C13 6 6 14 6 24s8 18 17 18c4 0 5-3 3-6-2-3 0-6 4-6h6c4 0 6-3 6-7C42 12 34 6 24 6Z" />
+          <circle cx="14" cy="23" r="1.8" fill="currentColor" stroke="none" />
+          <circle cx="20" cy="14" r="1.8" fill="currentColor" stroke="none" />
+          <circle cx="30" cy="14" r="1.8" fill="currentColor" stroke="none" />
+          <circle cx="36" cy="22" r="1.8" fill="currentColor" stroke="none" />
+        </>
+      )}
+      {name === "bulb" && (
+        <>
+          <path d="M24 4a14 14 0 0 0-8 25c1 1 2 3 2 5h12c0-2 1-4 2-5A14 14 0 0 0 24 4Z" />
+          <path d="M18 40h12 M20 45h8" />
+        </>
+      )}
+      {name === "wheel" && (
+        <>
+          <circle cx="24" cy="24" r="17" />
+          <circle cx="24" cy="24" r="5" />
+          <path d="M24 7v12 M24 29v12 M7 24h12 M29 24h12" />
+        </>
+      )}
       {name === "warn" && (
         <>
           <path d="M24 6 44 40H4L24 6Z" />

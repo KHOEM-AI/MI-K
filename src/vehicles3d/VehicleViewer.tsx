@@ -4,6 +4,7 @@ import type { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { VEHICLES, vehicleById } from "./vehicles.mjs";
 import { buildVehicle } from "./proceduralVehicle";
+import { TabIcon } from "./icons";
 import {
   CAMERA_PRESETS, LED_MODES, cameraPreset, fitDistance, guessBodyMaterial, isGlb, isLedName, isOneShotClip, isWheelName, turntableAngle,
 } from "./modelTools.mjs";
@@ -337,7 +338,7 @@ export default function ModelViewer({ onClose }: { onClose?: () => void }) {
     try {
       if (!isGlb(buf)) throw new Error("This is not a .glb model (binary glTF)");
       applyLoaded(await api.load(buf));
-      setNote(`✅ ${label}`);
+      setNote(`${label} · OK`);
     } catch (e) { setErr(msg(e)); }
     setBusy(false);
   }
@@ -348,7 +349,7 @@ export default function ModelViewer({ onClose }: { onClose?: () => void }) {
     setBusy(true); setErr("");
     try {
       applyLoaded(await api.procedural(`${vehicle.kind} ${vehicle.name} ${vehicle.id}`));
-      setNote(`🧩 ឡាន 3D សាកល្បង (មិនមែនម៉ូដែលពិត) · Built-in test car, not the real design. Real model: public${vehicle.glb}`);
+      setNote(`ឡាន 3D សាកល្បង (មិនមែនម៉ូដែលពិត) · Built-in test car, not the real design. Real model: public${vehicle.glb}`);
     } catch (e) { setErr(msg(e)); }
     setBusy(false);
   }
@@ -392,12 +393,12 @@ export default function ModelViewer({ onClose }: { onClose?: () => void }) {
   }
   async function record() {
     if (!apiRef.current) return;
-    setBusy(true); setErr(""); setNote(`🎥 កំពុងថត ${RECORD_SECONDS} វិនាទី · Recording ${RECORD_SECONDS} s...`);
+    setBusy(true); setErr(""); setNote(`កំពុងថត ${RECORD_SECONDS} វិនាទី · Recording ${RECORD_SECONDS} s...`);
     try {
       const blob = await apiRef.current.record();
-      setNote("☁ កំពុងរក្សាទុក · Saving...");
+      setNote("កំពុងរក្សាទុក · Saving...");
       const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `${vehicle.id}-turntable.webm`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-      setNote("✅ បានទាញយក · Downloaded to this phone");
+      setNote("បានទាញយក · Downloaded to this phone");
     } catch (e) { setErr(msg(e)); setNote(""); }
     setBusy(false);
   }
@@ -406,7 +407,7 @@ export default function ModelViewer({ onClose }: { onClose?: () => void }) {
     <div style={{ padding: 8 }}>
       <div>
         {onClose && <button style={soft} onClick={onClose}>← ត្រឡប់ · Back</button>}
-        <b>🚗 KHOEM-AI 3D</b>
+        <b><TabIcon name="car" /> KHOEM-AI 3D</b>
       </div>
       <select style={{ ...input, width: "100%", marginTop: 8 }} value={vehicleId} onChange={(e) => setVehicleId(e.target.value)}>
         {VEHICLES.map((v) => <option key={v.id} value={v.id}>{v.name} · {v.kind}</option>)}
@@ -422,38 +423,38 @@ export default function ModelViewer({ onClose }: { onClose?: () => void }) {
       {busy && <div>កំពុងដំណើរការ... · Working...</div>}
       {note && <div style={{ marginTop: 6 }}>{note}</div>}
       {hasModel && <img src={vehicle.image} alt={vehicle.name} style={{ height: 72, borderRadius: 6, marginTop: 6 }} />}
-      {err && <div style={{ color: "#ff8a8a", marginTop: 6 }}>⚠ {err}</div>}
+      {err && <div style={{ color: "#ff8a8a", marginTop: 6 }}><TabIcon name="warn" size={16} /> {err}</div>}
 
       <div style={box}>
         <label style={{ ...soft, display: "inline-block", cursor: "pointer" }}>
-          📂 នាំចូល .glb · Import
+          <TabIcon name="import" size={18} /> នាំចូល .glb · Import
           <input type="file" accept=".glb,model/gltf-binary" style={{ display: "none" }}
             onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) void f.arrayBuffer().then((b) => loadBuffer(b, f.name)); }} />
         </label>
-        <button style={soft} disabled={!hasModel || busy} onClick={() => void shot()}>📸 PNG</button>
-        <button style={soft} disabled={!hasModel || busy} onClick={() => void record()}>🎥 360° → WebM</button>
+        <button style={soft} disabled={!hasModel || busy} onClick={() => void shot()}><TabIcon name="camera" size={16} /> PNG</button>
+        <button style={soft} disabled={!hasModel || busy} onClick={() => void record()}><TabIcon name="video" size={16} /> 360° → WebM</button>
       </div>
 
       <div style={box}>
-        <div>🔄 បង្វិល · Turntable</div>
+        <div><TabIcon name="turn" size={18} /> បង្វិល · Turntable</div>
         <label><input type="checkbox" checked={auto} onChange={(e) => { setAuto(e.target.checked); autoRef.current = e.target.checked; }} /> បង្វិលស្វ័យប្រវត្តិ · Auto-turn</label>
         <div>
           <input type="range" min={0.1} max={2} step={0.1} value={speed}
             onChange={(e) => { const v = Number(e.target.value); setSpeed(v); speedRef.current = v; }} /> {speed.toFixed(1)} rad/s
         </div>
-        <div>📷 {CAMERA_PRESETS.map((p: string) => (
+        <div><TabIcon name="camera" size={18} /> {CAMERA_PRESETS.map((p: string) => (
           <button key={p} style={soft} disabled={!hasModel} onClick={() => apiRef.current && apiRef.current.view(p)}>{VIEW_LABELS[p]}</button>
         ))}</div>
       </div>
 
       <div style={box}>
-        <div>🎨 ពណ៌ · Colour</div>
+        <div><TabIcon name="palette" size={18} /> ពណ៌ · Colour</div>
         <select style={input} disabled={!hasModel} value={material} onChange={(e) => setMaterial(e.target.value)}>
           {materials.map((m) => <option key={m} value={m}>{m}</option>)}
         </select>
         <input type="color" disabled={!hasModel || !material} value={color} onChange={(e) => changeColor(e.target.value)} />
-        <button style={soft} disabled={!hasModel} onClick={() => { if (apiRef.current) apiRef.current.resetColors(); setLedMode(""); }}>↺ ដើម · Reset</button>
-        <div>💡 369 LED{leds === 0 && hasModel ? " (no LED parts found)" : ""}</div>
+        <button style={soft} disabled={!hasModel} onClick={() => { if (apiRef.current) apiRef.current.resetColors(); setLedMode(""); }}><TabIcon name="reset" size={16} /> ដើម · Reset</button>
+        <div><TabIcon name="bulb" size={18} /> 369 LED{leds === 0 && hasModel ? " (no LED parts found)" : ""}</div>
         {Object.entries(LED_MODES).map(([k, v]) => (
           <button key={k} style={ledMode === k ? btn : soft} disabled={!hasModel} onClick={() => led(k)}>{(v as { n: number }).n} {(v as { label: string }).label}</button>
         ))}
@@ -461,14 +462,14 @@ export default function ModelViewer({ onClose }: { onClose?: () => void }) {
       </div>
 
       <div style={box}>
-        <div>🎬 ចលនា · Animations ({clips.length})</div>
+        <div><TabIcon name="motion" size={18} /> ចលនា · Animations ({clips.length})</div>
         {clips.length === 0 && <div style={{ opacity: 0.75, fontSize: 13 }}>ម៉ូដែលនេះគ្មាន Animation (បើកទ្វារ ។ល។) · This model has no animation clips.</div>}
         {clips.map((c) => (
           <button key={c} style={playing[c] ? btn : soft} onClick={() => { if (apiRef.current) { const on = apiRef.current.togglePlay(c); setPlaying((p) => ({ ...p, [c]: on })); } }}>
-            {playing[c] ? "■" : "▶"} {c}
+            <TabIcon name={playing[c] ? "stop" : "play"} size={14} /> {c}
           </button>
         ))}
-        <div>🛞 កង់ · Wheels ({wheels})</div>
+        <div><TabIcon name="wheel" size={18} /> កង់ · Wheels ({wheels})</div>
         {wheels === 0 && hasModel && <div style={{ opacity: 0.75, fontSize: 13 }}>គ្មានកង់ដាច់ដោយឡែក · No separate wheel parts named wheel/tyre/tire.</div>}
         <label><input type="checkbox" disabled={wheels === 0} checked={spin} onChange={(e) => { setSpin(e.target.checked); wheelRef.current = e.target.checked; }} /> បង្វិលកង់ · Spin wheels</label>{" "}
         <select style={input} disabled={wheels === 0} value={axis} onChange={(e) => { const a = e.target.value as "x" | "y" | "z"; setAxis(a); axisRef.current = a; }}>
