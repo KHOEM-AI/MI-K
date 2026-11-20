@@ -45,6 +45,7 @@ import {
 import { createRain, updateRain, type RainSystem, createLightning, updateLightning, type LightningSystem } from "./rainSystem";
 import { createMarketLife, updateShoppers, type Shopper } from "./marketLife";
 import { createStars, updateStars, createMoon } from "./nightSky";
+import { TimeController, getTimeOfDay, applyTimeOfDay } from "./timeSystem";
 
 export default function Village3D() {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -68,10 +69,23 @@ export default function Village3D() {
   const lightningRef = useRef<LightningSystem | null>(null);
   const shoppersRef = useRef<Shopper[]>([]);
   const [isRaining, setIsRaining] = useState(false);
+  const [timeHour, setTimeHour] = useState(10);
+  const timeControllerRef = useRef<TimeController | null>(null);
+  const ambientRef = useRef<THREE.AmbientLight | null>(null);
   const starsRef = useRef<THREE.Points | null>(null);
   const moonRef = useRef<THREE.Group | null>(null);
   const sunRef = useRef<THREE.DirectionalLight | null>(null);
   useAutoQuality(rendererRef);
+
+  // Update time display
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (timeControllerRef.current) {
+        setTimeHour(timeControllerRef.current.getHour());
+      }
+    }, 500);
+    return () => clearInterval(interval);
+  }, []);
 
   // Toggle rain
   useEffect(() => {
@@ -115,7 +129,12 @@ export default function Village3D() {
     mount.appendChild(renderer.domElement);
 
     const ambient = new THREE.AmbientLight(0xffffff, 0.65);
+    ambientRef.current = ambient;
     scene.add(ambient);
+
+    // Time controller
+    const timeController = new TimeController(10, 0.3); // ចាប់ផ្តើម ១០ ម៉ោង, ០.៣ ម៉ោង/វិនាទី
+    timeControllerRef.current = timeController;
 
     const sun = new THREE.DirectionalLight(0xffffff, 1.3);
     sun.position.set(100, 150, 80);
@@ -424,12 +443,35 @@ export default function Village3D() {
         updateShoppers(shoppersRef.current, elapsedSec);
       }
 
+      // Update A: Time of Day
+      if (timeControllerRef.current) {
+        const hour = timeControllerRef.current.update(1 / 60);
+        const tod = getTimeOfDay(hour);
+        const sun = sunRef.current;
+        const amb = ambientRef.current;
+        if (sun && amb) {
+          applyTimeOfDay(scene, sun, amb, tod);
+        }
+        // ធ្វើឱ្យចង្កៀងផ្លូវភ្លឺពេលល្ងាច/យប់ (ជំនួស isNight manual)
+        const nightNow = tod.isNight;
+        scene.traverse((obj) => {
+          if (obj.name === "streetLamp") {
+            const mesh = obj as THREE.Mesh;
+            const m = mesh.material as THREE.MeshStandardMaterial;
+            const target = nightNow ? 1.5 : 0;
+            m.emissiveIntensity += (target - m.emissiveIntensity) * 0.05;
+          }
+        });
+      }
+
       // Update B: ផ្កាយ + ព្រះច័ន្ទ
       if (starsRef.current) {
-        updateStars(starsRef.current, isNight, delta);
+        const night = isNight || (timeControllerRef.current ? getTimeOfDay(timeControllerRef.current.getHour()).isNight : false);
+        updateStars(starsRef.current, night, delta);
       }
       if (moonRef.current) {
-        moonRef.current.visible = isNight;
+        const night = isNight || (timeControllerRef.current ? getTimeOfDay(timeControllerRef.current.getHour()).isNight : false);
+        moonRef.current.visible = night;
       }
 
       controls.update();
@@ -562,6 +604,79 @@ export default function Village3D() {
           >
             {isRaining ? "🌧️ Stop Rain" : "🌧️ Start Rain"}
           </button>
+          {/* Time of Day controls */}
+          <div
+            style={{
+              position: "absolute",
+              top: 60,
+              right: 16,
+              display: "flex",
+              gap: 8,
+              zIndex: 20,
+              alignItems: "center",
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => {
+                if (timeControllerRef.current) {
+                  timeControllerRef.current.toggle();
+                }
+              }}
+              style={{
+                padding: "8px 12px",
+                borderRadius: 8,
+                border: "none",
+                background: "#2c3e50",
+                color: "#fff",
+                fontSize: 13,
+                fontWeight: "bold",
+                cursor: "pointer",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+              }}
+            >
+              ⏸️ Pause
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (timeControllerRef.current) {
+                  const speeds = [0.1, 0.3, 0.5, 1, 2, 5];
+                  const cur = timeControllerRef.current.getSpeed();
+                  const idx = speeds.indexOf(cur);
+                  const next = speeds[(idx + 1) % speeds.length];
+                  timeControllerRef.current.setSpeed(next);
+                  alert(`Speed: ${next} hr/sec`);
+                }
+              }}
+              style={{
+                padding: "8px 12px",
+                borderRadius: 8,
+                border: "none",
+                background: "#8e44ad",
+                color: "#fff",
+                fontSize: 13,
+                fontWeight: "bold",
+                cursor: "pointer",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+              }}
+            >
+              ⏩ Speed
+            </button>
+            <div
+              style={{
+                padding: "8px 14px",
+                borderRadius: 8,
+                background: "rgba(0,0,0,0.7)",
+                color: "#fff",
+                fontSize: 14,
+                fontWeight: "bold",
+                fontFamily: "monospace",
+              }}
+            >
+              {timeControllerRef.current?.formatTime() || "10:00"}
+            </div>
+          </div>
           <button
             type="button"
             onClick={() => setIsNight((n) => !n)}
