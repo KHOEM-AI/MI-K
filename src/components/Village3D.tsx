@@ -27,6 +27,7 @@ import {
   createChicken,
   createMixedFarm,
 } from "./natureElements";
+import { createTrafficSystem, updateTraffic, type TrafficVehicle } from "./trafficSystem";
 
 export default function Village3D() {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -39,6 +40,7 @@ export default function Village3D() {
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+  const trafficVehiclesRef = useRef<TrafficVehicle[]>([]);
   const sunRef = useRef<THREE.DirectionalLight | null>(null);
   useAutoQuality(rendererRef);
 
@@ -180,6 +182,11 @@ export default function Village3D() {
       scene.add(chicken);
     }
 
+    // ========== ចរាចរណ៍ (ម៉ូតូ ១០ + ឡាន ៥ + អ្នកថ្មើរជើង ៨) ==========
+    const traffic = createTrafficSystem();
+    scene.add(traffic.group);
+    trafficVehiclesRef.current = traffic.vehicles;
+
     const markets = [
       { f: createMarketStall("#e74c3c"), pos: [-70, 0, 60] as const },
       { f: createMarketStall("#f39c12"), pos: [70, 0, 60] as const },
@@ -270,6 +277,12 @@ export default function Village3D() {
           mat.emissiveIntensity += (targetLampEmissive - mat.emissiveIntensity) * 0.05;
         }
       });
+
+      // Update traffic
+      if (trafficVehiclesRef.current.length > 0) {
+        const elapsed = performance.now() / 1000;
+        updateTraffic(trafficVehiclesRef.current, elapsed);
+      }
 
       controls.update();
       renderer.render(scene, camera);

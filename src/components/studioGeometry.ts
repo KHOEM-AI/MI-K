@@ -10728,4 +10728,3 @@ function buildDetailedHuman(
   g.traverse((c: any) => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
   return g;
 }
-
