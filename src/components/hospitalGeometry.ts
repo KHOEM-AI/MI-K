@@ -235,3 +235,94 @@ export function createGarden() {
 
   return garden;
 }
+
+// 8. អ្នកជំងឺដេកលើគ្រែ (Patient with Blanket)
+export function createPatient() {
+  const patient = new THREE.Group();
+  
+  const skinMat = new THREE.MeshStandardMaterial({ color: 0xf5cba7 });
+  const blanketMat = new THREE.MeshStandardMaterial({ color: 0x88ccff, roughness: 0.8 }); // ភួយពណ៌ខៀវ
+  const hairMat = new THREE.MeshStandardMaterial({ color: 0x2a1b10 });
+
+  // ក្បាល
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.3, 16, 16), skinMat);
+  head.position.set(0, 1.6, -1.2);
+  patient.add(head);
+
+  // សក់
+  const hair = new THREE.Mesh(new THREE.SphereGeometry(0.31, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2), hairMat);
+  hair.position.set(0, 1.65, -1.2);
+  patient.add(hair);
+
+  // ភួយក្រណាត់ (គ្របពីកញ្ចឹងកដល់ជើង)
+  const blanket = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.2, 2.5), blanketMat);
+  blanket.position.set(0, 1.5, 0);
+  patient.add(blanket);
+
+  return patient;
+}
+
+// 9. ផ្លាកសញ្ញា "HOSPITAL" (3D Text)
+export function createHospitalSign(THREE: any) {
+  const signGroup = new THREE.Group();
+  
+  // ប្រអប់ផ្លាក
+  const boardMat = new THREE.MeshStandardMaterial({ color: 0x1e3a8a, roughness: 0.4 });
+  const board = new THREE.Mesh(new THREE.BoxGeometry(8, 1.5, 0.3), boardMat);
+  board.position.y = 0;
+  signGroup.add(board);
+
+  // អក្សរ 3D ពណ៌ស (ប្រើ Geometry សាមញ្ញជំនួស)
+  const textMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0.5 });
+  const charGeo = new THREE.BoxGeometry(0.6, 0.8, 0.1);
+  
+  // បង្កើតតួអក្សរនីមួយៗ (H O S P I T A L)
+  const letters = ["H", "O", "S", "P", "I", "T", "A", "L"];
+  letters.forEach((_, i) => {
+    const char = new THREE.Mesh(charGeo, textMat);
+    char.position.set(-3.5 + i * 1, 0, 0.2);
+    signGroup.add(char);
+  });
+
+  return signGroup;
+}
+
+// 10. ផ្កា (Flowers)
+export function createFlower(color: number) {
+  const flower = new THREE.Group();
+  const stemMat = new THREE.MeshStandardMaterial({ color: 0x228b22 });
+  const petalMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.6 });
+  const centerMat = new THREE.MeshStandardMaterial({ color: 0xffff00 });
+
+  // ដើម
+  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.8, 6), stemMat);
+  stem.position.y = 0.4;
+  flower.add(stem);
+
+  // ត្របកផ្កា ៥
+  for (let i = 0; i < 5; i++) {
+    const angle = (i / 5) * Math.PI * 2;
+    const petal = new THREE.Mesh(new THREE.SphereGeometry(0.15, 8, 8), petalMat);
+    petal.position.set(Math.cos(angle) * 0.2, 0.8, Math.sin(angle) * 0.2);
+    petal.scale.set(1, 0.5, 1);
+    flower.add(petal);
+  }
+
+  // កណ្តាលផ្កា
+  const center = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), centerMat);
+  center.position.y = 0.8;
+  flower.add(center);
+
+  return flower;
+}
+
+// 11. ភ្លើងសង្គ្រោះវិល (Siren Light) - ត្រូវការ Animation
+export function createSirenLight() {
+  const lightMat = new THREE.MeshStandardMaterial({ 
+    color: 0xff0000, 
+    emissive: 0xff0000, 
+    emissiveIntensity: 2 
+  });
+  const siren = new THREE.Mesh(new THREE.SphereGeometry(0.3, 16, 16), lightMat);
+  return siren;
+}
