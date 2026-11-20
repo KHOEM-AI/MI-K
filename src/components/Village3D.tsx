@@ -55,6 +55,27 @@ import {
   type HouseLight,
 } from "./villageLife";
 import { VillageRegistry, createCropCycle, updateCropCycle, createSmartTraffic, updateSmartTraffic, type CropCycle, type SmartVehicle } from "./villageSimulation";
+import {
+  createFishSchool,
+  updateFishSchool,
+  createWaterRipple,
+  updateWaterRipple,
+  createFallingLeaves,
+  updateFallingLeaves,
+  type Fish,
+  type WaterRipple,
+  type FallingLeaf,
+} from "./waterSystem";
+import {
+  createSoundSystem,
+  initSound,
+  setMasterVolume,
+  setRainSound,
+  setBirdSound,
+  setWindSound,
+  disposeSound,
+  type SoundSystem,
+} from "./soundSystem";
 
 export default function Village3D() {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -86,6 +107,11 @@ export default function Village3D() {
   const registryRef = useRef<VillageRegistry | null>(null);
   const cropCyclesRef = useRef<CropCycle[]>([]);
   const smartTrafficRef = useRef<SmartVehicle[]>([]);
+  const fishesRef = useRef<Fish[]>([]);
+  const waterRipplesRef = useRef<WaterRipple[]>([]);
+  const leavesRef = useRef<FallingLeaf[]>([]);
+  const soundRef = useRef<SoundSystem>(createSoundSystem());
+  const [soundOn, setSoundOn] = useState(false);
   const starsRef = useRef<THREE.Points | null>(null);
   const moonRef = useRef<THREE.Group | null>(null);
   const sunRef = useRef<THREE.DirectionalLight | null>(null);
@@ -101,7 +127,7 @@ export default function Village3D() {
     return () => clearInterval(interval);
   }, []);
 
-  // Toggle rain
+  // Toggle rain + rain sound
   useEffect(() => {
     if (rainRef.current) {
       rainRef.current.points.visible = isRaining;
@@ -109,7 +135,10 @@ export default function Village3D() {
     if (lightningRef.current) {
       lightningRef.current.light.visible = isRaining;
     }
-  }, [isRaining]);
+    if (soundRef.current) {
+      setRainSound(soundRef.current, isRaining && soundOn);
+    }
+  }, [isRaining, soundOn]);
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -342,6 +371,34 @@ export default function Village3D() {
     houseLightsRef.current = houseLights.lights;
     registryRef.current = registry;
 
+    // ========== A: ត្រីហែលក្នុងស្រះ ==========
+    // ស្រះត្រី ៤ ទីតាំង (±80, ±40)
+    const pondPositions = [
+      [-80, 40], [80, 40], [-80, -40], [80, -40],
+    ];
+    pondPositions.forEach(([px, pz]) => {
+      const fishSchool = createFishSchool(5, px, pz, 10);
+      scene.add(fishSchool.group);
+      fishesRef.current.push(...fishSchool.fishes);
+
+      // Water ripple
+      const ripple = createWaterRipple(15, "#2980b9");
+      ripple.mesh.position.set(px, 0.15, pz);
+      scene.add(ripple.mesh);
+      waterRipplesRef.current.push(ripple);
+    });
+
+    // បឹងធំ (-180, -100) radius 40
+    const lakeRipple = createWaterRipple(80, "#3498db");
+    lakeRipple.mesh.position.set(-180, 0.15, -100);
+    scene.add(lakeRipple.mesh);
+    waterRipplesRef.current.push(lakeRipple);
+
+    // ========== A: ស្លឹកឈើជ្រុះ ==========
+    const leaves = createFallingLeaves(50, 300);
+    scene.add(leaves.group);
+    leavesRef.current = leaves.leaves;
+
     // ========== B: ផ្កាយ + ព្រះច័ន្ទ (សម្រាប់ពេលយប់) ==========
     const stars = createStars(1500, 800);
     scene.add(stars);
@@ -507,6 +564,17 @@ export default function Village3D() {
         });
       }
 
+      // Update A: ត្រី + រលក + ស្លឹកឈើ
+      if (fishesRef.current.length > 0) {
+        updateFishSchool(fishesRef.current, elapsedSec);
+      }
+      if (waterRipplesRef.current.length > 0) {
+        waterRipplesRef.current.forEach((r) => updateWaterRipple(r, elapsedSec));
+      }
+      if (leavesRef.current.length > 0) {
+        updateFallingLeaves(leavesRef.current, delta);
+      }
+
       // Update crop cycles
       if (cropCyclesRef.current.length > 0) {
         cropCyclesRef.current.forEach((crop) => {
@@ -557,6 +625,7 @@ export default function Village3D() {
       if (mount.contains(renderer.domElement)) {
         mount.removeChild(renderer.domElement);
       }
+      disposeSound(soundRef.current);
     };
   }, []);
 
@@ -674,6 +743,38 @@ export default function Village3D() {
               💡 {registryRef.current.houses.filter((h) => h.hasLight).length} ភ្លើង
             </div>
           )}
+          <button
+            type="button"
+            onClick={() => {
+              const newOn = !soundOn;
+              setSoundOn(newOn);
+              if (newOn) {
+                initSound(soundRef.current);
+                setMasterVolume(soundRef.current, 0.3);
+                setWindSound(soundRef.current, true);
+                setBirdSound(soundRef.current, true);
+              } else {
+                setMasterVolume(soundRef.current, 0);
+              }
+            }}
+            style={{
+              position: "absolute",
+              top: 16,
+              right: 260,
+              padding: "10px 16px",
+              borderRadius: 8,
+              border: "none",
+              background: soundOn ? "#27ae60" : "#7f8c8d",
+              color: "#fff",
+              fontSize: 14,
+              fontWeight: "bold",
+              cursor: "pointer",
+              zIndex: 20,
+              boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+            }}
+          >
+            {soundOn ? "🔊 Sound ON" : "🔇 Sound OFF"}
+          </button>
           <button
             type="button"
             onClick={() => setIsRaining((r) => !r)}
