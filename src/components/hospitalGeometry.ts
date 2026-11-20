@@ -862,3 +862,52 @@ export function createDigitalTV() {
   tv.userData = { canvas, ctx, texture };
   return tv;
 }
+
+// 35. កៅអីអង្គុយវែង (Long Bench for 3, 5, or 6 people)
+export function createLongBench(seats: number = 3) {
+  const bench = new THREE.Group();
+  const woodMat = new THREE.MeshStandardMaterial({ color: 0x8b5a2b, roughness: 0.8 });
+  const metalMat = new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.8 });
+  const length = seats * 0.8; // ទទឹងកៅអី ០.៨ ម៉ែត្រ/នាក់
+
+  // កន្លែងអង្គុយ
+  const seat = new THREE.Mesh(new THREE.BoxGeometry(length, 0.1, 0.6), woodMat);
+  seat.position.y = 0.8;
+  bench.add(seat);
+
+  // ខ្នងកៅអី
+  const back = new THREE.Mesh(new THREE.BoxGeometry(length, 0.6, 0.1), woodMat);
+  back.position.set(0, 1.2, -0.25);
+  bench.add(back);
+
+  // ជើងកៅអី (៣ ជើង)
+  const legGeo = new THREE.BoxGeometry(0.1, 0.8, 0.1);
+  for (let i = -1; i <= 1; i++) {
+    const leg = new THREE.Mesh(legGeo, metalMat);
+    leg.position.set(i * (length / 2.2), 0.4, 0);
+    bench.add(leg);
+  }
+  return bench;
+}
+
+// 36. បន្ទប់យាម (Security Guard Booth)
+export function createGuardBooth() {
+  const booth = new THREE.Group();
+  const wallMat = new THREE.MeshStandardMaterial({ color: 0xd2b48c, roughness: 0.8 });
+  const glassMat = new THREE.MeshStandardMaterial({ color: 0x88ccff, transparent: true, opacity: 0.6 });
+  const roofMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
+
+  const body = new THREE.Mesh(new THREE.BoxGeometry(2, 2.5, 2), wallMat);
+  body.position.y = 1.25;
+  booth.add(body);
+
+  const window1 = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1, 0.1), glassMat);
+  window1.position.set(0, 1.5, 1.05);
+  booth.add(window1);
+
+  const roof = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.2, 2.5), roofMat);
+  roof.position.y = 2.6;
+  booth.add(roof);
+
+  return booth;
+}

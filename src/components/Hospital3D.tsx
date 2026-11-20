@@ -9,7 +9,7 @@ import {
   createHelicopter, createCar, createSurgeryRoom, createVisitor,
   createStars, createRain, createTrafficSign, createColorfulLights,
   createFence, createStringLights, createACUnit, createStretcher,
-  createVIPRoom, createReception, createDigitalTV
+  createVIPRoom, createReception, createDigitalTV, createLongBench, createGuardBooth
 } from "./hospitalGeometry";
 
 const SvgSoundOn = () => (<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>);
@@ -94,7 +94,6 @@ export default function Hospital3D() {
     link.click();
   };
 
-  // 3. Bird's Eye View
   const setBirdEye = () => {
     if (cameraRef.current && controlsRef.current) {
       cameraRef.current.position.set(0, 70, 0.1);
@@ -157,19 +156,35 @@ export default function Hospital3D() {
     const lamp2 = createStreetLamp(); lamp2.position.set(8, 0, 6); lamp2.rotation.y = Math.PI; scene.add(lamp2);
     const ambulance = createAmbulance(); ambulance.position.set(-8, 0, 18); scene.add(ambulance);
     const siren = createSirenLight(); siren.position.set(-8.6, 2.6, 20.5); scene.add(siren);
+    
+    // ឡានចត
     const car1 = createCar(0xff0000); car1.position.set(10, 0, 22); car1.rotation.y = Math.PI / 2; scene.add(car1);
     const car2 = createCar(0x0000ff); car2.position.set(13, 0, 22); car2.rotation.y = Math.PI / 2; scene.add(car2);
     const car3 = createCar(0x00ff00); car3.position.set(16, 0, 22); car3.rotation.y = Math.PI / 2; scene.add(car3);
     
+    // បន្ទប់វះកាត់, VIP, ទីស្នាក់ការគិតលុយ
     const surgeryRoom = createSurgeryRoom(); surgeryRoom.position.set(-15, 0, -5); scene.add(surgeryRoom);
     const vipRoom = createVIPRoom(); vipRoom.position.set(15, 0, -5); scene.add(vipRoom);
     const reception = createReception(); reception.position.set(0, 0, 8); scene.add(reception);
 
-    // 2. បន្ថែមទូរទស្សន៍អក្សររត់ (Digital TV)
-    const digitalTV = createDigitalTV(); 
-    digitalTV.position.set(0, 2.8, 7.2); 
-    digitalTV.rotation.y = Math.PI; // បែរមុខមករកអ្នកមើល
-    scene.add(digitalTV);
+    // បន្ថែមកៅអីអង្គុយវែង តាមទីតាំងផ្សេងៗ
+    // 1. នៅតាមសួនច្បារ (អង្គុយលេង)
+    const gardenBench1 = createLongBench(5); gardenBench1.position.set(-13, 0, 8); gardenBench1.rotation.y = Math.PI / 2; scene.add(gardenBench1);
+    const gardenBench2 = createLongBench(3); gardenBench2.position.set(13, 0, 8); gardenBench2.rotation.y = -Math.PI / 2; scene.add(gardenBench2);
+    
+    // 2. នៅកន្លែងសង្គ្រោះបន្ទាន់ (ក្បែរឡានសង្គ្រោះ)
+    const emergencyBench = createLongBench(3); emergencyBench.position.set(-3, 0, 19); emergencyBench.rotation.y = Math.PI / 2; scene.add(emergencyBench);
+    
+    // 3. នៅកន្លែងគិតប្រាក់ (Reception)
+    const receptionBench1 = createLongBench(6); receptionBench1.position.set(-5, 0, 10); scene.add(receptionBench1);
+    const receptionBench2 = createLongBench(5); receptionBench2.position.set(5, 0, 10); scene.add(receptionBench2);
+    
+    // 4. កន្លែងយាម (បន្ទប់យាម និងកៅអីអង្គុយយាម)
+    const guardBooth = createGuardBooth(); guardBooth.position.set(-15, 0, 18); scene.add(guardBooth);
+    const guardBench = createLongBench(3); guardBench.position.set(-11, 0, 18); guardBench.rotation.y = -Math.PI / 2; scene.add(guardBench);
+
+    // បន្ថែមទូរទស្សន៍អក្សររត់
+    const digitalTV = createDigitalTV(); digitalTV.position.set(0, 2.8, 7.2); digitalTV.rotation.y = Math.PI; scene.add(digitalTV);
 
     // មនុស្ស និងរទេះ
     [{ x: 12, z: -2 }, { x: 12, z: -6 }].forEach(pos => {
@@ -181,7 +196,7 @@ export default function Hospital3D() {
     const nurse1 = createNurse(); nurse1.position.set(4, 0, 6); scene.add(nurse1);
     const wc = createWheelchair(); wc.position.set(-4, 0, 6); scene.add(wc);
     
-    // 1. រទេះរុញគ្រែ និងគិលានុបដ្ឋាយិការុញ
+    // រទេះរុញគ្រែ និងគិលានុបដ្ឋាយិការុញ
     const stretcher = createStretcher(); stretcher.position.set(0, 0, 15); scene.add(stretcher);
     const stretcherNurse = createNurse(); stretcherNurse.position.set(0.8, 0, 14); scene.add(stretcherNurse);
 
@@ -232,7 +247,7 @@ export default function Hospital3D() {
         helicopter.position.z += (-5 - helicopter.position.z) * 0.05;
       }
 
-      // 4. Follow Helicopter
+      // Follow Helicopter
       if (isFollowMode) {
         controls.target.lerp(helicopter.position, 0.1);
         const offset = new THREE.Vector3(15, 10, 15);
@@ -240,7 +255,7 @@ export default function Hospital3D() {
         camera.position.lerp(targetCamPos, 0.05);
       }
 
-      // 1. ចលនារទេះរុញគ្រែ និងគិលានុបដ្ឋាយិកា
+      // ចលនារទេះរុញគ្រែ និងគិលានុបដ្ឋាយិកា
       const stretcherX = Math.sin(elapsed * 0.8) * 8;
       stretcher.position.x = stretcherX;
       stretcherNurse.position.x = stretcherX + 0.8;
@@ -258,7 +273,7 @@ export default function Hospital3D() {
       visitor2.position.x = 5 + Math.cos(elapsed * 1) * 4;
       visitor2.rotation.y = Math.cos(elapsed * 1) > 0 ? -Math.PI / 2 : Math.PI / 2;
 
-      // 2. អក្សររត់លើទូរទស្សន៍
+      // អក្សររត់លើទូរទស្សន៍
       if (digitalTV.userData.ctx && digitalTV.userData.texture) {
         const ctx = digitalTV.userData.ctx;
         ctx.fillStyle = '#001122';
@@ -268,7 +283,6 @@ export default function Hospital3D() {
         ctx.font = 'bold 40px sans-serif';
         ctx.textAlign = 'center';
         
-        // អក្សររត់ពីស្តាំទៅឆ្វេង
         const textX = 512 - ((elapsed * 100) % 1000);
         ctx.fillText('Welcome to KHOEM-AI Hospital', textX, 128);
         ctx.font = 'bold 20px sans-serif';
@@ -364,11 +378,9 @@ export default function Hospital3D() {
         <button onClick={() => setIsRaining(!isRaining)} style={{ ...btnStyle, backgroundColor: isRaining ? "#3498db" : "#34495e" }}>
           🌧️ {isRaining ? "Stop Rain" : "Start Rain"}
         </button>
-        {/* 3. Bird's Eye View Button */}
         <button onClick={setBirdEye} style={{ ...btnStyle, backgroundColor: "#8e44ad" }}>
           <SvgEye /> Bird's Eye View
         </button>
-        {/* 4. Follow Helicopter Button */}
         <button onClick={() => setIsFollow(!isFollow)} style={{ ...btnStyle, backgroundColor: isFollow ? "#e67e22" : "#34495e" }}>
           <SvgFollow /> {isFollow ? "Stop Follow" : "Follow Helicopter"}
         </button>
