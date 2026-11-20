@@ -68,7 +68,7 @@ export function createVillager(shirtColor = "#3498db"): THREE.Group {
 /* ============================================================
    បង្កើតអ្នកស្រុក ៣០ នាក់
    ============================================================ */
-export function createVillagers(count = 30): {
+export function createVillagers(count = 100): {
   group: THREE.Group;
   villagers: Villager[];
 } {
@@ -199,7 +199,7 @@ export interface HouseLight {
   windowMat: THREE.MeshStandardMaterial;
 }
 
-export function createHouseLights(count = 100, registry?: VillageRegistry): {
+export function createHouseLights(count = 300, registry?: VillageRegistry): {
   group: THREE.Group;
   lights: HouseLight[];
 } {
@@ -212,6 +212,9 @@ export function createHouseLights(count = 100, registry?: VillageRegistry): {
   const startX = -((cols - 1) * spacingX) / 2;
   const startZ = -50;
 
+  // បង្កើត PointLight តែ ១០០ (សម្រាប់ performance)
+  const LIGHT_COUNT = 100;
+
   let built = 0;
   for (let r = 0; r < 15 && built < count; r++) {
     for (let c = 0; c < cols && built < count; c++) {
@@ -219,11 +222,17 @@ export function createHouseLights(count = 100, registry?: VillageRegistry): {
       const x = startX + c * spacingX;
       const z = startZ + r * spacingZ;
 
-      // Point light តូច (បើកពេលយប់)
-      const light = new THREE.PointLight("#ffcc66", 0, 15);
-      light.position.set(x, 3, z);
-      light.castShadow = false;
-      group.add(light);
+      // Point light តែ ១០០ ដំបូង (ជិតកណ្តាល)
+      let light: THREE.PointLight;
+      if (built < LIGHT_COUNT) {
+        light = new THREE.PointLight("#ffcc66", 0, 15);
+        light.position.set(x, 3, z);
+        light.castShadow = false;
+        group.add(light);
+      } else {
+        light = new THREE.PointLight("#ffcc66", 0, 15);
+        light.position.set(0, -100, 0); // លាក់
+      }
 
       // បង្អួច emissive
       const windowMat = new THREE.MeshStandardMaterial({
@@ -241,7 +250,9 @@ export function createHouseLights(count = 100, registry?: VillageRegistry): {
       // Register house
       if (registry) {
         const wealth = built % 3 === 0 ? 2 : built % 3 === 1 ? 1 : 0;
-        const familySize = 2 + Math.floor(Math.random() * 4);
+        // familySize deterministic: អ្នកមាន ៤-៦, កណ្តាល ៣-៥, ក្រ ២-៤
+        const baseFamily = wealth === 2 ? 4 : wealth === 1 ? 3 : 2;
+        const familySize = baseFamily + (built % 3);
         registry.register({
           x, z,
           wealth: wealth as 0 | 1 | 2,

@@ -76,6 +76,14 @@ import {
   disposeSound,
   type SoundSystem,
 } from "./soundSystem";
+import {
+  saveVillage,
+  loadVillage,
+  hasSave,
+  clearSave,
+  startAutoSave,
+  type VillageSaveState,
+} from "./villageSave";
 
 export default function Village3D() {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -116,6 +124,32 @@ export default function Village3D() {
   const moonRef = useRef<THREE.Group | null>(null);
   const sunRef = useRef<THREE.DirectionalLight | null>(null);
   useAutoQuality(rendererRef);
+
+  // Auto-save រៀងរាល់ ៣០ វិ
+  useEffect(() => {
+    const stop = startAutoSave(() => ({
+      version: 1,
+      timestamp: Date.now(),
+      time: {
+        hour: timeControllerRef.current?.getHour() ?? 10,
+        speed: timeControllerRef.current?.getSpeed() ?? 0.3,
+        running: timeControllerRef.current?.isRunning() ?? true,
+      },
+      weather: { isRaining, isNight },
+      camera: {
+        position: cameraRef.current
+          ? [cameraRef.current.position.x, cameraRef.current.position.y, cameraRef.current.position.z]
+          : [150, 100, 200],
+        target: [0, 10, 0],
+      },
+      stats: {
+        totalFamilies: registryRef.current?.totalFamilies ?? 0,
+        totalPeople: registryRef.current?.totalPeople ?? 0,
+        totalLights: registryRef.current?.getHousesWithLight().length ?? 0,
+      },
+    }));
+    return stop;
+  }, [isRaining, isNight]);
 
   // Update time display
   useEffect(() => {
@@ -661,6 +695,83 @@ export default function Village3D() {
     }
   };
 
+  const handleSave = () => {
+    const scene = sceneRef.current;
+    const camera = cameraRef.current;
+    if (!scene || !camera) return;
+
+    // យក controls target ពី camera
+    const target = new THREE.Vector3(0, 10, 0);
+
+    const state: VillageSaveState = {
+      version: 1,
+      timestamp: Date.now(),
+      time: {
+        hour: timeControllerRef.current?.getHour() ?? 10,
+        speed: timeControllerRef.current?.getSpeed() ?? 0.3,
+        running: timeControllerRef.current?.isRunning() ?? true,
+      },
+      weather: {
+        isRaining,
+        isNight,
+      },
+      camera: {
+        position: [camera.position.x, camera.position.y, camera.position.z],
+        target: [target.x, target.y, target.z],
+      },
+      stats: {
+        totalFamilies: registryRef.current?.totalFamilies ?? 0,
+        totalPeople: registryRef.current?.totalPeople ?? 0,
+        totalLights: registryRef.current?.getHousesWithLight().length ?? 0,
+      },
+    };
+
+    if (saveVillage(state)) {
+      alert("✅ បានរក្សាទុកភូមិ!");
+    } else {
+      alert("❌ Save បរាជ័យ");
+    }
+  };
+
+  const handleLoad = () => {
+    const state = loadVillage();
+    if (!state) {
+      alert("❌ គ្មាន Save");
+      return;
+    }
+
+    // Restore time
+    if (timeControllerRef.current) {
+      timeControllerRef.current.setHour(state.time.hour);
+      timeControllerRef.current.setSpeed(state.time.speed);
+      if (state.time.running && !timeControllerRef.current.isRunning()) {
+        timeControllerRef.current.toggle();
+      } else if (!state.time.running && timeControllerRef.current.isRunning()) {
+        timeControllerRef.current.toggle();
+      }
+    }
+
+    // Restore weather
+    setIsRaining(state.weather.isRaining);
+    setIsNight(state.weather.isNight);
+
+    // Restore camera
+    const camera = cameraRef.current;
+    if (camera) {
+      camera.position.set(...state.camera.position);
+      camera.lookAt(...state.camera.target);
+    }
+
+    alert(`✅ Loaded! (${new Date(state.timestamp).toLocaleString()})`);
+  };
+
+  const handleClear = () => {
+    if (confirm("លុប Save ចោល?")) {
+      clearSave();
+      alert("✅ លុបរួច");
+    }
+  };
+
   return (
     <div
       ref={mountRef}
@@ -742,6 +853,50 @@ export default function Village3D() {
               <br />
               💡 {registryRef.current.houses.filter((h) => h.hasLight).length} ភ្លើង
             </div>
+          )}
+          <button
+            type="button"
+            onClick={handleSave}
+            style={{
+              position: "absolute",
+              top: 16,
+              right: 380,
+              padding: "10px 16px",
+              borderRadius: 8,
+              border: "none",
+              background: "#3498db",
+              color: "#fff",
+              fontSize: 14,
+              fontWeight: "bold",
+              cursor: "pointer",
+              zIndex: 20,
+              boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+            }}
+          >
+            💾 Save
+          </button>
+          {hasSave() && (
+            <button
+              type="button"
+              onClick={handleLoad}
+              style={{
+                position: "absolute",
+                top: 16,
+                right: 480,
+                padding: "10px 16px",
+                borderRadius: 8,
+                border: "none",
+                background: "#27ae60",
+                color: "#fff",
+                fontSize: 14,
+                fontWeight: "bold",
+                cursor: "pointer",
+                zIndex: 20,
+                boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+              }}
+            >
+              📂 Load
+            </button>
           )}
           <button
             type="button"
