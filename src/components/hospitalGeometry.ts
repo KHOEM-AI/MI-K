@@ -326,3 +326,134 @@ export function createSirenLight() {
   const siren = new THREE.Mesh(new THREE.SphereGeometry(0.3, 16, 16), lightMat);
   return siren;
 }
+
+// 12. គិលានុបដ្ឋាយិកា (Nurse)
+export function createNurse() {
+  const nurse = new THREE.Group();
+  const uniformMat = new THREE.MeshStandardMaterial({ color: 0xffb6c1, roughness: 0.8 }); // ពណ៌ផ្កាឈូក
+  const skinMat = new THREE.MeshStandardMaterial({ color: 0xffdbac });
+  const hairMat = new THREE.MeshStandardMaterial({ color: 0x2a1b10 });
+
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.6, 1.8, 16), uniformMat);
+  body.position.y = 1.4;
+  nurse.add(body);
+
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.45, 16, 16), skinMat);
+  head.position.y = 2.7;
+  nurse.add(head);
+
+  const hair = new THREE.Mesh(new THREE.SphereGeometry(0.47, 16, 16, 0, Math.PI * 2, 0, Math.PI / 1.5), hairMat);
+  hair.position.y = 2.75;
+  nurse.add(hair);
+
+  const cap = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.15, 0.6), uniformMat);
+  cap.position.set(0, 2.95, 0);
+  nurse.add(cap);
+
+  return nurse;
+}
+
+// 13. រទេះរុញអ្នកជំងឺ (Wheelchair)
+export function createWheelchair() {
+  const wc = new THREE.Group();
+  const metalMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.8 });
+  const seatMat = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.8 });
+  const wheelMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+
+  const seat = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.1, 1.2), seatMat);
+  seat.position.y = 1;
+  wc.add(seat);
+
+  const back = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.2, 0.1), seatMat);
+  back.position.set(0, 1.6, -0.55);
+  wc.add(back);
+
+  const wheelGeo = new THREE.CylinderGeometry(0.6, 0.6, 0.1, 16);
+  for (let x of [-0.65, 0.65]) {
+    const wheel = new THREE.Mesh(wheelGeo, wheelMat);
+    wheel.rotation.z = Math.PI / 2;
+    wheel.position.set(x, 0.6, -0.2);
+    wc.add(wheel);
+  }
+
+  const smallWheelGeo = new THREE.CylinderGeometry(0.3, 0.3, 0.1, 16);
+  for (let x of [-0.5, 0.5]) {
+    const wheel = new THREE.Mesh(smallWheelGeo, wheelMat);
+    wheel.rotation.z = Math.PI / 2;
+    wheel.position.set(x, 0.3, 0.6);
+    wc.add(wheel);
+  }
+
+  return wc;
+}
+
+// 14. អំពូលភ្លើងតាមផ្លូវ (Street Lamp)
+export function createStreetLamp() {
+  const lamp = new THREE.Group();
+  const poleMat = new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.9, roughness: 0.1 });
+  const bulbMat = new THREE.MeshStandardMaterial({ color: 0xffffaa, emissive: 0xffffaa, emissiveIntensity: 1 });
+
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.15, 6, 8), poleMat);
+  pole.position.y = 3;
+  lamp.add(pole);
+
+  const arm = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.1, 0.1), poleMat);
+  arm.position.set(0.75, 6, 0);
+  lamp.add(arm);
+
+  const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 8), bulbMat);
+  bulb.position.set(1.5, 5.8, 0);
+  lamp.add(bulb);
+
+  const light = new THREE.PointLight(0xffffaa, 1, 10);
+  light.position.set(1.5, 5.8, 0);
+  lamp.add(light);
+
+  return lamp;
+}
+
+// 15. ចំណតឧទ្ធម្ភាគចក្រ (Helipad)
+export function createHelipad() {
+  const helipad = new THREE.Group();
+  const padMat = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.9 });
+  const whiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5 });
+
+  const pad = new THREE.Mesh(new THREE.CylinderGeometry(4, 4, 0.2, 32), padMat);
+  helipad.add(pad);
+
+  const circle = new THREE.Mesh(new THREE.RingGeometry(3, 3.5, 32), whiteMat);
+  circle.rotation.x = -Math.PI / 2;
+  circle.position.y = 0.15;
+  helipad.add(circle);
+
+  const h1 = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.1, 2), whiteMat);
+  h1.position.set(-0.8, 0.15, 0);
+  helipad.add(h1);
+  const h2 = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.1, 2), whiteMat);
+  h2.position.set(0.8, 0.15, 0);
+  helipad.add(h2);
+  const h3 = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.1, 0.3), whiteMat);
+  h3.position.set(0, 0.15, 0);
+  helipad.add(h3);
+
+  return helipad;
+}
+
+// 16. ផ្លូវថ្នល់ (Driveway)
+export function createDriveway() {
+  const road = new THREE.Group();
+  const roadMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 1 });
+  const lineMat = new THREE.MeshStandardMaterial({ color: 0xffff00 });
+
+  const asphalt = new THREE.Mesh(new THREE.BoxGeometry(10, 0.15, 30), roadMat);
+  asphalt.position.set(0, 0.1, 15);
+  road.add(asphalt);
+
+  for (let z = 2; z < 30; z += 4) {
+    const line = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.16, 2), lineMat);
+    line.position.set(0, 0.1, z);
+    road.add(line);
+  }
+
+  return road;
+}
