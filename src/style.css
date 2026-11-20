@@ -1090,3 +1090,6 @@ button:active .k-icon { transform: scale(.92); }
   .upload-button, .filter, .k-icon { transition: none; }
 }
 /* ===== END KHOEM-AI UI POLISH v1 ===== */
+
+/* KHOEM-AI toggle buttons in the 3D panel: same .filter look as the other buttons, icon next to the text */
+.studio-panel > .filter { display: inline-flex; align-items: center; gap: 8px; margin-right: 8px; padding: 10px 14px; font-size: 14px; }

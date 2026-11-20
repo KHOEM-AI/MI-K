@@ -456,18 +456,7 @@ export default function App() {
         <button
           type="button"
           title="Vehicles and People 3D"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 8,
-            padding: "8px 14px",
-            borderRadius: 8,
-            border: "none",
-            marginRight: 8,
-            color: "#fff",
-            fontSize: 14,
-            background: vehiclesOpen ? "#4f7cff" : "rgba(255,255,255,0.14)",
-          }}
+          className={vehiclesOpen ? "filter active" : "filter"}
           onClick={() => setVehiclesOpen((o) => !o)}
         >
           <KIcon name="car" />
@@ -478,18 +467,7 @@ export default function App() {
         <button
           type="button"
           title="Karaoke / Pub 3D"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 8,
-            padding: "8px 14px",
-            borderRadius: 8,
-            border: "none",
-            marginRight: 8,
-            color: "#fff",
-            fontSize: 14,
-            background: karaokeOpen ? "#4f7cff" : "rgba(255,255,255,0.14)",
-          }}
+          className={karaokeOpen ? "filter active" : "filter"}
           onClick={() => setKaraokeOpen((o) => !o)}
         >
           <KIcon name="karaoke" />

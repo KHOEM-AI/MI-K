@@ -13,10 +13,10 @@ import {
 // take a PNG and record a 360° turntable video into the library.
 // The animation, door and wheel features only work when the .glb really contains such clips / named parts.
 
-const box: React.CSSProperties = { background: "rgba(255,255,255,0.06)", borderRadius: 10, padding: 10, marginTop: 10 };
+const box: React.CSSProperties = { background: "color-mix(in srgb, currentColor 8%, transparent)", borderRadius: 10, padding: 10, marginTop: 10 };
 const input: React.CSSProperties = { borderRadius: 8, padding: 8, fontSize: 15, marginRight: 6, marginBottom: 6 };
-const btn: React.CSSProperties = { padding: "8px 12px", borderRadius: 8, border: "none", background: "#4f7cff", color: "#fff", fontSize: 14, marginRight: 6, marginTop: 4 };
-const soft: React.CSSProperties = { ...btn, background: "rgba(255,255,255,0.14)" };
+const btn: React.CSSProperties = { padding: "8px 12px", borderRadius: 8, border: "none", background: "var(--ka-accent)", color: "#fff", fontSize: 14, marginRight: 6, marginTop: 4 };
+const soft: React.CSSProperties = { ...btn, background: "color-mix(in srgb, currentColor 14%, transparent)", color: "inherit" };
 
 const RECORD_SECONDS = 8;
 const VIEW_LABELS: Record<string, string> = { threeQuarter: "3/4", front: "មុខ · front", side: "ខាង · side", rear: "ក្រោយ · rear", top: "លើ · top" };
