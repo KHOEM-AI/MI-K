@@ -38,3 +38,4 @@ repair-*.py
 test_write.py
 *.orig-mik
 add_v2_dispatch.py
+*.before-*
