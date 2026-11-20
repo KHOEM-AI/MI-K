@@ -6,14 +6,14 @@ import {
   createAmbulance, createDoctor, createGarden, createPatient, 
   createHospitalSign, createFlower, createSirenLight, createNurse, 
   createWheelchair, createStreetLamp, createHelipad, createDriveway,
-  createHelicopter
+  createHelicopter, createCar, createSurgeryRoom
 } from "./hospitalGeometry";
 
 export default function Hospital3D() {
   const mountRef = useRef<HTMLDivElement>(null);
   const [isNight, setIsNight] = useState(false);
   const nightRef = useRef(isNight);
-  nightRef.current = isNight; // Update ref for the animation loop
+  nightRef.current = isNight;
 
   useEffect(() => {
     if (!mountRef.current) return;
@@ -32,55 +32,35 @@ export default function Hospital3D() {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     mountRef.current.appendChild(renderer.domElement);
 
-    // ពន្លឺព្រះអាទិត្យ / ព្រះច័ន្ទ
     const sunLight = new THREE.DirectionalLight(0xffffff, 2.5);
     sunLight.position.set(30, 50, 30);
     sunLight.castShadow = true;
-    sunLight.shadow.mapSize.width = 2048;
-    sunLight.shadow.mapSize.height = 2048;
-    sunLight.shadow.camera.left = -40;
-    sunLight.shadow.camera.right = 40;
-    sunLight.shadow.camera.top = 40;
-    sunLight.shadow.camera.bottom = -40;
     scene.add(sunLight);
-
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     scene.add(ambientLight);
 
-    // 1. សួនច្បារ និងផ្លូវថ្នល់
+    // 1. សួនច្បារ ផ្លូវថ្នល់ អគារ
     scene.add(createGarden());
     const driveway = createDriveway(); driveway.position.set(0, 0, 5); scene.add(driveway);
+    const hospital = createHospitalBuilding(); hospital.position.set(0, 0, -5); scene.add(hospital);
 
-    // 2. អគារមន្ទីរពេទ្យ
-    const hospital = createHospitalBuilding();
-    hospital.position.set(0, 0, -5);
-    scene.add(hospital);
-
-    // 3. Helipad, Sign និង Helicopter
+    // 2. Helipad, Sign (B: Neon), Helicopter
     const helipad = createHelipad(); helipad.position.set(0, 30.2, -5); scene.add(helipad);
     const sign = createHospitalSign(THREE); sign.position.set(0, 32.5, -5); scene.add(sign);
-    
-    const helicopter = createHelicopter();
-    helicopter.position.set(0, 30.8, -5);
-    scene.add(helicopter);
+    const helicopter = createHelicopter(); helicopter.position.set(0, 30.8, -5); scene.add(helicopter);
 
-    // 4. ដើមឈើ និងផ្កា
-    const treePositions = [
-      { x: -12, z: 5, big: true }, { x: -10, z: 10, big: false },
-      { x: 12, z: 5, big: true }, { x: 10, z: 10, big: false },
-      { x: -14, z: -2, big: true }, { x: 14, z: -2, big: true },
-    ];
-    treePositions.forEach(pos => {
+    // 3. ដើមឈើ និងផ្កា
+    [{ x: -12, z: 5, big: true }, { x: -10, z: 10, big: false }, { x: 12, z: 5, big: true }, { x: 10, z: 10, big: false }].forEach(pos => {
       const tree = createTree(pos.big); tree.position.set(pos.x, 0, pos.z); scene.add(tree);
     });
-    const flowerColors = [0xff69b4, 0xff0000, 0xffff00, 0xffa500, 0x800080];
+    const flowerColors = [0xff69b4, 0xff0000, 0xffff00, 0xffa500];
     for (let i = 0; i < 20; i++) {
       const flower = createFlower(flowerColors[i % flowerColors.length]);
       const angle = (i / 20) * Math.PI * 2; const radius = 16 + Math.random() * 2;
       flower.position.set(Math.cos(angle) * radius, 0, Math.sin(angle) * radius); scene.add(flower);
     }
 
-    // 5. កៅអី អំពូលភ្លើង រថយន្តសង្គ្រោះ
+    // 4. កៅអី អំពូលភ្លើង រថយន្តសង្គ្រោះ
     const bench1 = createBench(); bench1.position.set(-6, 0, 12); bench1.rotation.y = Math.PI / 2; scene.add(bench1);
     const bench2 = createBench(); bench2.position.set(6, 0, 12); bench2.rotation.y = -Math.PI / 2; scene.add(bench2);
     
@@ -90,7 +70,17 @@ export default function Hospital3D() {
     const ambulance = createAmbulance(); ambulance.position.set(-8, 0, 18); scene.add(ambulance);
     const siren = createSirenLight(); siren.position.set(-8.6, 2.6, 20.5); scene.add(siren);
 
-    // 6. គ្រែអ្នកជំងឺ គ្រូពេទ្យ និងគិលានុបដ្ឋាយិកា
+    // C: ចំណតរថយន្ត (Parking Lot)
+    const car1 = createCar(0xff0000); car1.position.set(10, 0, 22); car1.rotation.y = Math.PI / 2; scene.add(car1);
+    const car2 = createCar(0x0000ff); car2.position.set(13, 0, 22); car2.rotation.y = Math.PI / 2; scene.add(car2);
+    const car3 = createCar(0x00ff00); car3.position.set(16, 0, 22); car3.rotation.y = Math.PI / 2; scene.add(car3);
+
+    // D: បន្ទប់វះកាត់ (Surgery Room)
+    const surgeryRoom = createSurgeryRoom(); 
+    surgeryRoom.position.set(-15, 0, -5); // ដាក់នៅខាងឆ្វេងអគារ
+    scene.add(surgeryRoom);
+
+    // A: មនុស្ស និងចលនាដើរ
     const bedPositions = [{ x: 12, z: -2 }, { x: 12, z: -6 }];
     bedPositions.forEach(pos => {
       const bed = createHospitalBed(); bed.position.set(pos.x, 0, pos.z); scene.add(bed);
@@ -106,10 +96,8 @@ export default function Hospital3D() {
     controls.target.set(0, 10, 0);
     controls.maxPolarAngle = Math.PI / 2.1;
 
-    // ស្វែងរក Material បង្អួចអគារ ដើម្បីបើកភ្លឺពេលយប់
     const windowMat = hospital.userData.windowMaterial;
-    const targetColorDay = new THREE.Color(0x87ceeb);
-    const targetColorNight = new THREE.Color(0x0a1128);
+    const neonLight = sign.userData.neonLight;
     
     let animationId: number;
     const clock = new THREE.Clock();
@@ -123,16 +111,25 @@ export default function Hospital3D() {
       if (siren.material instanceof THREE.MeshStandardMaterial) {
         const pulse = (Math.sin(elapsed * 8) + 1) / 2;
         siren.material.emissiveIntensity = 1 + pulse * 3;
-        siren.scale.setScalar(1 + pulse * 0.2);
       }
+      // 2. កង្ហារឧទ្ធម្ភាគចក្រ
+      if (helicopter.userData.rotorGroup) helicopter.userData.rotorGroup.rotation.y += 0.8;
 
-      // 2. កង្ហារឧទ្ធម្ភាគចក្រវិល
-      if (helicopter.userData.rotorGroup) {
-        helicopter.userData.rotorGroup.rotation.y += 0.8; // ល្បឿនវិល
-      }
+      // 3. ចលនាដើរ (A)
+      doc1.position.z = 8 + Math.sin(elapsed * 1.5) * 3;
+      doc1.rotation.y = Math.cos(elapsed * 1.5) > 0 ? 0 : Math.PI;
+      
+      doc2.position.x = 2 + Math.cos(elapsed * 1.2) * 2;
+      doc2.position.z = 6 + Math.sin(elapsed * 1.2) * 2;
+      doc2.rotation.y = Math.atan2(Math.cos(elapsed * 1.2) * -2, Math.cos(elapsed * 1.2) * 2); // បង្វិលមុខតាមផ្លូវ
 
-      // 3. ការផ្លាស់ប្តូរពេលថ្ងៃ និងយប់ (Smooth Transition)
-      const targetBg = isNightMode ? targetColorNight : targetColorDay;
+      nurse1.position.z = 6 + Math.sin(elapsed * 2 + 2) * 4;
+      nurse1.rotation.y = Math.cos(elapsed * 2 + 2) > 0 ? 0 : Math.PI;
+
+      wc.position.x = -4 + Math.sin(elapsed * 0.8) * 5;
+
+      // 4. ពន្លឺ Day/Night (B: Neon Sign, D: Surgery Light)
+      const targetBg = isNightMode ? new THREE.Color(0x0a1128) : new THREE.Color(0x87ceeb);
       if (scene.background instanceof THREE.Color) {
         scene.background.lerp(targetBg, 0.05);
         if (scene.fog instanceof THREE.Fog) scene.fog.color.copy(scene.background);
@@ -141,22 +138,24 @@ export default function Hospital3D() {
       sunLight.intensity += ((isNightMode ? 0.1 : 2.5) - sunLight.intensity) * 0.05;
       ambientLight.intensity += ((isNightMode ? 0.2 : 0.5) - ambientLight.intensity) * 0.05;
 
-      // អំពូលភ្លើងតាមផ្លូវ
-      lamp1.traverse(child => {
-        if (child instanceof THREE.PointLight) {
-          child.intensity += ((isNightMode ? 2 : 0) - child.intensity) * 0.05;
-        }
-      });
-      lamp2.traverse(child => {
-        if (child instanceof THREE.PointLight) {
-          child.intensity += ((isNightMode ? 2 : 0) - child.intensity) * 0.05;
-        }
+      // B: Neon Light ភ្លឺពេលយប់
+      if (neonLight) neonLight.intensity += ((isNightMode ? 3 : 0) - neonLight.intensity) * 0.05;
+
+      // បង្អួច និងអំពូលភ្លើង
+      if (windowMat) {
+        windowMat.emissiveIntensity += ((isNightMode ? 2.5 : 0.6) - windowMat.emissiveIntensity) * 0.05;
+      }
+      [lamp1, lamp2].forEach(lamp => {
+        lamp.traverse(child => {
+          if (child instanceof THREE.PointLight) {
+            child.intensity += ((isNightMode ? 2 : 0) - child.intensity) * 0.05;
+          }
+        });
       });
 
-      // បង្អួចអគារភ្លឺពេលយប់
-      if (windowMat) {
-        const targetEmissive = isNightMode ? 2.5 : 0.6;
-        windowMat.emissiveIntensity += (targetEmissive - windowMat.emissiveIntensity) * 0.05;
+      // D: Surgery Room Light ភ្លឺជានិច្ច
+      if (surgeryRoom.userData.surgeryLight) {
+        surgeryRoom.userData.surgeryLight.intensity = 5 + Math.sin(elapsed * 10) * 0.5; // ភ្លឺរលោងបន្តិច
       }
 
       controls.update();
@@ -174,7 +173,6 @@ export default function Hospital3D() {
   return (
     <div style={{ position: "relative", width: "100%", height: "100vh" }}>
       <div ref={mountRef} style={{ width: "100%", height: "100%" }} />
-      {/* ប៊ូតុងបើក/បិទភ្លើង (Day/Night) */}
       <button
         onClick={() => setIsNight(!isNight)}
         style={{

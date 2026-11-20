@@ -278,6 +278,10 @@ export function createHospitalSign(THREE: any) {
   const charGeo = new THREE.BoxGeometry(0.6, 0.8, 0.1);
   
   // បង្កើតតួអក្សរនីមួយៗ (H O S P I T A L)
+  const neonLight = new THREE.PointLight(0x00ffff, 0, 20);
+  neonLight.position.set(0, 0, 2);
+  signGroup.add(neonLight);
+  signGroup.userData = { neonLight };
   const letters = ["H", "O", "S", "P", "I", "T", "A", "L"];
   letters.forEach((_, i) => {
     const char = new THREE.Mesh(charGeo, textMat);
@@ -500,4 +504,71 @@ export function createHelicopter() {
 
   heli.userData = { rotorGroup };
   return heli;
+}
+
+// 18. ឡានធម្មតា (Normal Car) សម្រាប់ចំណតរថយន្ត
+export function createCar(color: number) {
+  const car = new THREE.Group();
+  const bodyMat = new THREE.MeshStandardMaterial({ color: color, metalness: 0.5, roughness: 0.3 });
+  const glassMat = new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.9, roughness: 0.1 });
+  const wheelMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+
+  const body = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.8, 4), bodyMat);
+  body.position.y = 0.8;
+  car.add(body);
+
+  const roof = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.6, 2), glassMat);
+  roof.position.set(0, 1.4, -0.2);
+  car.add(roof);
+
+  const wheelGeo = new THREE.CylinderGeometry(0.4, 0.4, 0.3, 16);
+  for (let x of [-0.9, 0.9]) {
+    for (let z of [-1.2, 1.2]) {
+      const wheel = new THREE.Mesh(wheelGeo, wheelMat);
+      wheel.rotation.z = Math.PI / 2;
+      wheel.position.set(x, 0.4, z);
+      car.add(wheel);
+    }
+  }
+  return car;
+}
+
+// 19. បន្ទប់វះកាត់ (Surgery Room) - ថែមនៅជាន់ផ្ទាល់ដី
+export function createSurgeryRoom() {
+  const room = new THREE.Group();
+  const wallMat = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.3, roughness: 0.1 }); // ជញ្ជាំងកញ្ចក់
+  const floorMat = new THREE.MeshStandardMaterial({ color: 0x88ccff, roughness: 0.2, metalness: 0.5 });
+  const tableMat = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8 });
+  const lightMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 3 });
+
+  // ជញ្ជាំង
+  const backWall = new THREE.Mesh(new THREE.BoxGeometry(8, 4, 0.2), wallMat);
+  backWall.position.set(0, 2, -4); room.add(backWall);
+  const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.2, 4, 8), wallMat);
+  leftWall.position.set(-4, 2, 0); room.add(leftWall);
+  const rightWall = new THREE.Mesh(new THREE.BoxGeometry(0.2, 4, 8), wallMat);
+  rightWall.position.set(4, 2, 0); room.add(rightWall);
+
+  // កម្រាលឥដ្ឋ
+  const floor = new THREE.Mesh(new THREE.BoxGeometry(8, 0.2, 8), floorMat);
+  floor.position.y = 0.1; room.add(floor);
+
+  // តុវះកាត់
+  const table = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.2, 3), tableMat);
+  table.position.set(0, 1.2, 0); room.add(table);
+  const tableLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 1.2, 8), tableMat);
+  tableLeg.position.set(0, 0.6, 0); room.add(tableLeg);
+
+  // ភ្លើងវះកាត់ (Surgical Light) នៅលើពិដាន
+  const lightFixture = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 0.2, 16), lightMat);
+  lightFixture.position.set(0, 3.8, 0);
+  room.add(lightFixture);
+
+  const spotLight = new THREE.SpotLight(0xffffff, 5, 10, Math.PI / 4, 0.5, 1);
+  spotLight.position.set(0, 3.5, 0);
+  spotLight.target.position.set(0, 1, 0);
+  room.add(spotLight, spotLight.target);
+
+  room.userData = { surgeryLight: spotLight, lightFixture };
+  return room;
 }
