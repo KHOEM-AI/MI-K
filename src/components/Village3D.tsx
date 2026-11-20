@@ -104,6 +104,15 @@ import {
   type Lantern,
   type FestivalPerson,
 } from "./festivalSystem";
+import {
+  createMeatFactoryStaff,
+  createSawmillStaff,
+  createVegetableFactoryStaff,
+  createDeliveryTrucks,
+  updateFactoryWorkers,
+  updateTrucks,
+  type WorkerAnimation,
+} from "./factoryWorkers";
 
 export default function Village3D() {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -150,6 +159,10 @@ export default function Village3D() {
   const fireworkRef = useRef<Firework | null>(null);
   const lanternsRef = useRef<Lantern[]>([]);
   const festivalPeopleRef = useRef<FestivalPerson[]>([]);
+  const factoryWorkersRef = useRef<WorkerAnimation[]>([]);
+  const factoryBladesRef = useRef<THREE.Mesh[]>([]);
+  const factoryPackagesRef = useRef<THREE.Mesh[]>([]);
+  const deliveryTrucksRef = useRef<WorkerAnimation[]>([]);
   const starsRef = useRef<THREE.Points | null>(null);
   const moonRef = useRef<THREE.Group | null>(null);
   const sunRef = useRef<THREE.DirectionalLight | null>(null);
@@ -518,6 +531,32 @@ export default function Village3D() {
     scene.add(firework.group);
     fireworkRef.current = firework;
 
+    // ========== បុគ្គលិក + ម៉ាស៊ីនក្នុងរោងចក្រ ==========
+    // រោងចក្រសាច់ (0, -110)
+    const meatStaff = createMeatFactoryStaff(0, -110);
+    scene.add(meatStaff.group);
+    factoryWorkersRef.current.push(...meatStaff.workers);
+    factoryBladesRef.current.push(...meatStaff.blades);
+    factoryPackagesRef.current.push(...meatStaff.packages);
+
+    // រោងចក្រឈើ (-250, 220)
+    const sawStaff = createSawmillStaff(-250, 220);
+    scene.add(sawStaff.group);
+    factoryWorkersRef.current.push(...sawStaff.workers);
+    factoryBladesRef.current.push(...sawStaff.blades);
+    factoryPackagesRef.current.push(...sawStaff.packages);
+
+    // រោងចក្របន្លែ (-100, -100)
+    const vegStaff = createVegetableFactoryStaff(-100, -100);
+    scene.add(vegStaff.group);
+    factoryWorkersRef.current.push(...vegStaff.workers);
+    factoryPackagesRef.current.push(...vegStaff.packages);
+
+    // ========== រថយន្តដឹកជញ្ជូន ==========
+    const trucks = createDeliveryTrucks();
+    scene.add(trucks.group);
+    deliveryTrucksRef.current = trucks.trucks;
+
     // ========== B: ផ្កាយ + ព្រះច័ន្ទ (សម្រាប់ពេលយប់) ==========
     const stars = createStars(1500, 800);
     scene.add(stars);
@@ -686,6 +725,21 @@ export default function Village3D() {
       // Update forest zone (ឃ្មុំ + ទឹក)
       if (forestBeesRef.current.length > 0 || forestWaterRef.current.length > 0) {
         updateForestZone(forestBeesRef.current, forestWaterRef.current, elapsedSec);
+      }
+
+      // Update factory workers + machines
+      if (factoryWorkersRef.current.length > 0) {
+        updateFactoryWorkers(
+          factoryWorkersRef.current,
+          factoryBladesRef.current,
+          factoryPackagesRef.current,
+          elapsedSec
+        );
+      }
+
+      // Update delivery trucks
+      if (deliveryTrucksRef.current.length > 0) {
+        updateTrucks(deliveryTrucksRef.current, elapsedSec);
       }
 
       // Update more nature (B + C)
