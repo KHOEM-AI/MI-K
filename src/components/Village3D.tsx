@@ -73,6 +73,8 @@ import {
   setRainSound,
   setBirdSound,
   setWindSound,
+  setWaterfallSound,
+  setBeeSound,
   disposeSound,
   type SoundSystem,
 } from "./soundSystem";
@@ -88,6 +90,7 @@ import { createAncientZone, updateAncientZone } from "./ancientRuins";
 import { createWildAnimals, updateWildAnimals, type WildAnimal } from "./wildAnimals";
 import { createForestZone, updateForestZone } from "./forestEnvironment";
 import { createForestWildlife, updateForestWildlife, type ForestAnimal } from "./forestWildlife";
+import { createSawmill, updateSawmill } from "./sawmill";
 
 export default function Village3D() {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -129,6 +132,7 @@ export default function Village3D() {
   const forestBeesRef = useRef<THREE.Mesh[]>([]);
   const forestWaterRef = useRef<THREE.Mesh[]>([]);
   const forestAnimalsRef = useRef<ForestAnimal[]>([]);
+  const sawBladeRef = useRef<THREE.Mesh | null>(null);
   const starsRef = useRef<THREE.Points | null>(null);
   const moonRef = useRef<THREE.Group | null>(null);
   const sunRef = useRef<THREE.DirectionalLight | null>(null);
@@ -463,6 +467,19 @@ export default function Village3D() {
     scene.add(forestWildlife.group);
     forestAnimalsRef.current = forestWildlife.animals;
 
+    // ========== រោងចក្រកែច្នៃឈើ (ជិតព្រៃភ្នំ) ==========
+    const sawmill = createSawmill();
+    sawmill.position.set(-250, 0, 220);
+    sawmill.rotation.y = Math.PI / 4;
+    scene.add(sawmill);
+
+    // យក blade សម្រាប់បង្វិល
+    sawmill.traverse((child) => {
+      if (child.name === "sawBlade") {
+        sawBladeRef.current = child as THREE.Mesh;
+      }
+    });
+
     // ========== B: ផ្កាយ + ព្រះច័ន្ទ (សម្រាប់ពេលយប់) ==========
     const stars = createStars(1500, 800);
     scene.add(stars);
@@ -631,6 +648,11 @@ export default function Village3D() {
       // Update forest zone (ឃ្មុំ + ទឹក)
       if (forestBeesRef.current.length > 0 || forestWaterRef.current.length > 0) {
         updateForestZone(forestBeesRef.current, forestWaterRef.current, elapsedSec);
+      }
+
+      // Update sawmill blade
+      if (sawBladeRef.current) {
+        updateSawmill(sawBladeRef.current, elapsedSec);
       }
 
       // Update forest wildlife
@@ -958,6 +980,8 @@ export default function Village3D() {
                 setMasterVolume(soundRef.current, 0.3);
                 setWindSound(soundRef.current, true);
                 setBirdSound(soundRef.current, true);
+                setWaterfallSound(soundRef.current, true);
+                setBeeSound(soundRef.current, true);
               } else {
                 setMasterVolume(soundRef.current, 0);
               }

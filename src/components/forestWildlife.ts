@@ -240,6 +240,175 @@ export function createEldsDeer(): THREE.Group {
 }
 
 /* ============================================================
+   ខ្លាឃ្មុំ (Bear)
+   ============================================================ */
+export function createBear(): THREE.Group {
+  const g = new THREE.Group();
+  const furMat = mat("#3e2723");
+
+  // តួ (ធំ)
+  const body = new THREE.Mesh(new THREE.SphereGeometry(1.3, 10, 10), furMat);
+  body.position.y = 1.5;
+  body.scale.set(1.3, 1, 1);
+  body.castShadow = true;
+  g.add(body);
+
+  // ក្បាល
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.9, 10, 10), furMat);
+  head.position.set(1.5, 2, 0);
+  head.castShadow = true;
+  g.add(head);
+
+  // ច្រមុះ
+  const snout = new THREE.Mesh(new THREE.SphereGeometry(0.4, 8, 8), mat("#1a1a1a"));
+  snout.position.set(2.1, 1.85, 0);
+  g.add(snout);
+
+  // ត្រចៀក ២
+  [-0.5, 0.5].forEach((z) => {
+    const ear = new THREE.Mesh(new THREE.SphereGeometry(0.25, 6, 6), furMat);
+    ear.position.set(1.5, 2.7, z);
+    g.add(ear);
+  });
+
+  // ភ្នែក ២
+  [-0.3, 0.3].forEach((z) => {
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.08, 6, 6), mat("#000"));
+    eye.position.set(1.95, 2.15, z);
+    g.add(eye);
+  });
+
+  // ជើង ៤
+  [[-1, 0.6], [-1, -0.6], [1, 0.6], [1, -0.6]].forEach(([x, z]) => {
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 1.2, 6), furMat);
+    leg.position.set(x, 0.6, z);
+    leg.name = "leg";
+    g.add(leg);
+  });
+
+  return g;
+}
+
+/* ============================================================
+   រមាស (Rhinoceros)
+   ============================================================ */
+export function createRhinoceros(): THREE.Group {
+  const g = new THREE.Group();
+  const grayMat = mat("#5d6d7e");
+  const hornMat = mat("#f5f5dc");
+
+  // តួ (ធំ)
+  const body = new THREE.Mesh(new THREE.BoxGeometry(3.5, 2, 1.8), grayMat);
+  body.position.y = 1.8;
+  body.castShadow = true;
+  g.add(body);
+
+  // ក្បាល
+  const head = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.3, 1.4), grayMat);
+  head.position.set(2.3, 1.8, 0);
+  head.castShadow = true;
+  g.add(head);
+
+  // ស្នែង ១ (ធំ)
+  const horn = new THREE.Mesh(
+    new THREE.ConeGeometry(0.3, 1.2, 8),
+    hornMat
+  );
+  horn.position.set(3.2, 2, 0);
+  horn.rotation.z = -Math.PI / 2;
+  g.add(horn);
+
+  // ស្នែង ២ (តូច)
+  const horn2 = new THREE.Mesh(
+    new THREE.ConeGeometry(0.15, 0.5, 6),
+    hornMat
+  );
+  horn2.position.set(2.8, 2.4, 0);
+  horn2.rotation.z = -Math.PI / 2;
+  g.add(horn2);
+
+  // ភ្នែក ២
+  [-0.4, 0.4].forEach((z) => {
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.08, 6, 6), mat("#000"));
+    eye.position.set(2.9, 2.1, z);
+    g.add(eye);
+  });
+
+  // ជើង ៤ (ក្រាស់)
+  [[-1.2, 0.7], [-1.2, -0.7], [1.2, 0.7], [1.2, -0.7]].forEach(([x, z]) => {
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 1.2, 8), grayMat);
+    leg.position.set(x, 0.6, z);
+    leg.name = "leg";
+    g.add(leg);
+  });
+
+  return g;
+}
+
+/* ============================================================
+   ក្រពើ (Crocodile)
+   ============================================================ */
+export function createCrocodile(): THREE.Group {
+  const g = new THREE.Group();
+  const greenMat = mat("#2d5016");
+  const darkGreen = mat("#1a3d0a");
+  const teethMat = mat("#f5f5dc");
+
+  // តួ (វែង)
+  const body = new THREE.Mesh(new THREE.BoxGeometry(4, 0.8, 1.2), greenMat);
+  body.position.y = 0.4;
+  body.castShadow = true;
+  g.add(body);
+
+  // ក្បាល
+  const head = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.6, 1), greenMat);
+  head.position.set(2.5, 0.4, 0);
+  head.castShadow = true;
+  g.add(head);
+
+  // ភ្នែក ២ (លឿង)
+  [-0.3, 0.3].forEach((z) => {
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.1, 6, 6), mat("#f1c40f"));
+    eye.position.set(2.8, 0.7, z);
+    g.add(eye);
+  });
+
+  // ធ្មេញ ៦ (តូច)
+  for (let i = 0; i < 6; i++) {
+    const tooth = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.15, 4), teethMat);
+    tooth.position.set(3 + i * 0.15, 0.3, 0.4);
+    tooth.rotation.z = Math.PI;
+    g.add(tooth);
+  }
+
+  // ស្នាមខ្នង ៨ (spikes)
+  for (let i = 0; i < 8; i++) {
+    const spike = new THREE.Mesh(
+      new THREE.ConeGeometry(0.15, 0.3, 4),
+      darkGreen
+    );
+    spike.position.set(-1.5 + i * 0.5, 0.9, 0);
+    g.add(spike);
+  }
+
+  // ជើង ៤
+  [[-1.2, 0.5], [-1.2, -0.5], [1.2, 0.5], [1.2, -0.5]].forEach(([x, z]) => {
+    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.2, 0.4), greenMat);
+    leg.position.set(x, 0.2, z);
+    leg.name = "leg";
+    g.add(leg);
+  });
+
+  // កន្ទុយ (វែង)
+  const tail = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.05, 2.5, 6), greenMat);
+  tail.rotation.z = -Math.PI / 2;
+  tail.position.set(-3, 0.4, 0);
+  g.add(tail);
+
+  return g;
+}
+
+/* ============================================================
    បង្កើតសត្វព្រៃបន្ថែម (Forest Wildlife)
    ============================================================ */
 export interface ForestAnimal {
@@ -248,7 +417,7 @@ export interface ForestAnimal {
   speed: number;
   offset: number;
   phase: number;
-  type: "porcupine" | "banteng" | "boar" | "deer";
+  type: "porcupine" | "banteng" | "boar" | "deer" | "bear" | "rhino" | "croc";
 }
 
 export function createForestWildlife(

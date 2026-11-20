@@ -9,6 +9,8 @@ export interface SoundSystem {
   rainGain: GainNode | null;
   windGain: GainNode | null;
   birdGain: GainNode | null;
+  waterfallGain: GainNode | null;
+  beeGain: GainNode | null;
   enabled: boolean;
 }
 
@@ -19,6 +21,8 @@ export function createSoundSystem(): SoundSystem {
     rainGain: null,
     windGain: null,
     birdGain: null,
+    waterfallGain: null,
+    beeGain: null,
     enabled: false,
   };
 }
@@ -96,6 +100,52 @@ export function initSound(sys: SoundSystem): void {
     birdGain.connect(masterGain);
     sys.birdGain = birdGain;
 
+    // --- សំឡេងទឹកជ្រោះ (waterfall noise) ---
+    const waterfallGain = ctx.createGain();
+    waterfallGain.gain.value = 0;
+    waterfallGain.connect(masterGain);
+    sys.waterfallGain = waterfallGain;
+
+    const waterfallBuffer = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+    const waterfallData = waterfallBuffer.getChannelData(0);
+    for (let i = 0; i < waterfallData.length; i++) {
+      waterfallData[i] = (Math.random() * 2 - 1) * 0.4;
+    }
+    const waterfallSource = ctx.createBufferSource();
+    waterfallSource.buffer = waterfallBuffer;
+    waterfallSource.loop = true;
+
+    const waterfallFilter = ctx.createBiquadFilter();
+    waterfallFilter.type = "bandpass";
+    waterfallFilter.frequency.value = 600;
+    waterfallFilter.Q.value = 0.5;
+
+    waterfallSource.connect(waterfallFilter);
+    waterfallFilter.connect(waterfallGain);
+    waterfallSource.start();
+
+    // --- សំឡេងឃ្មុំ (bee buzz) ---
+    const beeGain = ctx.createGain();
+    beeGain.gain.value = 0;
+    beeGain.connect(masterGain);
+    sys.beeGain = beeGain;
+
+    const beeOsc = ctx.createOscillator();
+    beeOsc.type = "sawtooth";
+    beeOsc.frequency.value = 220;
+    const beeFilter = ctx.createBiquadFilter();
+    beeFilter.type = "lowpass";
+    beeFilter.frequency.value = 800;
+    beeOsc.connect(beeFilter);
+    beeFilter.connect(beeGain);
+    beeOsc.start();
+    // Modulate frequency for buzz effect
+    setInterval(() => {
+      if (sys.context && sys.beeGain && sys.beeGain.gain.value > 0.01) {
+        beeOsc.frequency.value = 200 + Math.random() * 60;
+      }
+    }, 100);
+
     // Chirp loop (តាម setInterval)
     setInterval(() => {
       if (!sys.context || sys.birdGain === null) return;
@@ -145,6 +195,20 @@ export function setBirdSound(sys: SoundSystem, on: boolean): void {
 export function setWindSound(sys: SoundSystem, on: boolean): void {
   if (sys.windGain) {
     sys.windGain.gain.value = on ? 0.15 : 0;
+  }
+}
+
+/* Toggle waterfall sound */
+export function setWaterfallSound(sys: SoundSystem, on: boolean): void {
+  if (sys.waterfallGain) {
+    sys.waterfallGain.gain.value = on ? 0.3 : 0;
+  }
+}
+
+/* Toggle bee sound */
+export function setBeeSound(sys: SoundSystem, on: boolean): void {
+  if (sys.beeGain) {
+    sys.beeGain.gain.value = on ? 0.15 : 0;
   }
 }
 
