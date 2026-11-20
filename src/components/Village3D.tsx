@@ -113,6 +113,8 @@ import {
   updateTrucks,
   type WorkerAnimation,
 } from "./factoryWorkers";
+import { createMoreStaff, updateMoreStaff, type NewStaff } from "./moreStaff";
+import { createMoreMachines, updateMoreMachines, type AnimatedMachine } from "./moreMachines";
 
 export default function Village3D() {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -163,6 +165,8 @@ export default function Village3D() {
   const factoryBladesRef = useRef<THREE.Mesh[]>([]);
   const factoryPackagesRef = useRef<THREE.Mesh[]>([]);
   const deliveryTrucksRef = useRef<WorkerAnimation[]>([]);
+  const moreStaffRef = useRef<NewStaff[]>([]);
+  const moreMachinesRef = useRef<AnimatedMachine[]>([]);
   const starsRef = useRef<THREE.Points | null>(null);
   const moonRef = useRef<THREE.Group | null>(null);
   const sunRef = useRef<THREE.DirectionalLight | null>(null);
@@ -557,6 +561,16 @@ export default function Village3D() {
     scene.add(trucks.group);
     deliveryTrucksRef.current = trucks.trucks;
 
+    // ========== B: បុគ្គលិកថ្មី (យាម, សម្អាត, ចុងភៅ, អ្នកបើកឡាន) ==========
+    const moreStaff = createMoreStaff();
+    scene.add(moreStaff.group);
+    moreStaffRef.current = moreStaff.staff;
+
+    // ========== C: ម៉ាស៊ីនថ្មី (Forklift, Assembly Line, Warehouse Shelves) ==========
+    const moreMachines = createMoreMachines();
+    scene.add(moreMachines.group);
+    moreMachinesRef.current = moreMachines.machines;
+
     // ========== B: ផ្កាយ + ព្រះច័ន្ទ (សម្រាប់ពេលយប់) ==========
     const stars = createStars(1500, 800);
     scene.add(stars);
@@ -725,6 +739,16 @@ export default function Village3D() {
       // Update forest zone (ឃ្មុំ + ទឹក)
       if (forestBeesRef.current.length > 0 || forestWaterRef.current.length > 0) {
         updateForestZone(forestBeesRef.current, forestWaterRef.current, elapsedSec);
+      }
+
+      // Update more staff (B)
+      if (moreStaffRef.current.length > 0) {
+        updateMoreStaff(moreStaffRef.current, elapsedSec);
+      }
+
+      // Update more machines (C)
+      if (moreMachinesRef.current.length > 0) {
+        updateMoreMachines(moreMachinesRef.current, elapsedSec);
       }
 
       // Update factory workers + machines
