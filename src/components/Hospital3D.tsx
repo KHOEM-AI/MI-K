@@ -14,7 +14,8 @@ import {
   createSmallTrashBin, createBigTrashBin, createGarbageTruck, createAmbulanceVariant,
   createGarage, createSittingPerson, createCleaner, createSecurityGuard, createExamRoom,
   createHandrail, createBathroom, createPharmacy, createDirectorOffice, createFemaleSupervisor,
-  createMaleCleaner, createFemaleDoctor
+  createMaleCleaner, createFemaleDoctor, createSecurityOffice, createDeputyOffice,
+  createRubberRoad, createParkingBarrier, createTicketMachine, createPaymentMachine
 } from "./hospitalGeometry";
 
 const SvgSoundOn = () => (<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>);
@@ -32,6 +33,8 @@ export default function Hospital3D() {
   const controlsRef = useRef<OrbitControls | null>(null);
   const helicopterRef = useRef<THREE.Group | null>(null);
   const elevatorRef = useRef<THREE.Group | null>(null);
+  const entryBarrierRef = useRef<THREE.Group | null>(null);
+  const exitBarrierRef = useRef<THREE.Group | null>(null);
 
   const [isNight, setIsNight] = useState(false);
   const [isFlying, setIsFlying] = useState(false);
@@ -39,14 +42,16 @@ export default function Hospital3D() {
   const [musicOn, setMusicOn] = useState(false);
   const [isRaining, setIsRaining] = useState(false);
   const [isFollow, setIsFollow] = useState(false);
+  const [gateOpen, setGateOpen] = useState(false);
 
   const nightRef = useRef(isNight);
   const flyingRef = useRef(isFlying);
   const soundRef = useRef(soundOn);
   const rainRef = useRef(isRaining);
   const followRef = useRef(isFollow);
+  const gateRef = useRef(gateOpen);
 
-  nightRef.current = isNight; flyingRef.current = isFlying; soundRef.current = soundOn; rainRef.current = isRaining; followRef.current = isFollow;
+  nightRef.current = isNight; flyingRef.current = isFlying; soundRef.current = soundOn; rainRef.current = isRaining; followRef.current = isFollow; gateRef.current = gateOpen;
 
   const audioCtxRef = useRef<AudioContext | null>(null);
   const sirenOscRef = useRef<OscillatorNode | null>(null);
@@ -132,10 +137,24 @@ export default function Hospital3D() {
     const driveway = createDriveway(); driveway.position.set(0, 0, 5); scene.add(driveway);
     const hospital = createHospitalBuilding(); hospital.position.set(0, 0, -5); scene.add(hospital);
     
-    // បន្ថែមរបារចាប់ដៃអ៊ីណុក (Handrails)
-    const hr1 = createHandrail(20); hr1.position.set(-6, 0, 10); scene.add(hr1);
-    const hr2 = createHandrail(20); hr2.position.set(6, 0, 10); scene.add(hr2);
-    const hrEntrance = createHandrail(8); hrEntrance.position.set(0, 0, 5); scene.add(hrEntrance);
+    // ផ្លូវកៅស៊ូពីខាងក្រៅចូលដល់ចំណត (Rubber Road)
+    const entryRoad = createRubberRoad(8, 40); entryRoad.position.set(0, 0, 35); scene.add(entryRoad);
+    const parkingRoad = createRubberRoad(6, 20); parkingRoad.position.set(20, 0, 15); parkingRoad.rotation.y = Math.PI/2; scene.add(parkingRoad);
+
+    // ប្រព័ន្ធចំណតរថយន្តស្វ័យប្រវត្តិ
+    // 1. របារហាមឃាត់ចូល (Entry Barrier)
+    const entryBarrier = createParkingBarrier(); entryBarrier.position.set(0, 0, 32); entryBarrier.rotation.y = Math.PI; scene.add(entryBarrier);
+    entryBarrierRef.current = entryBarrier;
+    
+    // 2. ម៉ាស៊ីនចុចយកសំបុត្រ (Ticket Machine)
+    const ticketMachine = createTicketMachine(); ticketMachine.position.set(2.5, 0, 32); scene.add(ticketMachine);
+
+    // 3. របារហាមឃាត់ចេញ (Exit Barrier)
+    const exitBarrier = createParkingBarrier(); exitBarrier.position.set(30, 0, 10); exitBarrier.rotation.y = -Math.PI/2; scene.add(exitBarrier);
+    exitBarrierRef.current = exitBarrier;
+
+    // 4. ម៉ាស៊ីនគិតលុយ (Payment Machine)
+    const paymentMachine = createPaymentMachine(); paymentMachine.position.set(28, 0, 12); scene.add(paymentMachine);
 
     // AC Units
     for (let i = -2; i <= 2; i++) {
@@ -153,15 +172,27 @@ export default function Hospital3D() {
     elevatorRef.current = elevator;
     const stairs = createStairs(); stairs.position.set(-8, 0, 1); stairs.rotation.y = Math.PI; scene.add(stairs);
 
-    // បន្ទប់ទឹក ១០ (៥ ស្រី, ៥ ប្រុស)
+    // បន្ទប់ទឹក ១០
     for (let i = 0; i < 5; i++) {
       const fBath = createBathroom(i < 3); fBath.position.set(-25 + i * 2.5, 0, -15); scene.add(fBath);
       const mBath = createBathroom(i < 3); mBath.position.set(-25 + i * 2.5, 0, -25); scene.add(mBath);
     }
 
-    // ការិយាល័យប្រធាន និងទូដាក់ថ្នាំ
+    // ការិយាល័យប្រធាន, ការិយាល័យសន្តិសុខ, អនុប្រធានរង, ទូដាក់ថ្នាំ
     const directorOffice = createDirectorOffice(); directorOffice.position.set(15, 0, 8); directorOffice.rotation.y = -Math.PI / 2; scene.add(directorOffice);
+    const securityOffice = createSecurityOffice(); securityOffice.position.set(-20, 0, 18); scene.add(securityOffice);
+    
+    // អនុប្រធានរងផ្នែកផ្សេងៗ
+    const depSurgery = createDeputyOffice("SURGERY"); depSurgery.position.set(18, 0, -2); depSurgery.rotation.y = -Math.PI/2; scene.add(depSurgery);
+    const depOrtho = createDeputyOffice("ORTHOPEDIC"); depOrtho.position.set(18, 0, -6); depOrtho.rotation.y = -Math.PI/2; scene.add(depOrtho);
+    const depInjection = createDeputyOffice("INJECTION"); depInjection.position.set(18, 0, -10); depInjection.rotation.y = -Math.PI/2; scene.add(depInjection);
+
     const pharmacy = createPharmacy(); pharmacy.position.set(-15, 0, 8); pharmacy.rotation.y = Math.PI / 2; scene.add(pharmacy);
+
+    // របារចាប់ដៃ
+    const hr1 = createHandrail(20); hr1.position.set(-6, 0, 10); scene.add(hr1);
+    const hr2 = createHandrail(20); hr2.position.set(6, 0, 10); scene.add(hr2);
+    const hrEntrance = createHandrail(8); hrEntrance.position.set(0, 0, 5); scene.add(hrEntrance);
 
     // បំពង់ពន្លត់អគ្គីភ័យ និងទូទុយោទឹក
     const hydrant1 = createFireHydrant(); hydrant1.position.set(-10, 0, 5); scene.add(hydrant1);
@@ -241,21 +272,19 @@ export default function Hospital3D() {
     const reception_people = [createSittingPerson(0x888888), createSittingPerson(0x444444), createSittingPerson(0xcccccc), createSittingPerson(0xff8800), createSittingPerson(0x0088ff)];
     reception_people.forEach((p, i) => { p.position.set(-6.5 + i * 0.8, 0, 10); scene.add(p); });
 
-    // បុគ្គលិក (Cleaners & Supervisors)
+    // បុគ្គលិក
     const cleanerM1 = createMaleCleaner(); cleanerM1.position.set(-5, 0, 5); scene.add(cleanerM1);
     const cleanerM2 = createMaleCleaner(); cleanerM2.position.set(5, 0, 5); scene.add(cleanerM2);
     const cleanerF1 = createCleaner(true); cleanerF1.position.set(-8, 0, 12); scene.add(cleanerF1);
     const cleanerF2 = createCleaner(true); cleanerF2.position.set(8, 0, 12); scene.add(cleanerF2);
     const cleanerSup = createFemaleSupervisor("cleaner"); cleanerSup.position.set(0, 0, 5); scene.add(cleanerSup);
 
-    // សន្តិសុខ (Security)
-    const guard1 = createSecurityGuard(); guard1.position.set(8, 0, 22); scene.add(guard1); // ចំណតឡាន
-    const guard2 = createSecurityGuard(); guard2.position.set(12, 0, 22); scene.add(guard2); // ចំណតឡាន
-    const guard3 = createSecurityGuard(); guard3.position.set(-3, 0, 8); scene.add(guard3); // ក្នុងអាគារ
-    const guard4 = createSecurityGuard(); guard4.position.set(3, 0, 8); scene.add(guard4); // ក្នុងអាគារ
-    const securitySup = createFemaleSupervisor("security"); securitySup.position.set(0, 0, 7.5); scene.add(securitySup); // ទ្វារចូល
+    const guard1 = createSecurityGuard(); guard1.position.set(8, 0, 22); scene.add(guard1);
+    const guard2 = createSecurityGuard(); guard2.position.set(12, 0, 22); scene.add(guard2);
+    const guard3 = createSecurityGuard(); guard3.position.set(-3, 0, 8); scene.add(guard3);
+    const guard4 = createSecurityGuard(); guard4.position.set(3, 0, 8); scene.add(guard4);
+    const securitySup = createFemaleSupervisor("security"); securitySup.position.set(0, 0, 7.5); scene.add(securitySup);
 
-    // វេជ្ជបណ្ឌិត និងគិលានុបដ្ឋាយិកា
     const docM = createDoctor(false); docM.position.set(-2, 0, 12); scene.add(docM);
     const docF = createFemaleDoctor(); docF.position.set(2, 0, 12); scene.add(docF);
     const nurse1 = createNurse(); nurse1.position.set(4, 0, 6); scene.add(nurse1);
@@ -274,7 +303,6 @@ export default function Hospital3D() {
     const sign2 = createTrafficSign(); sign2.position.set(12, 0, 20); sign2.rotation.y = Math.PI; scene.add(sign2);
     const colorfulLights = createColorfulLights(); colorfulLights.position.set(0, 0, 12); scene.add(colorfulLights);
 
-    // ទូរទស្សន៍អក្សររត់
     const digitalTV = createDigitalTV(); digitalTV.position.set(0, 2.8, 7.2); digitalTV.rotation.y = Math.PI; scene.add(digitalTV);
 
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -295,6 +323,7 @@ export default function Hospital3D() {
       const isNightMode = nightRef.current;
       const isFlyingMode = flyingRef.current;
       const isFollowMode = followRef.current;
+      const isGateOpen = gateRef.current;
 
       // ភ្លើងសង្គ្រោះ
       if (siren.material instanceof THREE.MeshStandardMaterial) {
@@ -324,6 +353,16 @@ export default function Hospital3D() {
 
       // ជណ្តើរយន្តឡើងចុះ
       if (elevatorRef.current) elevatorRef.current.position.y = Math.abs(Math.sin(elapsed * 0.5)) * 25;
+
+      // របារហាមឃាត់បិទបើក
+      if (entryBarrierRef.current && entryBarrierRef.current.userData.armGroup) {
+        const targetRot = isGateOpen ? -Math.PI / 2 : 0;
+        entryBarrierRef.current.userData.armGroup.rotation.x += (targetRot - entryBarrierRef.current.userData.armGroup.rotation.x) * 0.1;
+      }
+      if (exitBarrierRef.current && exitBarrierRef.current.userData.armGroup) {
+        const targetRot = isGateOpen ? -Math.PI / 2 : 0;
+        exitBarrierRef.current.userData.armGroup.rotation.x += (targetRot - exitBarrierRef.current.userData.armGroup.rotation.x) * 0.1;
+      }
 
       // ឡានពេទ្យ ៤ ប្រភេទ
       ambulanceGroup.forEach(amb => {
@@ -366,7 +405,7 @@ export default function Hospital3D() {
         const textX = 512 - ((elapsed * 100) % 1000);
         ctx.fillText('Welcome to KHOEM-AI Hospital', textX, 128);
         ctx.font = 'bold 20px sans-serif'; ctx.fillStyle = '#ffaa00';
-        ctx.fillText('Emergency: 119', 256, 200);
+        ctx.fillText('Parking: 5 Riels/Hour', 256, 200);
         digitalTV.userData.texture.needsUpdate = true;
       }
 
@@ -455,6 +494,9 @@ export default function Hospital3D() {
         </button>
         <button onClick={() => setIsRaining(!isRaining)} style={{ ...btnStyle, backgroundColor: isRaining ? "#3498db" : "#34495e" }}>
           🌧️ {isRaining ? "Stop Rain" : "Start Rain"}
+        </button>
+        <button onClick={() => setGateOpen(!gateOpen)} style={{ ...btnStyle, backgroundColor: gateOpen ? "#27ae60" : "#c0392b" }}>
+          🚧 {gateOpen ? "Close Gate" : "Open Gate"}
         </button>
         <button onClick={setBirdEye} style={{ ...btnStyle, backgroundColor: "#8e44ad" }}>
           <SvgEye /> Bird's Eye View

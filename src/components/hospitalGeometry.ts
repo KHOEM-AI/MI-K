@@ -1291,3 +1291,173 @@ export function createMaleCleaner() {
 export function createFemaleDoctor() {
   return createDoctor(true);
 }
+
+// 57. បន្ទប់ការិយាល័យសន្តិសុខ (Security Office)
+export function createSecurityOffice() {
+  const office = new THREE.Group();
+  const wallMat = new THREE.MeshStandardMaterial({ color: 0x2c3e50 });
+  const floorMat = new THREE.MeshStandardMaterial({ color: 0x555555 });
+
+  const floor = new THREE.Mesh(new THREE.BoxGeometry(5, 0.2, 5), floorMat);
+  floor.position.y = 0.1; office.add(floor);
+  const back = new THREE.Mesh(new THREE.BoxGeometry(5, 3, 0.2), wallMat); back.position.set(0, 1.5, -2.5); office.add(back);
+  const left = new THREE.Mesh(new THREE.BoxGeometry(0.2, 3, 5), wallMat); left.position.set(-2.5, 1.5, 0); office.add(left);
+  const right = new THREE.Mesh(new THREE.BoxGeometry(0.2, 3, 5), wallMat); right.position.set(2.5, 1.5, 0); office.add(right);
+
+  // តុធំ
+  const desk = new THREE.Mesh(new THREE.BoxGeometry(3, 0.1, 1), new THREE.MeshStandardMaterial({ color: 0x111111 }));
+  desk.position.set(0, 1, 0); office.add(desk);
+
+  // ម៉ូនីទ័រ CCTV (៤ អេក្រង់)
+  for (let i = 0; i < 4; i++) {
+    const monitor = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.4, 0.1), new THREE.MeshStandardMaterial({ color: 0x000000 }));
+    monitor.position.set(-1.2 + i * 0.8, 1.5, -2.2); 
+    office.add(monitor);
+    const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.3), new THREE.MeshStandardMaterial({ color: 0x00ffcc, emissive: 0x00ffcc, emissiveIntensity: 1 }));
+    screen.position.set(-1.2 + i * 0.8, 1.5, -2.14); 
+    office.add(screen);
+  }
+  
+  // បុគ្គលិកសន្តិសុខ ២ នាក់
+  const guard1 = createSecurityGuard(); guard1.position.set(-1, 0, 0.5); office.add(guard1);
+  const guard2 = createSecurityGuard(); guard2.position.set(1, 0, 0.5); office.add(guard2);
+
+  return office;
+}
+
+// 58. ការិយាល័យអនុប្រធានរងតាមផ្នែក (Deputy Office)
+export function createDeputyOffice(department: string) {
+  const office = new THREE.Group();
+  const wallMat = new THREE.MeshStandardMaterial({ color: 0xfef3c7 });
+  const floorMat = new THREE.MeshStandardMaterial({ color: 0x8b4513 });
+
+  const floor = new THREE.Mesh(new THREE.BoxGeometry(4, 0.2, 4), floorMat);
+  floor.position.y = 0.1; office.add(floor);
+  const back = new THREE.Mesh(new THREE.BoxGeometry(4, 2.5, 0.2), wallMat); back.position.set(0, 1.25, -2); office.add(back);
+  const left = new THREE.Mesh(new THREE.BoxGeometry(0.2, 2.5, 4), wallMat); left.position.set(-2, 1.25, 0); office.add(left);
+  
+  const desk = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.1, 0.8), new THREE.MeshStandardMaterial({ color: 0x5c4033 }));
+  desk.position.set(0, 1, 0); office.add(desk);
+  const pc = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.05), new THREE.MeshStandardMaterial({ color: 0x222222 }));
+  pc.position.set(0, 1.3, -0.3); office.add(pc);
+
+  const doctor = createDoctor(true); doctor.scale.set(1.1, 1.1, 1.1); doctor.position.set(0, 0, 0.8); doctor.rotation.y = Math.PI; office.add(doctor);
+
+  // ផ្លាកសញ្ញានាមផ្នែក (Text Label)
+  const canvas = document.createElement('canvas');
+  canvas.width = 256; canvas.height = 64;
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, 256, 64);
+    ctx.fillStyle = '#000000'; ctx.font = 'bold 20px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(department, 128, 40);
+  }
+  const texture = new THREE.CanvasTexture(canvas);
+  const labelMat = new THREE.MeshStandardMaterial({ map: texture });
+  const label = new THREE.Mesh(new THREE.PlaneGeometry(2, 0.5), labelMat);
+  label.position.set(0, 2.2, -1.89); office.add(label);
+
+  return office;
+}
+
+// 59. ផ្លូវកៅស៊ូ (Rubber/Asphalt Road)
+export function createRubberRoad(width: number, length: number) {
+  const road = new THREE.Group();
+  const roadMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 1 });
+  const lineMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+  const yellowLineMat = new THREE.MeshStandardMaterial({ color: 0xffff00 });
+
+  const asphalt = new THREE.Mesh(new THREE.BoxGeometry(width, 0.1, length), roadMat);
+  asphalt.position.y = 0.05; road.add(asphalt);
+
+  // ខ្សែស ពីរខាង
+  const whiteLineL = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.12, length), lineMat);
+  whiteLineL.position.set(-width/2 + 0.3, 0.05, 0); road.add(whiteLineL);
+  const whiteLineR = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.12, length), lineMat);
+  whiteLineR.position.set(width/2 - 0.3, 0.05, 0); road.add(whiteLineR);
+
+  // ខ្សែលឿងកណ្តាល
+  for (let z = -length/2 + 1; z < length/2; z += 2) {
+    const dash = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.12, 1), yellowLineMat);
+    dash.position.set(0, 0.05, z); road.add(dash);
+  }
+  return road;
+}
+
+// 60. របារហាមឃាត់ចូលចេញ (Parking Barrier Gate)
+export function createParkingBarrier() {
+  const barrier = new THREE.Group();
+  const poleMat = new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.8 });
+  const armMat = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+  const baseMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+
+  const base = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.5, 0.5), baseMat);
+  base.position.y = 0.75; barrier.add(base);
+
+  // Barrier Arm (របារសម្រាប់ហាមឃាត់)
+  const armGroup = new THREE.Group();
+  const arm = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 4), armMat);
+  arm.position.z = 2; armGroup.add(arm);
+  for (let i = 0; i < 4; i++) {
+    const whiteStripe = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.11, 0.5), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+    whiteStripe.position.set(0, 0, 1 + i * 1); armGroup.add(whiteStripe);
+  }
+  armGroup.position.set(0, 1.5, 0); 
+  barrier.add(armGroup);
+  barrier.userData = { armGroup };
+
+  // ស្លាកសញ្ញា STOP
+  const stopSign = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.05, 8), new THREE.MeshStandardMaterial({ color: 0xff0000 }));
+  stopSign.rotation.x = Math.PI / 2; stopSign.position.set(0, 1.5, -0.26); barrier.add(stopSign);
+
+  return barrier;
+}
+
+// 61. ម៉ាស៊ីនចុចយកសំបុត្រ (Ticket Dispenser)
+export function createTicketMachine() {
+  const machine = new THREE.Group();
+  const bodyMat = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.5 });
+  const screenMat = new THREE.MeshStandardMaterial({ color: 0x0000ff, emissive: 0x0000ff, emissiveIntensity: 1 });
+  const slotMat = new THREE.MeshStandardMaterial({ color: 0x000000 });
+
+  const body = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.5, 0.4), bodyMat);
+  body.position.y = 0.75; machine.add(body);
+
+  const screen = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.25, 0.05), screenMat);
+  screen.position.set(0, 1.2, 0.21); machine.add(screen);
+
+  const slot = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.05, 0.1), slotMat);
+  slot.position.set(0, 0.8, 0.21); machine.add(slot);
+
+  // ប៊ូតុងចុចពណ៌បៃតង
+  const buttonMat = new THREE.MeshStandardMaterial({ color: 0x00ff00, emissive: 0x00aa00, emissiveIntensity: 0.5 });
+  const button = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.05, 16), buttonMat);
+  button.rotation.x = Math.PI / 2; button.position.set(0, 0.5, 0.21); machine.add(button);
+
+  return machine;
+}
+
+// 62. ម៉ាស៊ីនគិតលុយចំណត (Parking Payment Machine)
+export function createPaymentMachine() {
+  const machine = new THREE.Group();
+  const bodyMat = new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.7 });
+  const screenMat = new THREE.MeshStandardMaterial({ color: 0x00ff00, emissive: 0x00ff00, emissiveIntensity: 1 });
+
+  const body = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1.5, 0.5), bodyMat);
+  body.position.y = 0.75; machine.add(body);
+
+  const screen = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.3, 0.05), screenMat);
+  screen.position.set(0, 1.2, 0.26); machine.add(screen);
+
+  // ប្រហោងដាក់កាក់
+  const coinSlot = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.2, 0.1), new THREE.MeshStandardMaterial({ color: 0xffff00, metalness: 1 }));
+  coinSlot.position.set(0.2, 0.7, 0.26); machine.add(coinSlot);
+
+  // ប៊ូតុងពិនិត្យ
+  const btnMat = new THREE.MeshStandardMaterial({ color: 0x0088ff });
+  for (let i = 0; i < 3; i++) {
+    const btn = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.03, 8), btnMat);
+    btn.rotation.x = Math.PI / 2; btn.position.set(-0.15 + i * 0.15, 0.4, 0.26); machine.add(btn);
+  }
+  return machine;
+}
