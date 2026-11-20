@@ -974,3 +974,44 @@ export function createVillageHousesInstanced(count = 300, seed = 42): InstancedV
 
   return { group, baseMesh, roofMesh };
 }
+
+/* ============================================================
+   ចង្កៀងផ្លូវ (សម្រាប់ពេលយប់)
+   ============================================================ */
+export function createStreetLamps(): THREE.Group {
+  const g = new THREE.Group();
+  const poleMat = new THREE.MeshStandardMaterial({ color: "#2c3e50", metalness: 0.7, roughness: 0.3 });
+
+  // ចង្កៀងតាមផ្លូវធំ (២០ ដង)
+  const positions: { x: number; z: number }[] = [];
+  for (let i = 0; i < 10; i++) {
+    positions.push({ x: -90 + i * 20, z: 7 });
+    positions.push({ x: -90 + i * 20, z: -7 });
+  }
+
+  positions.forEach(({ x, z }) => {
+    const pole = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.15, 0.15, 6, 8),
+      poleMat
+    );
+    pole.position.set(x, 3, z);
+    pole.castShadow = true;
+    g.add(pole);
+
+    // ក្បាលចង្កៀង (បន្ថែម emissive ដើម្បីបើកពេលយប់)
+    const lampMat = new THREE.MeshStandardMaterial({
+      color: "#f1c40f",
+      emissive: "#f1c40f",
+      emissiveIntensity: 0,
+    });
+    const lamp = new THREE.Mesh(
+      new THREE.SphereGeometry(0.4, 12, 12),
+      lampMat
+    );
+    lamp.position.set(x, 6.2, z);
+    lamp.name = "streetLamp"; // ដើម្បីកែ emissive ពេលយប់
+    g.add(lamp);
+  });
+
+  return g;
+}

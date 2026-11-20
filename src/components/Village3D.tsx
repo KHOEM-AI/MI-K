@@ -16,15 +16,21 @@ import {
   createBikeShop,
   createRiceField,
   createVegetableGarden,
+  createStreetLamps,
 } from "./villageGeometry";
 
 export default function Village3D() {
   const mountRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [isNight, setIsNight] = useState(false);
+  const nightRef = useRef(isNight);
+  nightRef.current = isNight;
+
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+  const sunRef = useRef<THREE.DirectionalLight | null>(null);
   useAutoQuality(rendererRef);
 
   useEffect(() => {
@@ -51,11 +57,9 @@ export default function Village3D() {
     });
     rendererRef.current = renderer;
     renderer.setSize(window.innerWidth, window.innerHeight);
-    // ⚡ FPS optimization: pixel ratio max 1.5
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    // ⚡ shadow map តូចជាង (1024 ជំនួស 2048)
     renderer.shadowMap.autoUpdate = false;
     renderer.shadowMap.needsUpdate = true;
     mount.appendChild(renderer.domElement);
@@ -73,6 +77,7 @@ export default function Village3D() {
     sun.shadow.camera.bottom = -250;
     sun.shadow.camera.far = 600;
     sun.shadow.bias = -0.0005;
+    sunRef.current = sun;
     scene.add(sun);
 
     scene.add(createVillageGround());
@@ -82,9 +87,11 @@ export default function Village3D() {
     factory.position.set(0, 0, -110);
     scene.add(factory);
 
-    // ⚡ ភូមិ ៣០០ គ្រួសារ — ប្រើ InstancedMesh
     const { group: villageGroup } = createVillageHousesInstanced(300);
     scene.add(villageGroup);
+
+    // ចង្កៀងផ្លូវ
+    scene.add(createStreetLamps());
 
     const markets = [
       { f: createMarketStall("#e74c3c"), pos: [-70, 0, 60] as const },
@@ -148,8 +155,35 @@ export default function Village3D() {
     };
     window.addEventListener("resize", onResize);
 
+    // ====== Day/Night transitions ======
+    const dayBg = new THREE.Color("#87ceeb");
+    const nightBg = new THREE.Color("#0a1128");
+    let currentBg = dayBg.clone();
+
     let rafId = 0;
     const animate = () => {
+      const night = nightRef.current;
+      const targetBg = night ? nightBg : dayBg;
+
+      // ផ្លាស់ពណ៌មេឃ
+      currentBg.lerp(targetBg, 0.05);
+      scene.background = currentBg;
+      scene.fog!.color.copy(currentBg);
+
+      // ផ្លាស់ពន្លឺថ្ងៃ
+      const targetSun = night ? 0.1 : 1.3;
+      sun.intensity += (targetSun - sun.intensity) * 0.05;
+
+      // ចង្កៀងផ្លូវ (emissive)
+      const targetLampEmissive = night ? 1.5 : 0;
+      scene.traverse((obj) => {
+        if (obj.name === "streetLamp") {
+          const mesh = obj as THREE.Mesh;
+          const mat = mesh.material as THREE.MeshStandardMaterial;
+          mat.emissiveIntensity += (targetLampEmissive - mat.emissiveIntensity) * 0.05;
+        }
+      });
+
       controls.update();
       renderer.render(scene, camera);
       rafId = requestAnimationFrame(animate);
@@ -259,6 +293,27 @@ export default function Village3D() {
               {busy ? "⏳ កំពុង Export..." : "🎬 Export GLB"}
             </button>
           </div>
+          <button
+            type="button"
+            onClick={() => setIsNight((n) => !n)}
+            style={{
+              position: "absolute",
+              top: 16,
+              right: 16,
+              padding: "10px 16px",
+              borderRadius: 8,
+              border: "none",
+              background: isNight ? "#f1c40f" : "#2c3e50",
+              color: isNight ? "#000" : "#fff",
+              fontSize: 14,
+              fontWeight: "bold",
+              cursor: "pointer",
+              zIndex: 20,
+              boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+            }}
+          >
+            {isNight ? "☀️ Day Mode" : "🌙 Night Mode"}
+          </button>
         </>
       )}
       {loading && (
