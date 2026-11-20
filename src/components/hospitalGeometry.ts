@@ -668,3 +668,162 @@ export function createColorfulLights() {
   group.userData = { lights };
   return group;
 }
+
+// 25. របង (Fence)
+export function createFence() {
+  const fence = new THREE.Group();
+  const metalMat = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8, roughness: 0.4 });
+  for (let i = -20; i <= 20; i += 2) {
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 2, 8), metalMat);
+    post.position.set(i, 1, 20);
+    fence.add(post);
+  }
+  const rail = new THREE.Mesh(new THREE.BoxGeometry(40, 0.1, 0.1), metalMat);
+  rail.position.set(0, 1.8, 20);
+  fence.add(rail);
+  const rail2 = rail.clone(); rail2.position.y = 1; fence.add(rail2);
+  return fence;
+}
+
+// 26. ភ្លើងអាលីបាបា (String Lights)
+export function createStringLights() {
+  const lights = new THREE.Group();
+  const wireMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+  const bulbMat = new THREE.MeshStandardMaterial({ color: 0xffffaa, emissive: 0xffffaa, emissiveIntensity: 2 });
+
+  const wire = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 40, 4), wireMat);
+  wire.rotation.z = Math.PI / 2;
+  wire.position.set(0, 2, 20);
+  lights.add(wire);
+
+  for (let i = -19; i <= 19; i += 1.5) {
+    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.15, 8, 8), bulbMat);
+    bulb.position.set(i, 1.8 + Math.sin(i * 0.5) * 0.2, 20); // ធ្លាក់ចុះបន្តិច
+    lights.add(bulb);
+    const pointLight = new THREE.PointLight(0xffaa00, 0, 5);
+    pointLight.position.copy(bulb.position);
+    lights.add(pointLight);
+  }
+  return lights;
+}
+
+// 27. ម៉ាស៊ីនត្រជាក់ (Air Conditioner)
+export function createACUnit() {
+  const ac = new THREE.Group();
+  const bodyMat = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.3, roughness: 0.5 });
+  const grillMat = new THREE.MeshStandardMaterial({ color: 0x888888 });
+  const fanMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
+
+  const body = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.8, 0.5), bodyMat);
+  ac.add(body);
+  const grill = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.1, 0.1), grillMat);
+  grill.position.set(0, -0.2, 0.26); ac.add(grill);
+  const fan = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.1, 16), fanMat);
+  fan.rotation.x = Math.PI / 2;
+  fan.position.set(0.4, 0, 0.26); ac.add(fan);
+  return ac;
+}
+
+// 28. រទេះរុញគ្រែអ្នកជំងឺ (Stretcher)
+export function createStretcher() {
+  const stretcher = new THREE.Group();
+  const metalMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.9, roughness: 0.2 });
+  const bedMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9 });
+
+  const frame = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.1, 2.5), metalMat);
+  frame.position.y = 1.2; stretcher.add(frame);
+  const mattress = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.2, 2.4), bedMat);
+  mattress.position.y = 1.35; stretcher.add(mattress);
+
+  // ជើង និងកង់
+  const wheelGeo = new THREE.CylinderGeometry(0.15, 0.15, 0.1, 16);
+  const wheelMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+  for (let x of [-0.5, 0.5]) {
+    for (let z of [-1, 1]) {
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.1, 8), metalMat);
+      leg.position.set(x, 0.6, z); stretcher.add(leg);
+      const wheel = new THREE.Mesh(wheelGeo, wheelMat);
+      wheel.rotation.z = Math.PI / 2;
+      wheel.position.set(x, 0.15, z); stretcher.add(wheel);
+    }
+  }
+  return stretcher;
+}
+
+// 29. ទូទឹកកក (Refrigerator)
+export function createFridge() {
+  const fridge = new THREE.Group();
+  const mat = new THREE.MeshStandardMaterial({ color: 0xeeeeee, metalness: 0.5, roughness: 0.3 });
+  const handleMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.9 });
+  const body = new THREE.Mesh(new THREE.BoxGeometry(1, 2, 0.8), mat);
+  body.position.y = 1; fridge.add(body);
+  const handle = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.6, 0.05), handleMat);
+  handle.position.set(0.4, 1.5, 0.41); fridge.add(handle);
+  return fridge;
+}
+
+// 30. ទូរទស្សន៍ (TV)
+export function createTV() {
+  const tv = new THREE.Group();
+  const frameMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+  const screenMat = new THREE.MeshStandardMaterial({ color: 0x0000ff, emissive: 0x2244aa, emissiveIntensity: 1 });
+  const frame = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1, 0.1), frameMat);
+  tv.add(frame);
+  const screen = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.9, 0.12), screenMat);
+  screen.position.z = 0.01; tv.add(screen);
+  return tv;
+}
+
+// 31. ម៉ាស៊ីនទឹកស្អាត (Water Dispenser)
+export function createWaterDispenser() {
+  const dispenser = new THREE.Group();
+  const bodyMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+  const bottleMat = new THREE.MeshStandardMaterial({ color: 0x88ccff, transparent: true, opacity: 0.7 });
+  const body = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1.2, 0.6), bodyMat);
+  body.position.y = 0.6; dispenser.add(body);
+  const bottle = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.6, 16), bottleMat);
+  bottle.position.y = 1.5; dispenser.add(bottle);
+  return dispenser;
+}
+
+// 32. បន្ទប់ VIP
+export function createVIPRoom() {
+  const room = new THREE.Group();
+  const glassMat = new THREE.MeshStandardMaterial({ color: 0xaaccff, transparent: true, opacity: 0.2, metalness: 0.8, roughness: 0.1 });
+  const floorMat = new THREE.MeshStandardMaterial({ color: 0xd2b48c });
+
+  const floor = new THREE.Mesh(new THREE.BoxGeometry(8, 0.2, 8), floorMat);
+  floor.position.y = 0.1; room.add(floor);
+  // ជញ្ជាំងកញ្ចក់
+  const wall1 = new THREE.Mesh(new THREE.BoxGeometry(8, 3, 0.1), glassMat);
+  wall1.position.set(0, 1.5, -4); room.add(wall1);
+  const wall2 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 3, 8), glassMat);
+  wall2.position.set(-4, 1.5, 0); room.add(wall2);
+
+  // គ្រឿងសង្ហារឹម
+  const bed = createHospitalBed(); bed.position.set(1, 0, -1); bed.rotation.y = Math.PI / 2; room.add(bed);
+  const ac = createACUnit(); ac.position.set(0, 2.8, -3.9); room.add(ac);
+  const fridge = createFridge(); fridge.position.set(-3.2, 0, 3); room.add(fridge);
+  const tv = createTV(); tv.position.set(-3.9, 1.8, 0); tv.rotation.y = Math.PI / 2; room.add(tv);
+
+  return room;
+}
+
+// 33. កន្លែងគិតលុយ (Reception)
+export function createReception() {
+  const reception = new THREE.Group();
+  const deskMat = new THREE.MeshStandardMaterial({ color: 0x1e3a8a, roughness: 0.4 });
+  const woodMat = new THREE.MeshStandardMaterial({ color: 0x8b5a2b });
+
+  const desk = new THREE.Mesh(new THREE.BoxGeometry(5, 1.2, 1.5), deskMat);
+  desk.position.y = 0.6; reception.add(desk);
+  const top = new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.1, 1.7), woodMat);
+  top.position.y = 1.25; reception.add(top);
+
+  // ទូរទស្សន៍ព្យួរជញ្ជាំង
+  const tv = createTV(); tv.position.set(0, 3, -0.7); reception.add(tv);
+  // ម៉ាស៊ីនទឹកស្អាត
+  const water = createWaterDispenser(); water.position.set(3, 0, 0); reception.add(water);
+
+  return reception;
+}

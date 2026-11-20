@@ -7,7 +7,9 @@ import {
   createHospitalSign, createFlower, createSirenLight, createNurse, 
   createWheelchair, createStreetLamp, createHelipad, createDriveway,
   createHelicopter, createCar, createSurgeryRoom, createVisitor,
-  createStars, createRain, createTrafficSign, createColorfulLights
+  createStars, createRain, createTrafficSign, createColorfulLights,
+  createFence, createStringLights, createACUnit, createStretcher,
+  createVIPRoom, createReception
 } from "./hospitalGeometry";
 
 const SvgSoundOn = () => (<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>);
@@ -60,24 +62,17 @@ export default function Hospital3D() {
       const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
       if (!audioCtxRef.current) audioCtxRef.current = new AudioCtx();
       const ctx = audioCtxRef.current;
-      // បង្កើតសំឡេងស្រាលៗ (Ambient Chord)
-      const freqs = [261.63, 329.63, 392.00]; // C, E, G chord
-      const gains: GainNode[] = [];
+      const freqs = [261.63, 329.63, 392.00];
       musicOscRef.current = [];
       freqs.forEach(freq => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = "sine"; osc.frequency.value = freq;
-        gain.gain.value = 0.02;
+        const osc = ctx.createOscillator(); const gain = ctx.createGain();
+        osc.type = "sine"; osc.frequency.value = freq; gain.gain.value = 0.02;
         osc.connect(gain); gain.connect(ctx.destination);
-        osc.start();
-        musicOscRef.current.push(osc);
-        gains.push(gain);
+        osc.start(); musicOscRef.current.push(osc);
       });
       setMusicOn(true);
     } else {
-      musicOscRef.current.forEach(o => o.stop());
-      musicOscRef.current = [];
+      musicOscRef.current.forEach(o => o.stop()); musicOscRef.current = [];
       setMusicOn(false);
     }
   };
@@ -113,11 +108,18 @@ export default function Hospital3D() {
     scene.add(createGarden());
     const driveway = createDriveway(); driveway.position.set(0, 0, 5); scene.add(driveway);
     const hospital = createHospitalBuilding(); hospital.position.set(0, 0, -5); scene.add(hospital);
+    
+    // បន្ថែមម៉ាស៊ីនត្រជាក់លើជញ្ជាំងអគារ
+    for (let i = -2; i <= 2; i++) {
+      const ac = createACUnit(); ac.position.set(i * 4, 15, 1.2); scene.add(ac);
+      const ac2 = createACUnit(); ac2.position.set(i * 4, 25, 1.2); scene.add(ac2);
+    }
+
     const helipad = createHelipad(); helipad.position.set(0, 30.2, -5); scene.add(helipad);
     const sign = createHospitalSign(THREE); sign.position.set(0, 32.5, -5); scene.add(sign);
     const helicopter = createHelicopter(); helicopter.position.set(0, 30.8, -5); scene.add(helicopter);
 
-    // ធម្មជាតិ
+    // ធម្មជាតិ និងរបង
     [{ x: -12, z: 5, big: true }, { x: -10, z: 10, big: false }, { x: 12, z: 5, big: true }, { x: 10, z: 10, big: false }].forEach(pos => {
       const tree = createTree(pos.big); tree.position.set(pos.x, 0, pos.z); scene.add(tree);
     });
@@ -127,6 +129,10 @@ export default function Hospital3D() {
       const angle = (i / 20) * Math.PI * 2; const radius = 16 + Math.random() * 2;
       flower.position.set(Math.cos(angle) * radius, 0, Math.sin(angle) * radius); scene.add(flower);
     }
+
+    // របង និងភ្លើងអាលីបាបា
+    const fence = createFence(); fence.position.set(0, 0, 0); scene.add(fence);
+    const stringLights = createStringLights(); scene.add(stringLights);
 
     // ធាតុផ្សេងៗ
     const bench1 = createBench(); bench1.position.set(-6, 0, 12); bench1.rotation.y = Math.PI / 2; scene.add(bench1);
@@ -138,30 +144,31 @@ export default function Hospital3D() {
     const car1 = createCar(0xff0000); car1.position.set(10, 0, 22); car1.rotation.y = Math.PI / 2; scene.add(car1);
     const car2 = createCar(0x0000ff); car2.position.set(13, 0, 22); car2.rotation.y = Math.PI / 2; scene.add(car2);
     const car3 = createCar(0x00ff00); car3.position.set(16, 0, 22); car3.rotation.y = Math.PI / 2; scene.add(car3);
+    
+    // បន្ទប់វះកាត់, VIP, ទីស្នាក់ការគិតលុយ
     const surgeryRoom = createSurgeryRoom(); surgeryRoom.position.set(-15, 0, -5); scene.add(surgeryRoom);
+    const vipRoom = createVIPRoom(); vipRoom.position.set(15, 0, -5); scene.add(vipRoom);
+    const reception = createReception(); reception.position.set(0, 0, 8); scene.add(reception);
 
-    // មនុស្ស
+    // មនុស្ស និងរទេះ
     [{ x: 12, z: -2 }, { x: 12, z: -6 }].forEach(pos => {
       const bed = createHospitalBed(); bed.position.set(pos.x, 0, pos.z); scene.add(bed);
       const patient = createPatient(); patient.position.set(pos.x, 0, pos.z); scene.add(patient);
     });
-    const doc1 = createDoctor(false); doc1.position.set(-2, 0, 8); scene.add(doc1);
-    const doc2 = createDoctor(true); doc2.position.set(2, 0, 8); scene.add(doc2);
+    const doc1 = createDoctor(false); doc1.position.set(-2, 0, 12); scene.add(doc1);
+    const doc2 = createDoctor(true); doc2.position.set(2, 0, 12); scene.add(doc2);
     const nurse1 = createNurse(); nurse1.position.set(4, 0, 6); scene.add(nurse1);
     const wc = createWheelchair(); wc.position.set(-4, 0, 6); scene.add(wc);
+    const stretcher = createStretcher(); stretcher.position.set(5, 0, 15); stretcher.rotation.y = Math.PI / 4; scene.add(stretcher);
     const visitor1 = createVisitor(0xffaa00); visitor1.position.set(-5, 0, 15); scene.add(visitor1);
     const visitor2 = createVisitor(0x9900ff); visitor2.position.set(5, 0, 16); scene.add(visitor2);
 
-    // ==== OPTION 1: ភ្លៀង, ផ្កាយ, ផ្លាកសញ្ញា ====
+    // ភ្លៀង, ផ្កាយ, ផ្លាកសញ្ញា
     const stars = createStars(); scene.add(stars);
     const rain = createRain(); rain.visible = false; scene.add(rain);
     const sign1 = createTrafficSign(); sign1.position.set(-12, 0, 20); scene.add(sign1);
     const sign2 = createTrafficSign(); sign2.position.set(12, 0, 20); sign2.rotation.y = Math.PI; scene.add(sign2);
-
-    // ==== OPTION 3: ពន្លឺចម្រុះពណ៌ ====
-    const colorfulLights = createColorfulLights();
-    colorfulLights.position.set(0, 0, 12);
-    scene.add(colorfulLights);
+    const colorfulLights = createColorfulLights(); colorfulLights.position.set(0, 0, 12); scene.add(colorfulLights);
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true; controls.target.set(0, 10, 0);
@@ -180,11 +187,9 @@ export default function Hospital3D() {
       const isNightMode = nightRef.current;
       const isFlyingMode = flyingRef.current;
 
-      // ភ្លើងសង្គ្រោះ
       if (siren.material instanceof THREE.MeshStandardMaterial) {
         siren.material.emissiveIntensity = 1 + ((Math.sin(elapsed * 8) + 1) / 2) * 3;
       }
-      // កង្ហារ & ហោះហើរ
       if (helicopter.userData.rotorGroup) helicopter.userData.rotorGroup.rotation.y += isFlyingMode ? 2.5 : 0.8;
       if (isFlyingMode) {
         helicopter.position.y += (45 - helicopter.position.y) * 0.02;
@@ -196,8 +201,8 @@ export default function Hospital3D() {
         helicopter.position.x += (0 - helicopter.position.x) * 0.05;
         helicopter.position.z += (-5 - helicopter.position.z) * 0.05;
       }
-      // ចលនាមនុស្ស
-      doc1.position.z = 8 + Math.sin(elapsed * 1.5) * 3;
+
+      doc1.position.z = 12 + Math.sin(elapsed * 1.5) * 3;
       doc1.rotation.y = Math.cos(elapsed * 1.5) > 0 ? 0 : Math.PI;
       doc2.position.x = 2 + Math.cos(elapsed * 1.2) * 2; doc2.position.z = 6 + Math.sin(elapsed * 1.2) * 2;
       nurse1.position.z = 6 + Math.sin(elapsed * 2 + 2) * 4;
@@ -208,7 +213,6 @@ export default function Hospital3D() {
       visitor2.position.x = 5 + Math.cos(elapsed * 1) * 4;
       visitor2.rotation.y = Math.cos(elapsed * 1) > 0 ? -Math.PI / 2 : Math.PI / 2;
 
-      // Day/Night
       const targetBg = isNightMode ? new THREE.Color(0x0a1128) : new THREE.Color(0x87ceeb);
       if (scene.background instanceof THREE.Color) {
         scene.background.lerp(targetBg, 0.05);
@@ -217,12 +221,21 @@ export default function Hospital3D() {
       sunLight.intensity += ((isNightMode ? 0.1 : 2.5) - sunLight.intensity) * 0.05;
       ambientLight.intensity += ((isNightMode ? 0.2 : 0.5) - ambientLight.intensity) * 0.05;
 
-      // ផ្កាយ (Option 1)
+      // ភ្លើងអាលីបាបា និងអំពូលភ្លើង
+      if (isNightMode) {
+        stringLights.children.forEach(child => {
+          if (child instanceof THREE.PointLight) child.intensity = 1.5 + Math.sin(elapsed * 3 + child.position.x) * 0.5;
+        });
+      } else {
+        stringLights.children.forEach(child => {
+          if (child instanceof THREE.PointLight) child.intensity = 0;
+        });
+      }
+
       if (stars.material instanceof THREE.PointsMaterial) {
         stars.material.opacity += ((isNightMode ? 1 : 0) - stars.material.opacity) * 0.05;
         stars.rotation.y += 0.0002;
       }
-      // ភ្លៀង (Option 1)
       if (rainRef.current) {
         rain.visible = true;
         for (let i = 1; i < rainPositions.length; i += 3) {
@@ -234,7 +247,6 @@ export default function Hospital3D() {
         rain.visible = false;
       }
 
-      // ពន្លឺចម្រុះពណ៌ (Option 3)
       if (isNightMode && colorfulLights.userData.lights) {
         (colorfulLights.userData.lights as THREE.PointLight[]).forEach((light, i) => {
           light.intensity = 1.5 + Math.sin(elapsed * 3 + i) * 1.5;
@@ -245,6 +257,7 @@ export default function Hospital3D() {
 
       if (neonLight) neonLight.intensity += ((isNightMode ? 3 : 0) - neonLight.intensity) * 0.05;
       if (windowMat) windowMat.emissiveIntensity += ((isNightMode ? 2.5 : 0.6) - windowMat.emissiveIntensity) * 0.05;
+      
       [lamp1, lamp2].forEach(lamp => {
         lamp.traverse(child => { if (child instanceof THREE.PointLight) child.intensity += ((isNightMode ? 2 : 0) - child.intensity) * 0.05; });
       });
