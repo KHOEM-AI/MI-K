@@ -3,6 +3,7 @@ import type { AnimationAction, AnimationMixer, BufferGeometry, Group, Material, 
 import type { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { isGlb } from "./modelTools.mjs";
+import { TabIcon, PersonPortrait } from "./icons";
 
 // 3D people for the studio. Turn them 360° (auto-turn or drag), and make them idle / walk / wave.
 // If /characters/<id>.glb exists it is used (and its own animation clips are listed). Otherwise a simple
@@ -12,18 +13,18 @@ type Three = typeof import("three");
 type Mode = "idle" | "walk" | "wave";
 
 interface Person {
-  id: string; name: string; role: string; female: boolean; height: number;
+  id: string; name: string; role: string; desc: string; female: boolean; height: number;
   skin: number; top: number; bottom: number; hair: number;
   tie?: number; shirt?: number; skirt?: boolean; longHair?: boolean; bun?: boolean; longSleeves?: boolean;
 }
 
 const PEOPLE: Person[] = [
-  { id: "businessman", name: "សុភ័ក្រ", role: "Businessman", female: false, height: 180, skin: 0xc58e69, top: 0x2a2e38, bottom: 0x2a2e38, hair: 0x15110e, tie: 0xb3202a, shirt: 0xf3f5f7, longSleeves: true },
-  { id: "fashion-model", name: "ដារ៉ា", role: "Fashion Model", female: false, height: 178, skin: 0xc99672, top: 0x86b9ea, bottom: 0x232b3a, hair: 0x1a1410 },
-  { id: "doctor", name: "គុសល", role: "Doctor", female: false, height: 182, skin: 0xc08a66, top: 0xf1f4f6, bottom: 0x3b4a5c, hair: 0x15110e, longSleeves: true },
-  { id: "businesswoman", name: "លីហ្សា", role: "Businesswoman", female: true, height: 168, skin: 0xd0a07c, top: 0x7a2d63, bottom: 0x24202c, hair: 0x120d0b, skirt: true, longHair: true, longSleeves: true },
-  { id: "student", name: "ហ្សា", role: "Student", female: true, height: 162, skin: 0xd1a27d, top: 0xf4f6f8, bottom: 0x1b2f5e, hair: 0x120d0b, skirt: true, longHair: true },
-  { id: "nurse", name: "ស្រីពៅ", role: "Nurse", female: true, height: 166, skin: 0xcf9f7b, top: 0x7fd0e0, bottom: 0x7fd0e0, hair: 0x120d0b, bun: true },
+  { id: "businessman", name: "សុភ័ក្រ", role: "Businessman", desc: "អ្នកជំនួញ ស្លៀកឈុតអាវធំ និងក្រវ៉ាត់ក", female: false, height: 180, skin: 0xc58e69, top: 0x2a2e38, bottom: 0x2a2e38, hair: 0x15110e, tie: 0xb3202a, shirt: 0xf3f5f7, longSleeves: true },
+  { id: "fashion-model", name: "ដារ៉ា", role: "Fashion Model", desc: "តារាបង្ហាញម៉ូដ អាវពណ៌ខៀវស", female: false, height: 178, skin: 0xc99672, top: 0x86b9ea, bottom: 0x232b3a, hair: 0x1a1410 },
+  { id: "doctor", name: "គុសល", role: "Doctor", desc: "វេជ្ជបណ្ឌិត ពាក់អាវពេទ្យពណ៌ស", female: false, height: 182, skin: 0xc08a66, top: 0xf1f4f6, bottom: 0x3b4a5c, hair: 0x15110e, longSleeves: true },
+  { id: "businesswoman", name: "លីហ្សា", role: "Businesswoman", desc: "អ្នកជំនួញស្ត្រី សម្លៀកបំពាក់ទាន់សម័យ", female: true, height: 168, skin: 0xd0a07c, top: 0x7a2d63, bottom: 0x24202c, hair: 0x120d0b, skirt: true, longHair: true, longSleeves: true },
+  { id: "student", name: "ហ្សា", role: "Student", desc: "និស្សិតស្រី សម្លៀកបំពាក់ធម្មតា", female: true, height: 162, skin: 0xd1a27d, top: 0xf4f6f8, bottom: 0x1b2f5e, hair: 0x120d0b, skirt: true, longHair: true },
+  { id: "nurse", name: "ស្រីពៅ", role: "Nurse", desc: "គិលានុបដ្ឋាយិកា សម្លៀកបំពាក់ពេទ្យ", female: true, height: 166, skin: 0xcf9f7b, top: 0x7fd0e0, bottom: 0x7fd0e0, hair: 0x120d0b, bun: true },
 ];
 
 interface Rig {
@@ -138,9 +139,7 @@ function pose(r: Rig, mode: Mode, t: number): void {
 }
 
 const box: React.CSSProperties = { background: "rgba(255,255,255,0.06)", borderRadius: 10, padding: 10, marginTop: 10 };
-const input: React.CSSProperties = { borderRadius: 8, padding: 8, fontSize: 15, marginRight: 6, marginBottom: 6 };
-const btn: React.CSSProperties = { padding: "8px 12px", borderRadius: 8, border: "none", background: "#4f7cff", color: "#fff", fontSize: 14, marginRight: 6, marginTop: 4 };
-const soft: React.CSSProperties = { ...btn, background: "rgba(255,255,255,0.14)" };
+const cls = (on: boolean): string => (on ? "filter active" : "filter");
 const MODE_LABELS: Record<Mode, string> = { idle: "ឈរ · Idle", walk: "ដើរ · Walk", wave: "ដាក់ដៃ · Wave" };
 const msg = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
@@ -332,48 +331,61 @@ export default function HumanViewer() {
 
   return (
     <div style={{ padding: 8 }}>
-      <b>🧍 KHOEM-AI 3D · តួអង្គ · Characters</b>
-      <div style={{ marginTop: 6 }}>
-        <button style={filter === "all" ? btn : soft} onClick={() => setFilter("all")}>ទាំងអស់ ({PEOPLE.length})</button>
-        <button style={filter === "m" ? btn : soft} onClick={() => setFilter("m")}>♂ ប្រុស</button>
-        <button style={filter === "f" ? btn : soft} onClick={() => setFilter("f")}>♀ ស្រី</button>
+      <b><TabIcon name="people" /> KHOEM-AI 3D · តួអង្គ · Characters</b>
+      <div className="filters wrap">
+        <button type="button" className={cls(filter === "all")} onClick={() => setFilter("all")}>ទាំងអស់ ({PEOPLE.length})</button>
+        <button type="button" className={cls(filter === "m")} onClick={() => setFilter("m")}><TabIcon name="male" size={16} /> ប្រុស</button>
+        <button type="button" className={cls(filter === "f")} onClick={() => setFilter("f")}><TabIcon name="female" size={16} /> ស្រី</button>
       </div>
-      <select style={{ ...input, width: "100%", marginTop: 8 }} value={id} onChange={(e) => setId(e.target.value)}>
-        {list.map((x) => <option key={x.id} value={x.id}>{x.female ? "♀" : "♂"} {x.name} · {x.role} · {x.height} cm</option>)}
-        {!list.some((x) => x.id === id) && <option value={id}>{person.name} · {person.role}</option>}
-      </select>
+      <div className="person-grid">
+        {list.map((x) => (
+          <button type="button" key={x.id} className={x.id === id ? "person-card active" : "person-card"} aria-pressed={x.id === id} onClick={() => setId(x.id)}>
+            <span className="person-portrait-wrap">
+              <PersonPortrait role={x.role} skin={x.skin} top={x.top} hair={x.hair} shirt={x.shirt} tie={x.tie} longHair={x.longHair} bun={x.bun} />
+            </span>
+            <span className="person-text">
+              <b>{x.name}</b>
+              <small>{x.role} · {x.height} cm <TabIcon name={x.female ? "female" : "male"} size={13} /></small>
+              <small>{x.desc}</small>
+            </span>
+          </button>
+        ))}
+      </div>
+      <div style={{ marginTop: 6, marginBottom: 6 }}><b>{person.name}</b> · {person.role} · {person.height} cm</div>
 
       <div style={{ position: "relative", width: "100%", height: "52vh", minHeight: 300, borderRadius: 10, overflow: "hidden", background: "#0b1220" }}>
         <div ref={hostRef} style={{ position: "absolute", inset: 0 }} />
       </div>
       <div style={{ marginTop: 6, fontSize: 13, opacity: 0.85 }}>
         {real
-          ? "✅ ម៉ូដែល .glb ពិត · Real .glb model"
+          ? <><TabIcon name="check" size={16} /> ម៉ូដែល .glb ពិត · Real .glb model</>
           : `មនុស្សក្លែងសាកល្បង (មិនមែនមនុស្សពិត) · Test mannequin — real model: put it at public/characters/${person.id}.glb`}
       </div>
-      {err && <div style={{ color: "#ff8a8a", marginTop: 6 }}>⚠ {err}</div>}
+      {err && <div style={{ color: "#ff8a8a", marginTop: 6 }}><TabIcon name="warn" size={16} /> {err}</div>}
 
       <div style={box}>
-        <div>🔄 បង្វិល 360° · Turn (អូសដើម្បីបង្វិលដោយដៃ · drag; pinch = zoom)</div>
+        <div><TabIcon name="turn" size={18} /> បង្វិល 360° · Turn (អូសដើម្បីបង្វិលដោយដៃ · drag; pinch = zoom)</div>
         <label><input type="checkbox" checked={auto} onChange={(e) => { setAuto(e.target.checked); autoRef.current = e.target.checked; }} /> បង្វិលស្វ័យប្រវត្តិ · Auto-turn</label>
         <div>
           <input type="range" min={0.1} max={2} step={0.1} value={speed}
             onChange={(e) => { const v = Number(e.target.value); setSpeed(v); speedRef.current = v; }} /> {speed.toFixed(1)} rad/s
         </div>
-        <button style={soft} onClick={() => apiRef.current && apiRef.current.resetView()}>↺ មើលពីមុខ · Reset view</button>
+        <button type="button" className="filter" onClick={() => apiRef.current && apiRef.current.resetView()}><TabIcon name="reset" size={16} /> មើលពីមុខ · Reset view</button>
       </div>
 
       <div style={box}>
-        <div>🎬 ចលនា · Motion</div>
-        {!real && (Object.keys(MODE_LABELS) as Mode[]).map((m) => (
-          <button key={m} style={mode === m ? btn : soft} onClick={() => pick(m)}>{MODE_LABELS[m]}</button>
-        ))}
+        <div><TabIcon name="motion" size={18} /> ចលនា · Motion</div>
+        <div className="filters wrap">
+          {!real && (Object.keys(MODE_LABELS) as Mode[]).map((m) => (
+            <button type="button" key={m} className={cls(mode === m)} onClick={() => pick(m)}>{MODE_LABELS[m]}</button>
+          ))}
+          {real && clips.map((c) => (
+            <button type="button" key={c} className={cls(!!playing[c])} onClick={() => { if (apiRef.current) { const on = apiRef.current.togglePlay(c); setPlaying((p) => ({ ...p, [c]: on })); } }}>
+              <TabIcon name={playing[c] ? "stop" : "play"} size={14} /> {c}
+            </button>
+          ))}
+        </div>
         {real && clips.length === 0 && <div style={{ opacity: 0.75, fontSize: 13 }}>ម៉ូដែលនេះគ្មាន Animation · This model has no animation clips.</div>}
-        {real && clips.map((c) => (
-          <button key={c} style={playing[c] ? btn : soft} onClick={() => { if (apiRef.current) { const on = apiRef.current.togglePlay(c); setPlaying((p) => ({ ...p, [c]: on })); } }}>
-            {playing[c] ? "■" : "▶"} {c}
-          </button>
-        ))}
       </div>
     </div>
   );

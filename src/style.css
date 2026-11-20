@@ -1093,3 +1093,20 @@ button:active .k-icon { transform: scale(.92); }
 
 /* KHOEM-AI toggle buttons in the 3D panel: same .filter look as the other buttons, icon next to the text */
 .studio-panel > .filter { display: inline-flex; align-items: center; gap: 8px; margin-right: 8px; padding: 10px 14px; font-size: 14px; }
+
+/* KHOEM-AI People tab: own-made SVG icons and character cards (no emoji, no image files) */
+.k-tab-icon { display: inline-block; vertical-align: -4px; margin-right: 4px; flex: 0 0 auto; color: var(--ka-car, #43b9ff); }
+.filter.active .k-tab-icon { color: currentColor; }
+.k-tab-icon-warn { color: #ff8a8a; }
+.filters.wrap { flex-wrap: wrap; margin: 8px 0; }
+.person-grid { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; scroll-snap-type: x proximity; }
+.person-card { flex: 0 0 min(250px, 78vw); display: flex; align-items: center; gap: 10px; min-height: 72px; padding: 8px; text-align: left; border: 1px solid #30445d; border-radius: 10px; background: #17283d; color: #b8c9dc; cursor: pointer; scroll-snap-align: start; }
+.person-card.active { border-color: var(--ka-accent, #087fce); box-shadow: 0 0 0 2px var(--ka-accent, #087fce) inset; }
+.person-portrait-wrap { flex: 0 0 auto; width: 56px; height: 56px; overflow: hidden; border-radius: 50%; border: 2px solid var(--ka-car, #43b9ff); }
+.person-portrait { display: block; width: 100%; height: 100%; }
+.person-portrait-bg { fill: #0f1c2e; }
+.person-text { min-width: 0; }
+.person-text b { display: block; color: inherit; }
+.person-text small { display: block; line-height: 1.35; opacity: .85; }
+:root[data-theme="day"] .person-card { background: #edf3f9; border-color: #cbd9e8; color: #243b53; }
+:root[data-theme="day"] .person-portrait-bg { fill: #dbe8f5; }

@@ -10,7 +10,6 @@ type Asset = {
 
 const ModelViewer = lazy(() => import("./components/ModelViewer"));
 const Studio3D = lazy(() => import("./components/Studio3D"));
-const Character3D = lazy(() => import("./components/Character3D"));
 const Vehicles3D = lazy(() => import("./vehicles3d/Vehicles3D"));
 const KaraokeViewer = lazy(() => import("./components/KaraokeViewer"));
 const Hospital3D = lazy(() => import("./components/Hospital3D"));
@@ -120,7 +119,6 @@ export default function App() {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [storageReady, setStorageReady] = useState(false);
   const [studioOpen, setStudioOpen] = useState(false);
-  const [charactersOpen, setCharactersOpen] = useState(false);
   const [vehiclesOpen, setVehiclesOpen] = useState(false);
   const [karaokeOpen, setKaraokeOpen] = useState(false);
   const [hospitalOpen, setHospitalOpen] = useState(false);
@@ -412,13 +410,6 @@ export default function App() {
         <button
           type="button"
           className="upload-button"
-          onClick={() => setCharactersOpen((open) => !open)}
-        >
-          {charactersOpen ? "Close Characters" : "Open Characters"}
-        </button>
-        <button
-          type="button"
-          className="upload-button"
           onClick={() => setHospitalOpen((open) => !open)}
         >
           {hospitalOpen ? "Close Hospital" : "Open Hospital 3D"}
@@ -501,12 +492,6 @@ export default function App() {
       {hospitalOpen && (
         <Suspense fallback={<div className="studio-panel">Loading Hospital...</div>}>
           <Hospital3D />
-        </Suspense>
-      )}
-
-      {charactersOpen && (
-        <Suspense fallback={<div className="studio-panel">Loading Characters...</div>}>
-          <Character3D />
         </Suspense>
       )}
 
