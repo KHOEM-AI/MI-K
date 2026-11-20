@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
 import { createSchoolBuilding, createFlagPole, createStudent, createTeacher } from "./schoolGeometry";
+import { createSchoolSurroundings } from "./villageGeometry";
 import { createTree, createFlower, createBench } from "./hospitalGeometry";
 
 export default function School3D() {
@@ -41,6 +42,8 @@ export default function School3D() {
     field.position.set(0, 0.01, 10); scene.add(field);
 
     const school = createSchoolBuilding(); school.position.set(0, 0, -8); scene.add(school);
+    // បរិវេណជុំវិញ (ផ្សារ ៤ + ផ្ទះ ១០)
+    scene.add(createSchoolSurroundings());
     const flag = createFlagPole(); flag.position.set(-10, 0, 5); scene.add(flag);
 
     // ដើមឈើ

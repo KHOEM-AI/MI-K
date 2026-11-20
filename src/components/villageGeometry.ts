@@ -740,3 +740,49 @@ export function createHospitalSurroundings(): THREE.Group {
 
   return g;
 }
+
+/* ============================================================
+   បរិវេណជុំវិញ School — ផ្សារ ៤ + ផ្ទះ ១០
+   ============================================================ */
+export function createSchoolSurroundings(): THREE.Group {
+  const g = new THREE.Group();
+  const rng = mulberry32(999);
+
+  // ផ្សារ ៤ ជុំវិញ school (radius ~២៥)
+  const marketColors = ["#e74c3c", "#f39c12", "#27ae60", "#3498db"];
+  for (let i = 0; i < 4; i++) {
+    const angle = (i / 4) * Math.PI * 2 + Math.PI / 4;
+    const radius = 25 + rng() * 5;
+    const x = Math.cos(angle) * radius;
+    const z = Math.sin(angle) * radius;
+
+    const market = createMarketStall(marketColors[i]);
+    market.position.set(x, 0, z);
+    market.rotation.y = Math.atan2(-x, -z);
+    g.add(market);
+  }
+
+  // ផ្ទះ ១០ ខ្នង (radius ៣៥-៥០)
+  for (let i = 0; i < 10; i++) {
+    const angle = (i / 10) * Math.PI * 2 + rng() * 0.4;
+    const radius = 35 + rng() * 15;
+    const x = Math.cos(angle) * radius;
+    const z = Math.sin(angle) * radius;
+
+    const wealth = pickWealth(rng);
+    let house: THREE.Group;
+    if (wealth === 0) {
+      house = createPoorHouse("#8b4513");
+    } else if (wealth === 1) {
+      house = createMiddleHouse("#e8dcc4", "#8d6e63");
+    } else {
+      house = createRichHouse("#fdfefe", "#2c3e50");
+    }
+
+    house.position.set(x, 0, z);
+    house.rotation.y = Math.atan2(-x, -z);
+    g.add(house);
+  }
+
+  return g;
+}
