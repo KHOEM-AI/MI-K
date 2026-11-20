@@ -457,3 +457,45 @@ export function createDriveway() {
 
   return road;
 }
+
+// 17. ឧទ្ធម្ភាគចក្រ (Helicopter)
+export function createHelicopter() {
+  const heli = new THREE.Group();
+  const bodyMat = new THREE.MeshStandardMaterial({ color: 0xdd2222, metalness: 0.6, roughness: 0.4 });
+  const glassMat = new THREE.MeshStandardMaterial({ color: 0x88ccff, transparent: true, opacity: 0.7, metalness: 0.9, roughness: 0.1 });
+  const bladeMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
+  const skidMat = new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.8 });
+
+  // តួឧទ្ធម្ភាគចក្រ
+  const body = new THREE.Mesh(new THREE.SphereGeometry(1.2, 16, 16), bodyMat);
+  body.scale.set(1, 0.8, 1.8);
+  heli.add(body);
+
+  // កន្ទុយ
+  const tail = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.1, 3, 8), bodyMat);
+  tail.rotation.x = Math.PI / 2;
+  tail.position.set(0, 0, -2.5);
+  heli.add(tail);
+
+  // កញ្ចក់កាប៊ីន
+  const cockpit = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 16), glassMat);
+  cockpit.position.set(0, 0.2, 0.8);
+  cockpit.scale.set(0.9, 0.8, 1);
+  heli.add(cockpit);
+
+  // កង្ហារវិល (Rotor) - ត្រូវយកទៅ Animate
+  const rotorGroup = new THREE.Group();
+  const rotor = new THREE.Mesh(new THREE.BoxGeometry(6, 0.05, 0.2), bladeMat);
+  rotorGroup.add(rotor);
+  const rotor2 = rotor.clone(); rotor2.rotation.y = Math.PI / 2; rotorGroup.add(rotor2);
+  rotorGroup.position.set(0, 1.5, 0);
+  heli.add(rotorGroup);
+
+  // ជើងចុះចត (Skids)
+  const skid1 = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 2.5, 8), skidMat);
+  skid1.rotation.x = Math.PI / 2; skid1.position.set(-0.8, -1.2, 0); heli.add(skid1);
+  const skid2 = skid1.clone(); skid2.position.x = 0.8; heli.add(skid2);
+
+  heli.userData = { rotorGroup };
+  return heli;
+}
