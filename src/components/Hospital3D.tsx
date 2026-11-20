@@ -6,14 +6,88 @@ import {
   createAmbulance, createDoctor, createGarden, createPatient, 
   createHospitalSign, createFlower, createSirenLight, createNurse, 
   createWheelchair, createStreetLamp, createHelipad, createDriveway,
-  createHelicopter, createCar, createSurgeryRoom
+  createHelicopter, createCar, createSurgeryRoom, createVisitor
 } from "./hospitalGeometry";
+
+// SVG Icons សម្រាប់ប៊ូតុង
+const SvgSoundOn = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+    <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+  </svg>
+);
+const SvgSoundOff = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+    <line x1="23" y1="9" x2="17" y2="15"></line>
+    <line x1="17" y1="9" x2="23" y2="15"></line>
+  </svg>
+);
+const SvgHelicopter = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 12h18M12 3v18M5 5l14 14M19 5L5 19"></path>
+    <circle cx="12" cy="12" r="4"></circle>
+  </svg>
+);
 
 export default function Hospital3D() {
   const mountRef = useRef<HTMLDivElement>(null);
   const [isNight, setIsNight] = useState(false);
+  const [isFlying, setIsFlying] = useState(false);
+  const [soundOn, setSoundOn] = useState(false);
+  
   const nightRef = useRef(isNight);
+  const flyingRef = useRef(isFlying);
+  const soundRef = useRef(soundOn);
   nightRef.current = isNight;
+  flyingRef.current = isFlying;
+  soundRef.current = soundOn;
+
+  // Web Audio API សម្រាប់សំឡេង Siren
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const sirenOscRef = useRef<OscillatorNode | null>(null);
+  const sirenGainRef = useRef<GainNode | null>(null);
+
+  const toggleSound = () => {
+    if (!soundOn) {
+      // បើកសំឡេង
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!audioCtxRef.current) audioCtxRef.current = new AudioCtx();
+      
+      const ctx = audioCtxRef.current;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.type = "sawtooth";
+      osc.frequency.value = 600; // ប្រេកង់សំឡេង Siren
+      
+      // LFO សម្រាប់ធ្វើឱ្យសំឡេងឡើងចុះ (ដូចឡានសង្គ្រោះ)
+      const lfo = ctx.createOscillator();
+      lfo.type = "sine";
+      lfo.frequency.value = 2; // ល្បឿនឡើងចុះ 2Hz
+      const lfoGain = ctx.createGain();
+      lfoGain.gain.value = 200; // ចន្លោះប្រេកង់
+      lfo.connect(lfoGain);
+      lfoGain.connect(osc.frequency);
+      
+      gain.gain.value = 0.05; // កម្រិតសំឡេង (ត្រូវកុំឱ្យខ្លាំងពេក)
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      osc.start();
+      lfo.start();
+      
+      sirenOscRef.current = osc;
+      sirenGainRef.current = gain;
+      setSoundOn(true);
+    } else {
+      // បិទសំឡេង
+      if (sirenOscRef.current) sirenOscRef.current.stop();
+      if (sirenGainRef.current) sirenGainRef.current.disconnect();
+      setSoundOn(false);
+    }
+  };
 
   useEffect(() => {
     if (!mountRef.current) return;
@@ -63,24 +137,20 @@ export default function Hospital3D() {
     // 4. កៅអី អំពូលភ្លើង រថយន្តសង្គ្រោះ
     const bench1 = createBench(); bench1.position.set(-6, 0, 12); bench1.rotation.y = Math.PI / 2; scene.add(bench1);
     const bench2 = createBench(); bench2.position.set(6, 0, 12); bench2.rotation.y = -Math.PI / 2; scene.add(bench2);
-    
     const lamp1 = createStreetLamp(); lamp1.position.set(-8, 0, 6); scene.add(lamp1);
     const lamp2 = createStreetLamp(); lamp2.position.set(8, 0, 6); lamp2.rotation.y = Math.PI; scene.add(lamp2);
-
     const ambulance = createAmbulance(); ambulance.position.set(-8, 0, 18); scene.add(ambulance);
     const siren = createSirenLight(); siren.position.set(-8.6, 2.6, 20.5); scene.add(siren);
 
-    // C: ចំណតរថយន្ត (Parking Lot)
+    // 5. ចំណតរថយន្ត (C)
     const car1 = createCar(0xff0000); car1.position.set(10, 0, 22); car1.rotation.y = Math.PI / 2; scene.add(car1);
     const car2 = createCar(0x0000ff); car2.position.set(13, 0, 22); car2.rotation.y = Math.PI / 2; scene.add(car2);
     const car3 = createCar(0x00ff00); car3.position.set(16, 0, 22); car3.rotation.y = Math.PI / 2; scene.add(car3);
 
-    // D: បន្ទប់វះកាត់ (Surgery Room)
-    const surgeryRoom = createSurgeryRoom(); 
-    surgeryRoom.position.set(-15, 0, -5); // ដាក់នៅខាងឆ្វេងអគារ
-    scene.add(surgeryRoom);
+    // 6. បន្ទប់វះកាត់ (D)
+    const surgeryRoom = createSurgeryRoom(); surgeryRoom.position.set(-15, 0, -5); scene.add(surgeryRoom);
 
-    // A: មនុស្ស និងចលនាដើរ
+    // 7. មនុស្ស (A)
     const bedPositions = [{ x: 12, z: -2 }, { x: 12, z: -6 }];
     bedPositions.forEach(pos => {
       const bed = createHospitalBed(); bed.position.set(pos.x, 0, pos.z); scene.add(bed);
@@ -90,6 +160,10 @@ export default function Hospital3D() {
     const doc2 = createDoctor(true); doc2.position.set(2, 0, 8); scene.add(doc2);
     const nurse1 = createNurse(); nurse1.position.set(4, 0, 6); scene.add(nurse1);
     const wc = createWheelchair(); wc.position.set(-4, 0, 6); scene.add(wc);
+
+    // 8. អ្នកទស្សនាដើរក្នុងសួន (Option 3)
+    const visitor1 = createVisitor(0xffaa00); visitor1.position.set(-5, 0, 15); scene.add(visitor1);
+    const visitor2 = createVisitor(0x9900ff); visitor2.position.set(5, 0, 16); scene.add(visitor2);
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
@@ -106,45 +180,57 @@ export default function Hospital3D() {
       animationId = requestAnimationFrame(animate);
       const elapsed = clock.getElapsedTime();
       const isNightMode = nightRef.current;
+      const isFlyingMode = flyingRef.current;
 
       // 1. ភ្លើងសង្គ្រោះវិល
       if (siren.material instanceof THREE.MeshStandardMaterial) {
         const pulse = (Math.sin(elapsed * 8) + 1) / 2;
         siren.material.emissiveIntensity = 1 + pulse * 3;
       }
-      // 2. កង្ហារឧទ្ធម្ភាគចក្រ
-      if (helicopter.userData.rotorGroup) helicopter.userData.rotorGroup.rotation.y += 0.8;
 
-      // 3. ចលនាដើរ (A)
+      // 2. កង្ហារឧទ្ធម្ភាគចក្រ & ហោះហើរ (Option 2)
+      if (helicopter.userData.rotorGroup) {
+        helicopter.userData.rotorGroup.rotation.y += isFlyingMode ? 2.5 : 0.8; // កង្ហារវិលលឿនពេលហោះ
+      }
+      if (isFlyingMode) {
+        helicopter.position.y += (45 - helicopter.position.y) * 0.02; // ឡើងទៅលើ
+        const time = elapsed * 0.4;
+        helicopter.position.x = Math.sin(time) * 15; // វិលជុំវិញ
+        helicopter.position.z = Math.cos(time) * 15 - 5;
+        helicopter.rotation.y += 0.02; // បង្វិលតួ
+      } else {
+        helicopter.position.y += (30.8 - helicopter.position.y) * 0.05; // ចុះចត
+        helicopter.position.x += (0 - helicopter.position.x) * 0.05;
+        helicopter.position.z += (-5 - helicopter.position.z) * 0.05;
+      }
+
+      // 3. ចលនាដើរ (A) និងអ្នកទស្សនា (3)
       doc1.position.z = 8 + Math.sin(elapsed * 1.5) * 3;
       doc1.rotation.y = Math.cos(elapsed * 1.5) > 0 ? 0 : Math.PI;
-      
       doc2.position.x = 2 + Math.cos(elapsed * 1.2) * 2;
       doc2.position.z = 6 + Math.sin(elapsed * 1.2) * 2;
-      doc2.rotation.y = Math.atan2(Math.cos(elapsed * 1.2) * -2, Math.cos(elapsed * 1.2) * 2); // បង្វិលមុខតាមផ្លូវ
-
+      doc2.rotation.y = Math.atan2(Math.cos(elapsed * 1.2) * -2, Math.cos(elapsed * 1.2) * 2);
       nurse1.position.z = 6 + Math.sin(elapsed * 2 + 2) * 4;
       nurse1.rotation.y = Math.cos(elapsed * 2 + 2) > 0 ? 0 : Math.PI;
-
       wc.position.x = -4 + Math.sin(elapsed * 0.8) * 5;
 
-      // 4. ពន្លឺ Day/Night (B: Neon Sign, D: Surgery Light)
+      visitor1.position.z = 15 + Math.sin(elapsed * 1.2) * 5;
+      visitor1.rotation.y = Math.cos(elapsed * 1.2) > 0 ? 0 : Math.PI;
+      visitor2.position.x = 5 + Math.cos(elapsed * 1) * 4;
+      visitor2.rotation.y = Math.cos(elapsed * 1) > 0 ? -Math.PI/2 : Math.PI/2;
+
+      // 4. ពន្លឺ Day/Night
       const targetBg = isNightMode ? new THREE.Color(0x0a1128) : new THREE.Color(0x87ceeb);
       if (scene.background instanceof THREE.Color) {
         scene.background.lerp(targetBg, 0.05);
         if (scene.fog instanceof THREE.Fog) scene.fog.color.copy(scene.background);
       }
-
       sunLight.intensity += ((isNightMode ? 0.1 : 2.5) - sunLight.intensity) * 0.05;
       ambientLight.intensity += ((isNightMode ? 0.2 : 0.5) - ambientLight.intensity) * 0.05;
 
-      // B: Neon Light ភ្លឺពេលយប់
       if (neonLight) neonLight.intensity += ((isNightMode ? 3 : 0) - neonLight.intensity) * 0.05;
-
-      // បង្អួច និងអំពូលភ្លើង
-      if (windowMat) {
-        windowMat.emissiveIntensity += ((isNightMode ? 2.5 : 0.6) - windowMat.emissiveIntensity) * 0.05;
-      }
+      if (windowMat) windowMat.emissiveIntensity += ((isNightMode ? 2.5 : 0.6) - windowMat.emissiveIntensity) * 0.05;
+      
       [lamp1, lamp2].forEach(lamp => {
         lamp.traverse(child => {
           if (child instanceof THREE.PointLight) {
@@ -152,10 +238,14 @@ export default function Hospital3D() {
           }
         });
       });
-
-      // D: Surgery Room Light ភ្លឺជានិច្ច
       if (surgeryRoom.userData.surgeryLight) {
-        surgeryRoom.userData.surgeryLight.intensity = 5 + Math.sin(elapsed * 10) * 0.5; // ភ្លឺរលោងបន្តិច
+        surgeryRoom.userData.surgeryLight.intensity = 5 + Math.sin(elapsed * 10) * 0.5;
+      }
+
+      // សំឡេង (Option 1) - បង្កើន/បន្ថយកម្រិតសំឡេងតាមចលនា
+      if (soundRef.current && sirenGainRef.current) {
+        // ធ្វើឱ្យសំឡេងខ្លាំង-ខ្សោយ តាមចលនារថយន្ត
+        sirenGainRef.current.gain.value = 0.05 + Math.sin(elapsed * 2) * 0.02;
       }
 
       controls.update();
@@ -167,24 +257,39 @@ export default function Hospital3D() {
       cancelAnimationFrame(animationId);
       renderer.dispose();
       if (mountRef.current) mountRef.current.removeChild(renderer.domElement);
+      if (sirenOscRef.current) sirenOscRef.current.stop();
     };
   }, []);
 
   return (
     <div style={{ position: "relative", width: "100%", height: "100vh" }}>
       <div ref={mountRef} style={{ width: "100%", height: "100%" }} />
-      <button
-        onClick={() => setIsNight(!isNight)}
-        style={{
-          position: "absolute", top: "20px", right: "20px",
-          padding: "10px 20px", borderRadius: "8px", border: "none",
-          backgroundColor: isNight ? "#f1c40f" : "#2c3e50",
-          color: isNight ? "#000" : "#fff", cursor: "pointer",
-          fontWeight: "bold", fontSize: "16px", zIndex: 10
-        }}
-      >
-        {isNight ? "☀️ Day Mode" : "🌙 Night Mode"}
-      </button>
+      
+      {/* UI Controls ជាមួយ SVG */}
+      <div style={{ position: "absolute", top: "20px", right: "20px", display: "flex", flexDirection: "column", gap: "10px", zIndex: 10 }}>
+        <button
+          onClick={() => setIsNight(!isNight)}
+          style={{ padding: "10px 15px", borderRadius: "8px", border: "none", backgroundColor: isNight ? "#f1c40f" : "#2c3e50", color: isNight ? "#000" : "#fff", cursor: "pointer", fontWeight: "bold", display: "flex", alignItems: "center", gap: "8px" }}
+        >
+          {isNight ? "☀️ Day Mode" : "🌙 Night Mode"}
+        </button>
+        
+        <button
+          onClick={toggleSound}
+          style={{ padding: "10px 15px", borderRadius: "8px", border: "none", backgroundColor: soundOn ? "#e74c3c" : "#34495e", color: "#fff", cursor: "pointer", fontWeight: "bold", display: "flex", alignItems: "center", gap: "8px" }}
+        >
+          {soundOn ? <SvgSoundOff /> : <SvgSoundOn />}
+          {soundOn ? "Mute Siren" : "Play Siren"}
+        </button>
+
+        <button
+          onClick={() => setIsFlying(!isFlying)}
+          style={{ padding: "10px 15px", borderRadius: "8px", border: "none", backgroundColor: isFlying ? "#27ae60" : "#2980b9", color: "#fff", cursor: "pointer", fontWeight: "bold", display: "flex", alignItems: "center", gap: "8px" }}
+        >
+          <SvgHelicopter />
+          {isFlying ? "Land Helicopter" : "Takeoff Helicopter"}
+        </button>
+      </div>
     </div>
   );
 }

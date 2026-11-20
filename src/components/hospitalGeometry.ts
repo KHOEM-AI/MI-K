@@ -572,3 +572,32 @@ export function createSurgeryRoom() {
   room.userData = { surgeryLight: spotLight, lightFixture };
   return room;
 }
+
+// 20. អ្នកទស្សនា (Visitor) ដើរលេងក្នុងសួន
+export function createVisitor(shirtColor: number) {
+  const visitor = new THREE.Group();
+  const shirtMat = new THREE.MeshStandardMaterial({ color: shirtColor, roughness: 0.8 });
+  const pantsMat = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.9 });
+  const skinMat = new THREE.MeshStandardMaterial({ color: 0xffdbac });
+  const hairMat = new THREE.MeshStandardMaterial({ color: 0x2a1b10 });
+
+  // ខ្លួន
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 1.2, 8), shirtMat);
+  body.position.y = 1.2;
+  visitor.add(body);
+
+  // ជើង
+  const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.8, 8), pantsMat);
+  leg.position.set(-0.2, 0.4, 0); visitor.add(leg);
+  const leg2 = leg.clone(); leg2.position.x = 0.2; visitor.add(leg2);
+
+  // ក្បាល និងសក់
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.35, 16, 16), skinMat);
+  head.position.y = 2;
+  visitor.add(head);
+  const hair = new THREE.Mesh(new THREE.SphereGeometry(0.36, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2), hairMat);
+  hair.position.y = 2.05;
+  visitor.add(hair);
+
+  return visitor;
+}
