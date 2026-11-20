@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
 import {
   createVillageGround,
   createVillageRoads,
@@ -16,12 +17,17 @@ import {
 export default function Village3D() {
   const mountRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const sceneRef = useRef<THREE.Scene | null>(null);
+  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
 
   useEffect(() => {
     const mount = mountRef.current;
     if (!mount) return;
 
     const scene = new THREE.Scene();
+    sceneRef.current = scene;
     scene.background = new THREE.Color("#87ceeb");
     scene.fog = new THREE.Fog("#87ceeb", 150, 400);
 
@@ -32,8 +38,10 @@ export default function Village3D() {
       1000
     );
     camera.position.set(60, 50, 80);
+    cameraRef.current = camera;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
+    rendererRef.current = renderer;
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
@@ -129,6 +137,38 @@ export default function Village3D() {
     };
   }, []);
 
+  const takeScreenshot = () => {
+    const renderer = rendererRef.current;
+    if (!renderer) return;
+    const dataURL = renderer.domElement.toDataURL("image/png");
+    const link = document.createElement("a");
+    link.download = `village-${Date.now()}.png`;
+    link.href = dataURL;
+    link.click();
+  };
+
+  const exportGLB = async () => {
+    const scene = sceneRef.current;
+    if (!scene || busy) return;
+    setBusy(true);
+    try {
+      const exporter = new GLTFExporter();
+      const result = await exporter.parseAsync(scene, { binary: true });
+      const blob = new Blob([result as ArrayBuffer], { type: "model/gltf-binary" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.download = `village-${Date.now()}.glb`;
+      link.href = url;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Export GLB failed:", err);
+      alert("Export បរាជ័យ — សូមពិនិត្យ console");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <div
       ref={mountRef}
@@ -140,6 +180,52 @@ export default function Village3D() {
         background: "#87ceeb",
       }}
     >
+      {!loading && (
+        <div
+          style={{
+            position: "absolute",
+            top: 16,
+            left: 16,
+            display: "flex",
+            gap: 8,
+            zIndex: 10,
+          }}
+        >
+          <button
+            type="button"
+            onClick={takeScreenshot}
+            style={{
+              padding: "10px 16px",
+              borderRadius: 8,
+              border: "none",
+              background: "#16a085",
+              color: "#fff",
+              fontSize: 14,
+              cursor: "pointer",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+            }}
+          >
+            📸 Screenshot
+          </button>
+          <button
+            type="button"
+            onClick={exportGLB}
+            disabled={busy}
+            style={{
+              padding: "10px 16px",
+              borderRadius: 8,
+              border: "none",
+              background: busy ? "#7f8c8d" : "#8e44ad",
+              color: "#fff",
+              fontSize: 14,
+              cursor: busy ? "wait" : "pointer",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+            }}
+          >
+            {busy ? "⏳ កំពុង Export..." : "🎬 Export GLB"}
+          </button>
+        </div>
+      )}
       {loading && (
         <div
           style={{
