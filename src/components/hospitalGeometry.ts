@@ -50,6 +50,7 @@ export function createHospitalBuilding() {
   cross1.position.set(0, 31, 0); cross2.position.set(0, 31, 0);
   group.add(cross1, cross2);
 
+  group.userData = { windowMaterial: windowMat };
   return group;
 }
 
@@ -409,6 +410,7 @@ export function createStreetLamp() {
   light.position.set(1.5, 5.8, 0);
   lamp.add(light);
 
+  lamp.userData = { lampLight: light };
   return lamp;
 }
 

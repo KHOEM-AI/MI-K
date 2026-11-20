@@ -141,6 +141,18 @@ export default function Hospital3D() {
       sunLight.intensity += ((isNightMode ? 0.1 : 2.5) - sunLight.intensity) * 0.05;
       ambientLight.intensity += ((isNightMode ? 0.2 : 0.5) - ambientLight.intensity) * 0.05;
 
+      // អំពូលភ្លើងតាមផ្លូវ
+      lamp1.traverse(child => {
+        if (child instanceof THREE.PointLight) {
+          child.intensity += ((isNightMode ? 2 : 0) - child.intensity) * 0.05;
+        }
+      });
+      lamp2.traverse(child => {
+        if (child instanceof THREE.PointLight) {
+          child.intensity += ((isNightMode ? 2 : 0) - child.intensity) * 0.05;
+        }
+      });
+
       // បង្អួចអគារភ្លឺពេលយប់
       if (windowMat) {
         const targetEmissive = isNightMode ? 2.5 : 0.6;
