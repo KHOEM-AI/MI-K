@@ -671,3 +671,72 @@ function mulberry32(a: number) {
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 }
+
+/* ============================================================
+   បរិវេណជុំវិញ Hospital — ផ្ទះ ២៥, ផ្សារ ២, ដើមឈើ
+   ============================================================ */
+export function createHospitalSurroundings(): THREE.Group {
+  const g = new THREE.Group();
+  const rng = mulberry32(777);
+
+  // ផ្ទះ ២៥ ខ្នង ជុំវិញ radius ៤០-៦៥
+  for (let i = 0; i < 25; i++) {
+    const angle = (i / 25) * Math.PI * 2 + rng() * 0.3;
+    const radius = 45 + rng() * 20;
+    const x = Math.cos(angle) * radius;
+    const z = Math.sin(angle) * radius;
+
+    // លាយឋានៈ
+    const wealth = pickWealth(rng);
+    let house: THREE.Group;
+    if (wealth === 0) {
+      house = createPoorHouse("#8b4513");
+    } else if (wealth === 1) {
+      house = createMiddleHouse("#e8dcc4", "#8d6e63");
+    } else {
+      house = createRichHouse("#fdfefe", "#2c3e50");
+    }
+
+    house.position.set(x, 0, z);
+    // បង្វិលទៅរកកណ្តាល (hospital)
+    house.rotation.y = Math.atan2(-x, -z);
+    g.add(house);
+  }
+
+  // ផ្សារ ២ ជ្រុង
+  const market1 = createMarketStall("#e74c3c");
+  market1.position.set(-50, 0, 30);
+  g.add(market1);
+
+  const market2 = createMarketStall("#f39c12");
+  market2.position.set(50, 0, 30);
+  g.add(market2);
+
+  // ដើមឈើ ១២ (ប្រើ geometry ពី hospitalGeometry បើមាន)
+  const treeMat = new THREE.MeshStandardMaterial({ color: "#2d6a4f", roughness: 1 });
+  const trunkMat = new THREE.MeshStandardMaterial({ color: "#5d4037", roughness: 1 });
+  for (let i = 0; i < 12; i++) {
+    const angle = (i / 12) * Math.PI * 2 + rng() * 0.5;
+    const radius = 70 + rng() * 15;
+    const x = Math.cos(angle) * radius;
+    const z = Math.sin(angle) * radius;
+
+    const trunk = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.4, 0.5, 2, 8),
+      trunkMat
+    );
+    trunk.position.set(x, 1, z);
+    trunk.castShadow = true;
+    g.add(trunk);
+
+    const leaves = new THREE.Mesh(
+      new THREE.SphereGeometry(2, 8, 8),
+      treeMat
+    );
+    leaves.position.set(x, 3.5, z);
+    leaves.castShadow = true;
+    g.add(leaves);
+  }
+
+  return g;
+}
