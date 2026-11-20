@@ -20,6 +20,7 @@ import {
   createFullPerimeter
 } from "./hospitalGeometry";
 import { createHospitalSurroundings } from "./villageGeometry";
+import { createTrafficSystem, updateTraffic, type TrafficVehicle } from "./trafficSystem";
 
 const SvgSoundOn = () => (<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>);
 const SvgSoundOff = () => (<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>);
@@ -176,6 +177,13 @@ export default function Hospital3D() {
 
     // បរិវេណជុំវិញ (ភូមិតូច ២៥ ខ្នង + ផ្សារ ២ + ដើមឈើ ១២)
     scene.add(createHospitalSurroundings());
+
+    // ចរាចរណ៍ (ម៉ូតូ ៥ + ឡាន ៣)
+    const traffic = createTrafficSystem();
+    // ធ្វើឱ្យតូចជាងភូមិ (ភូមិ Hospital តូចជាង)
+    traffic.group.scale.setScalar(0.4);
+    scene.add(traffic.group);
+    (scene as any).userData.traffic = traffic.vehicles;
     
     // ផ្លូវកៅស៊ូពីខាងក្រៅចូលដល់ចំណត
     const entryRoad = createRubberRoad(8, 40); entryRoad.position.set(0, 0, 35); scene.add(entryRoad);
@@ -431,6 +439,12 @@ export default function Hospital3D() {
       if (windowMat) windowMat.emissiveIntensity += ((isNightMode ? 2.5 : 0.6) - windowMat.emissiveIntensity) * 0.05;
       
       if (surgeryRoom.userData.surgeryLight) surgeryRoom.userData.surgeryLight.intensity = 5 + Math.sin(elapsed * 10) * 0.5;
+
+      // Update traffic
+      const tv = (scene as any).userData.traffic as TrafficVehicle[] | undefined;
+      if (tv && tv.length > 0) {
+        updateTraffic(tv, performance.now() / 1000);
+      }
 
       controls.update();
       renderer.render(scene, camera);

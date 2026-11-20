@@ -28,6 +28,8 @@ import {
   createMixedFarm,
 } from "./natureElements";
 import { createTrafficSystem, updateTraffic, type TrafficVehicle } from "./trafficSystem";
+import { createVillageAnimals, updateAnimals, type AnimatedAnimal } from "./villageAnimals";
+import { createTrafficLights, updateTrafficLights, type TrafficLight } from "./trafficLights";
 
 export default function Village3D() {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -41,6 +43,8 @@ export default function Village3D() {
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const trafficVehiclesRef = useRef<TrafficVehicle[]>([]);
+  const animalsRef = useRef<AnimatedAnimal[]>([]);
+  const trafficLightsRef = useRef<TrafficLight[]>([]);
   const sunRef = useRef<THREE.DirectionalLight | null>(null);
   useAutoQuality(rendererRef);
 
@@ -187,6 +191,16 @@ export default function Village3D() {
     scene.add(traffic.group);
     trafficVehiclesRef.current = traffic.vehicles;
 
+    // ========== សត្វ (គោ ៥ + ជ្រូក ៦ + ទា ១៥) ==========
+    const animals = createVillageAnimals();
+    scene.add(animals.group);
+    animalsRef.current = animals.animals;
+
+    // ========== ភ្លើងស្តុប ៤ (តាមផ្លូវបំបែក) ==========
+    const trafficLights = createTrafficLights();
+    scene.add(trafficLights.group);
+    trafficLightsRef.current = trafficLights.lights;
+
     const markets = [
       { f: createMarketStall("#e74c3c"), pos: [-70, 0, 60] as const },
       { f: createMarketStall("#f39c12"), pos: [70, 0, 60] as const },
@@ -282,6 +296,15 @@ export default function Village3D() {
       if (trafficVehiclesRef.current.length > 0) {
         const elapsed = performance.now() / 1000;
         updateTraffic(trafficVehiclesRef.current, elapsed);
+      }
+
+      // Update animals + traffic lights
+      if (animalsRef.current.length > 0) {
+        const elapsed = performance.now() / 1000;
+        updateAnimals(animalsRef.current, elapsed);
+      }
+      if (trafficLightsRef.current.length > 0) {
+        updateTrafficLights(trafficLightsRef.current, 1 / 60);
       }
 
       controls.update();

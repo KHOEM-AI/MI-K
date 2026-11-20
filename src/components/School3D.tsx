@@ -4,6 +4,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
 import { createSchoolBuilding, createFlagPole, createStudent, createTeacher } from "./schoolGeometry";
 import { createSchoolSurroundings } from "./villageGeometry";
+import { createTrafficSystem, updateTraffic, type TrafficVehicle } from "./trafficSystem";
 import { createTree, createFlower, createBench } from "./hospitalGeometry";
 
 export default function School3D() {
@@ -44,6 +45,12 @@ export default function School3D() {
     const school = createSchoolBuilding(); school.position.set(0, 0, -8); scene.add(school);
     // បរិវេណជុំវិញ (ផ្សារ ៤ + ផ្ទះ ១០)
     scene.add(createSchoolSurroundings());
+
+    // ចរាចរណ៍ (ម៉ូតូ ៣ + ឡាន ២)
+    const traffic = createTrafficSystem();
+    traffic.group.scale.setScalar(0.25);
+    scene.add(traffic.group);
+    (scene as any).userData.traffic = traffic.vehicles;
     const flag = createFlagPole(); flag.position.set(-10, 0, 5); scene.add(flag);
 
     // ដើមឈើ
@@ -95,6 +102,10 @@ export default function School3D() {
       sun.intensity += ((night ? 0.1 : 2.5) - sun.intensity) * 0.05;
       if (windowMat) windowMat.emissiveIntensity += ((night ? 2.5 : 0.6) - windowMat.emissiveIntensity) * 0.05;
 
+      const tv = (scene as any).userData.traffic as TrafficVehicle[] | undefined;
+      if (tv && tv.length > 0) {
+        updateTraffic(tv, clock.getElapsedTime());
+      }
       controls.update();
       renderer.render(scene, camera);
     };
