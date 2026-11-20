@@ -273,3 +273,76 @@ export function updateAnimals(animals: AnimatedAnimal[], elapsed: number): void 
     });
   });
 }
+
+
+/* ============================================================
+   មាន់ដើរ (A)
+   ============================================================ */
+export interface AnimatedChicken {
+  mesh: THREE.Group;
+  angle: number;
+  radius: number;
+  speed: number;
+  centerX: number;
+  centerZ: number;
+  legPhase: number;
+}
+
+export function createChickenFlock(
+  count = 20,
+  centerX = 0,
+  centerZ = 0,
+  radius = 50
+): { group: THREE.Group; chickens: AnimatedChicken[] } {
+  const group = new THREE.Group();
+  const chickens: AnimatedChicken[] = [];
+
+  for (let i = 0; i < count; i++) {
+    // មាន់ color ចម្រុះ
+    const colors = ["#f39c12", "#ffffff", "#e67e22", "#c0392b", "#f1c40f"];
+    const chicken = createDuck(colors[i % colors.length]);
+    chicken.scale.setScalar(0.6);
+    group.add(chicken);
+
+    const startAngle = (i / count) * Math.PI * 2;
+    chickens.push({
+      mesh: chicken,
+      angle: startAngle,
+      radius: radius + (Math.random() - 0.5) * 15,
+      speed: 0.15 + Math.random() * 0.15,
+      centerX,
+      centerZ,
+      legPhase: Math.random() * Math.PI * 2,
+    });
+  }
+
+  return { group, chickens };
+}
+
+export function updateChickenFlock(
+  chickens: AnimatedChicken[],
+  elapsed: number
+): void {
+  chickens.forEach((c) => {
+    // ដើរជុំវិញ center
+    c.angle += c.speed * 0.016;
+    const x = c.centerX + Math.cos(c.angle) * c.radius;
+    const z = c.centerZ + Math.sin(c.angle) * c.radius;
+
+    c.mesh.position.set(x, 0, z);
+    // បង្វិលជាមួយ tangent
+    c.mesh.rotation.y = c.angle + Math.PI / 2;
+
+    // ជើងញាក់ + ក្បាលញ័រ (pecking)
+    c.mesh.traverse((child) => {
+      if (child.name === "leg") {
+        child.rotation.x = Math.sin(elapsed * 8 + c.legPhase) * 0.4;
+      }
+    });
+    // ក្បាលញ័រ (ចុចចុះឡើង)
+    if (c.mesh.children[1]) {
+      c.mesh.children[1].position.y =
+        0.9 + Math.abs(Math.sin(elapsed * 4 + c.legPhase)) * 0.1;
+    }
+  });
+}

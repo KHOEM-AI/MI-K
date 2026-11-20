@@ -30,6 +30,18 @@ import {
 import { createTrafficSystem, updateTraffic, type TrafficVehicle } from "./trafficSystem";
 import { createVillageAnimals, updateAnimals, type AnimatedAnimal } from "./villageAnimals";
 import { createTrafficLights, updateTrafficLights, type TrafficLight } from "./trafficLights";
+import { createChickenFlock, updateChickenFlock, type AnimatedChicken } from "./villageAnimals";
+import {
+  createSwayCrops,
+  updateSwayCrops,
+  createSwayVeggies,
+  updateSwayVeggies,
+  createClouds,
+  updateClouds,
+  type SwayCrop,
+  type SwayVeg,
+  type DriftCloud,
+} from "./villageAnimations";
 
 export default function Village3D() {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -45,6 +57,10 @@ export default function Village3D() {
   const trafficVehiclesRef = useRef<TrafficVehicle[]>([]);
   const animalsRef = useRef<AnimatedAnimal[]>([]);
   const trafficLightsRef = useRef<TrafficLight[]>([]);
+  const chickensRef = useRef<AnimatedChicken[]>([]);
+  const cropsRef = useRef<SwayCrop[]>([]);
+  const veggiesRef = useRef<SwayVeg[]>([]);
+  const cloudsRef = useRef<DriftCloud[]>([]);
   const sunRef = useRef<THREE.DirectionalLight | null>(null);
   useAutoQuality(rendererRef);
 
@@ -201,6 +217,36 @@ export default function Village3D() {
     scene.add(trafficLights.group);
     trafficLightsRef.current = trafficLights.lights;
 
+    // ========== A: មាន់ដើរ ២០ ==========
+    const chickens = createChickenFlock(20, -50, 30, 25);
+    scene.add(chickens.group);
+    chickensRef.current = chickens.chickens;
+
+    // ========== B: ស្រូវបក់ (ស្រែ ៤ កន្លែង) ==========
+    const cropPositions = [
+      [-140, 120], [140, 120], [-140, -120], [140, -120],
+    ];
+    cropPositions.forEach(([cx, cz]) => {
+      const sw = createSwayCrops(64, cx, cz, 28);
+      scene.add(sw.group);
+      cropsRef.current.push(...sw.crops);
+    });
+
+    // ========== B2: បន្លែបក់ ==========
+    const vegPositions = [
+      [-100, -100], [-70, -100], [70, -100], [100, -100],
+    ];
+    vegPositions.forEach(([cx, cz]) => {
+      const sv = createSwayVeggies(25, cx, cz, 13);
+      scene.add(sv.group);
+      veggiesRef.current.push(...sv.veggies);
+    });
+
+    // ========== C: ពពករសាត់ ១៥ ==========
+    const cloudSystem = createClouds(15, 110, 500);
+    scene.add(cloudSystem.group);
+    cloudsRef.current = cloudSystem.clouds;
+
     const markets = [
       { f: createMarketStall("#e74c3c"), pos: [-70, 0, 60] as const },
       { f: createMarketStall("#f39c12"), pos: [70, 0, 60] as const },
@@ -305,6 +351,21 @@ export default function Village3D() {
       }
       if (trafficLightsRef.current.length > 0) {
         updateTrafficLights(trafficLightsRef.current, 1 / 60);
+      }
+
+      // Update A + B + C
+      const elapsedSec = performance.now() / 1000;
+      if (chickensRef.current.length > 0) {
+        updateChickenFlock(chickensRef.current, elapsedSec);
+      }
+      if (cropsRef.current.length > 0) {
+        updateSwayCrops(cropsRef.current, elapsedSec);
+      }
+      if (veggiesRef.current.length > 0) {
+        updateSwayVeggies(veggiesRef.current, elapsedSec);
+      }
+      if (cloudsRef.current.length > 0) {
+        updateClouds(cloudsRef.current, elapsedSec, 500);
       }
 
       controls.update();
