@@ -91,6 +91,19 @@ import { createWildAnimals, updateWildAnimals, type WildAnimal } from "./wildAni
 import { createForestZone, updateForestZone } from "./forestEnvironment";
 import { createForestWildlife, updateForestWildlife, type ForestAnimal } from "./forestWildlife";
 import { createSawmill, updateSawmill } from "./sawmill";
+import { createMoreNature, updateMoreNature, type MoreAnimal } from "./moreNature";
+import {
+  createFirework,
+  launchFirework,
+  updateFirework,
+  createLanterns,
+  updateLanterns,
+  createFestival,
+  updateFestival,
+  type Firework,
+  type Lantern,
+  type FestivalPerson,
+} from "./festivalSystem";
 
 export default function Village3D() {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -133,6 +146,10 @@ export default function Village3D() {
   const forestWaterRef = useRef<THREE.Mesh[]>([]);
   const forestAnimalsRef = useRef<ForestAnimal[]>([]);
   const sawBladeRef = useRef<THREE.Mesh | null>(null);
+  const moreAnimalsRef = useRef<MoreAnimal[]>([]);
+  const fireworkRef = useRef<Firework | null>(null);
+  const lanternsRef = useRef<Lantern[]>([]);
+  const festivalPeopleRef = useRef<FestivalPerson[]>([]);
   const starsRef = useRef<THREE.Points | null>(null);
   const moonRef = useRef<THREE.Group | null>(null);
   const sunRef = useRef<THREE.DirectionalLight | null>(null);
@@ -480,6 +497,27 @@ export default function Village3D() {
       }
     });
 
+    // ========== សត្វព្រៃ + រុក្ខជាតិថ្មី (B + C) ==========
+    const moreNature = createMoreNature(-300, 250);
+    scene.add(moreNature.group);
+    moreAnimalsRef.current = moreNature.animals;
+
+    // ========== ពិធីបុណ្យ (D) ==========
+    // ចង្កៀងគោម ២០ ជុំវិញភូមិ
+    const lanterns = createLanterns(20, 80);
+    scene.add(lanterns.group);
+    lanternsRef.current = lanterns.lanterns;
+
+    // មនុស្សជុំគ្នា ៣០ នៅកណ្តាលភូមិ
+    const festival = createFestival(30, 0, 50);
+    scene.add(festival.group);
+    festivalPeopleRef.current = festival.people;
+
+    // ភ្លើងបុណ្យ
+    const firework = createFirework();
+    scene.add(firework.group);
+    fireworkRef.current = firework;
+
     // ========== B: ផ្កាយ + ព្រះច័ន្ទ (សម្រាប់ពេលយប់) ==========
     const stars = createStars(1500, 800);
     scene.add(stars);
@@ -648,6 +686,36 @@ export default function Village3D() {
       // Update forest zone (ឃ្មុំ + ទឹក)
       if (forestBeesRef.current.length > 0 || forestWaterRef.current.length > 0) {
         updateForestZone(forestBeesRef.current, forestWaterRef.current, elapsedSec);
+      }
+
+      // Update more nature (B + C)
+      if (moreAnimalsRef.current.length > 0) {
+        updateMoreNature(moreAnimalsRef.current, elapsedSec);
+      }
+
+      // Update festival (D) — ចង្កៀង + មនុស្ស
+      if (lanternsRef.current.length > 0 && timeControllerRef.current) {
+        const night = getTimeOfDay(timeControllerRef.current.getHour()).isNight;
+        updateLanterns(lanternsRef.current, elapsedSec, night);
+
+        // បង្ហោះភ្លើងបុណ្យរៀងរាល់ ៥ វិ ពេលយប់
+        if (night && fireworkRef.current) {
+          if (!fireworkRef.current.active && Math.floor(elapsedSec) % 5 === 0 && fireworkRef.current.timer > 4) {
+            launchFirework(
+              fireworkRef.current,
+              (Math.random() - 0.5) * 60,
+              (Math.random() - 0.5) * 60 + 50
+            );
+          }
+          if (fireworkRef.current.active) {
+            fireworkRef.current.timer += 1 / 60;
+            updateFirework(fireworkRef.current, 1 / 60);
+          }
+        }
+      }
+
+      if (festivalPeopleRef.current.length > 0) {
+        updateFestival(festivalPeopleRef.current, elapsedSec);
       }
 
       // Update sawmill blade
