@@ -1461,3 +1461,155 @@ export function createPaymentMachine() {
   }
   return machine;
 }
+
+// 63. របងព័ទ្ធជុំវិញ (Perimeter Wall)
+export function createPerimeterWall(size: number) {
+  const wallGroup = new THREE.Group();
+  const wallMat = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.8 });
+  
+  // ជញ្ជាំង ៤ ជ្រុង
+  const wallThickness = 0.2;
+  const wallHeight = 2.5;
+  
+  const wallN = new THREE.Mesh(new THREE.BoxGeometry(size, wallHeight, wallThickness), wallMat);
+  wallN.position.set(0, wallHeight / 2, -size / 2); wallGroup.add(wallN);
+  
+  const wallS = new THREE.Mesh(new THREE.BoxGeometry(size, wallHeight, wallThickness), wallMat);
+  wallS.position.set(0, wallHeight / 2, size / 2); wallGroup.add(wallS);
+  
+  const wallE = new THREE.Mesh(new THREE.BoxGeometry(wallThickness, wallHeight, size), wallMat);
+  wallE.position.set(size / 2, wallHeight / 2, 0); wallGroup.add(wallE);
+  
+  const wallW = new THREE.Mesh(new THREE.BoxGeometry(wallThickness, wallHeight, size), wallMat);
+  wallW.position.set(-size / 2, wallHeight / 2, 0); wallGroup.add(wallW);
+  
+  return wallGroup;
+}
+
+// 64. ចង្កៀងគោមសូឡា (Solar Wall Lamp)
+export function createSolarWallLamp() {
+  const lamp = new THREE.Group();
+  const baseMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
+  const lightMat = new THREE.MeshStandardMaterial({ color: 0xffdd55, emissive: 0xffdd55, emissiveIntensity: 2 });
+  
+  const base = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.3, 0.1), baseMat);
+  lamp.add(base);
+  
+  const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), lightMat);
+  bulb.position.set(0, 0.15, 0.1);
+  lamp.add(bulb);
+  
+  return lamp;
+}
+
+// 65. បង្គោលភ្លើងសូឡា (Solar Light Pole)
+export function createSolarPole() {
+  const pole = new THREE.Group();
+  const poleMat = new THREE.MeshStandardMaterial({ color: 0x666666, metalness: 0.7 });
+  const panelMat = new THREE.MeshStandardMaterial({ color: 0x111133, metalness: 0.9 });
+  const bulbMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 1.5 });
+  
+  const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.08, 3, 8), poleMat);
+  pillar.position.y = 1.5;
+  pole.add(pillar);
+  
+  const panel = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.05, 0.4), panelMat);
+  panel.position.set(0, 3.1, 0);
+  panel.rotation.x = Math.PI / 6;
+  pole.add(panel);
+  
+  const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.5, 8), poleMat);
+  arm.rotation.z = Math.PI / 2;
+  arm.position.set(0.25, 2.8, 0);
+  pole.add(arm);
+  
+  const bulb = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.1, 0.2), bulbMat);
+  bulb.position.set(0.5, 2.75, 0);
+  pole.add(bulb);
+  
+  pole.userData = { bulb };
+  return pole;
+}
+
+// 66. ដើមស្លា (Palm Tree)
+export function createPalmTree() {
+  const palm = new THREE.Group();
+  const trunkMat = new THREE.MeshStandardMaterial({ color: 0x8b5a2b, roughness: 1 });
+  const leafMat = new THREE.MeshStandardMaterial({ color: 0x228b22, roughness: 0.8 });
+  
+  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.2, 4, 8), trunkMat);
+  trunk.position.y = 2;
+  palm.add(trunk);
+  
+  for (let i = 0; i < 5; i++) {
+    const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.8, 2.5, 5), leafMat);
+    leaf.position.set(0, 4, 0);
+    leaf.rotation.x = (Math.PI / 4) + (i * Math.PI / 2.5);
+    leaf.rotation.z = (Math.PI / 4);
+    palm.add(leaf);
+  }
+  
+  return palm;
+}
+
+// 67. បង្កើតបរិវេណទាំងមូល (Full Perimeter Setup)
+export function createFullPerimeter(size: number) {
+  const perimeter = new THREE.Group();
+  
+  // 1. របង
+  perimeter.add(createPerimeterWall(size));
+  
+  const halfSize = size / 2;
+  const stepLamp = 1.5; // រាល់ ១.៥ ម៉ែត្រ
+  const stepPole = 5.0; // រាល់ ៥ ម៉ែត្រ
+  
+  // បង្កើតវត្ថុជុំវិញរបង
+  for (let i = -halfSize; i <= halfSize; i += stepLamp) {
+    // ចង្កៀងគោម (១.៥ ម៉ែត្រ)
+    const lampN = createSolarWallLamp(); lampN.position.set(i, 2.2, -halfSize + 0.1); lampN.rotation.y = Math.PI; perimeter.add(lampN);
+    const lampS = createSolarWallLamp(); lampS.position.set(i, 2.2, halfSize - 0.1); perimeter.add(lampS);
+    const lampE = createSolarWallLamp(); lampE.position.set(halfSize - 0.1, 2.2, i); lampE.rotation.y = -Math.PI / 2; perimeter.add(lampE);
+    const lampW = createSolarWallLamp(); lampW.position.set(-halfSize + 0.1, 2.2, i); lampW.rotation.y = Math.PI / 2; perimeter.add(lampW);
+
+    // ដើមស្លា (រាល់ ១.៥ ម៉ែត្រ)
+    const palmN = createPalmTree(); palmN.position.set(i, 0, -halfSize - 1); perimeter.add(palmN);
+    const palmS = createPalmTree(); palmS.position.set(i, 0, halfSize + 1); perimeter.add(palmS);
+    const palmE = createPalmTree(); palmE.position.set(halfSize + 1, 0, i); perimeter.add(palmE);
+    const palmW = createPalmTree(); palmW.position.set(-halfSize - 1, 0, i); perimeter.add(palmW);
+    
+    // ផ្កាចម្រុះពណ៌ (ដាក់ចន្លោះដើមស្លា)
+    if (Math.round(i) % 3 === 0) {
+      const fN = createFlower(0xff00ff); fN.position.set(i, 0, -halfSize - 1.5); perimeter.add(fN);
+      const fS = createFlower(0xffff00); fS.position.set(i, 0, halfSize + 1.5); perimeter.add(fS);
+      const fE = createFlower(0x00ffff); fE.position.set(halfSize + 1.5, 0, i); perimeter.add(fE);
+      const fW = createFlower(0xff0000); fW.position.set(-halfSize - 1.5, 0, i); perimeter.add(fW);
+    }
+  }
+
+  for (let i = -halfSize; i <= halfSize; i += stepPole) {
+    // បង្គោលភ្លើង (រាល់ ៥ ម៉ែត្រ)
+    const poleN = createSolarPole(); poleN.position.set(i, 0, -halfSize - 2.5); perimeter.add(poleN);
+    const poleS = createSolarPole(); poleS.position.set(i, 0, halfSize + 2.5); poleS.rotation.y = Math.PI; perimeter.add(poleS);
+    const poleE = createSolarPole(); poleE.position.set(halfSize + 2.5, 0, i); poleE.rotation.y = -Math.PI / 2; perimeter.add(poleE);
+    const poleW = createSolarPole(); poleW.position.set(-halfSize - 2.5, 0, i); poleW.rotation.y = Math.PI / 2; perimeter.add(poleW);
+  }
+  
+  // ថ្មើរជើង (Sidewalk) ជុំវិញ
+  const sideMat = new THREE.MeshStandardMaterial({ color: 0xaaaaaa });
+  const kerbMat = new THREE.MeshStandardMaterial({ color: 0x555555 });
+  
+  // ថ្មើរជើង N & S
+  const swN = new THREE.Mesh(new THREE.BoxGeometry(size + 6, 0.1, 1.5), sideMat); swN.position.set(0, 0.05, -halfSize - 2.5); perimeter.add(swN);
+  const swS = new THREE.Mesh(new THREE.BoxGeometry(size + 6, 0.1, 1.5), sideMat); swS.position.set(0, 0.05, halfSize + 2.5); perimeter.add(swS);
+  // ថ្មើរជើង E & W
+  const swE = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.1, size + 6), sideMat); swE.position.set(halfSize + 2.5, 0.05, 0); perimeter.add(swE);
+  const swW = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.1, size + 6), sideMat); swW.position.set(-halfSize - 2.5, 0.05, 0); perimeter.add(swW);
+
+  // គីរូ (Kerb)
+  const k1 = new THREE.Mesh(new THREE.BoxGeometry(size + 6, 0.15, 0.1), kerbMat); k1.position.set(0, 0.07, -halfSize - 3.25); perimeter.add(k1);
+  const k2 = new THREE.Mesh(new THREE.BoxGeometry(size + 6, 0.15, 0.1), kerbMat); k2.position.set(0, 0.07, halfSize + 3.25); perimeter.add(k2);
+  const k3 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.15, size + 6), kerbMat); k3.position.set(halfSize + 3.25, 0.07, 0); perimeter.add(k3);
+  const k4 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.15, size + 6), kerbMat); k4.position.set(-halfSize - 3.25, 0.07, 0); perimeter.add(k4);
+
+  return perimeter;
+}
