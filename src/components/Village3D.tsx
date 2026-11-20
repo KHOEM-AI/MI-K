@@ -12,6 +12,8 @@ import {
   createClothingShop,
   createMotorbikeShop,
   createBikeShop,
+  createRiceField,
+  createVegetableGarden,
 } from "./villageGeometry";
 
 export default function Village3D() {
@@ -29,15 +31,15 @@ export default function Village3D() {
     const scene = new THREE.Scene();
     sceneRef.current = scene;
     scene.background = new THREE.Color("#87ceeb");
-    scene.fog = new THREE.Fog("#87ceeb", 150, 400);
+    scene.fog = new THREE.Fog("#87ceeb", 250, 700);
 
     const camera = new THREE.PerspectiveCamera(
       55,
       window.innerWidth / window.innerHeight,
       0.1,
-      1000
+      2000
     );
-    camera.position.set(60, 50, 80);
+    camera.position.set(150, 100, 200);
     cameraRef.current = camera;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -48,62 +50,88 @@ export default function Village3D() {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     mount.appendChild(renderer.domElement);
 
-    const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+    const ambient = new THREE.AmbientLight(0xffffff, 0.65);
     scene.add(ambient);
 
-    const sun = new THREE.DirectionalLight(0xffffff, 1.2);
-    sun.position.set(50, 80, 40);
+    const sun = new THREE.DirectionalLight(0xffffff, 1.3);
+    sun.position.set(100, 150, 80);
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 2048);
-    sun.shadow.camera.left = -100;
-    sun.shadow.camera.right = 100;
-    sun.shadow.camera.top = 100;
-    sun.shadow.camera.bottom = -100;
-    sun.shadow.camera.far = 300;
+    sun.shadow.camera.left = -250;
+    sun.shadow.camera.right = 250;
+    sun.shadow.camera.top = 250;
+    sun.shadow.camera.bottom = -250;
+    sun.shadow.camera.far = 600;
     scene.add(sun);
 
     scene.add(createVillageGround());
     scene.add(createVillageRoads());
 
+    // រោងចក្រ (ខាងជើង)
     const factory = createMeatVegFactory();
-    factory.position.set(0, 0, -60);
+    factory.position.set(0, 0, -110);
     scene.add(factory);
 
+    // ភូមិ ៣០០ គ្រួសារ (កណ្តាល)
     scene.add(createVillageHouses(300));
 
-    const m1 = createMarketStall("#e74c3c");
-    m1.position.set(-35, 0, 25);
-    scene.add(m1);
-    const m2 = createMarketStall("#f39c12");
-    m2.position.set(35, 0, 25);
-    scene.add(m2);
-    const m3 = createMarketStall("#27ae60");
-    m3.position.set(-35, 0, -25);
-    scene.add(m3);
-    const m4 = createMarketStall("#3498db");
-    m4.position.set(35, 0, -25);
-    scene.add(m4);
+    // ផ្សារ ៤ (ជ្រុងភូមិ)
+    const markets = [
+      { f: createMarketStall("#e74c3c"), pos: [-70, 0, 60] },
+      { f: createMarketStall("#f39c12"), pos: [70, 0, 60] },
+      { f: createMarketStall("#27ae60"), pos: [-70, 0, -60] },
+      { f: createMarketStall("#3498db"), pos: [70, 0, -60] },
+    ];
+    markets.forEach(({ f, pos }) => {
+      f.position.set(pos[0], pos[1], pos[2]);
+      scene.add(f);
+    });
 
-    const p1 = createPhoneShop();
-    p1.position.set(-18, 0, 40);
-    scene.add(p1);
-    const p2 = createClothingShop();
-    p2.position.set(-6, 0, 40);
-    scene.add(p2);
-    const p3 = createMotorbikeShop();
-    p3.position.set(8, 0, 40);
-    scene.add(p3);
-    const p4 = createBikeShop();
-    p4.position.set(22, 0, 40);
-    scene.add(p4);
+    // ហាងពាណិជ្ជកម្ម (តាមដងផ្លូវធំ)
+    const shops = [
+      { f: createPhoneShop(), pos: [-40, 0, 70] },
+      { f: createClothingShop(), pos: [-15, 0, 70] },
+      { f: createMotorbikeShop(), pos: [15, 0, 70] },
+      { f: createBikeShop(), pos: [45, 0, 70] },
+    ];
+    shops.forEach(({ f, pos }) => {
+      f.position.set(pos[0], pos[1], pos[2]);
+      scene.add(f);
+    });
+
+    // កសិកម្ម — ស្រែ ៤ (ជ្រុងខាងក្រៅ)
+    const riceFields = [
+      [-140, 0, 120],
+      [140, 0, 120],
+      [-140, 0, -120],
+      [140, 0, -120],
+    ];
+    riceFields.forEach(([x, y, z]) => {
+      const field = createRiceField(30);
+      field.position.set(x, y, z);
+      scene.add(field);
+    });
+
+    // ចម្ការបន្លែ ៤ (ជិតរោងចក្រ)
+    const gardens = [
+      [-100, 0, -100],
+      [-70, 0, -100],
+      [70, 0, -100],
+      [100, 0, -100],
+    ];
+    gardens.forEach(([x, y, z]) => {
+      const garden = createVegetableGarden(15);
+      garden.position.set(x, y, z);
+      scene.add(garden);
+    });
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
     controls.maxPolarAngle = Math.PI / 2.1;
-    controls.minDistance = 15;
-    controls.maxDistance = 250;
-    controls.target.set(0, 5, 0);
+    controls.minDistance = 30;
+    controls.maxDistance = 500;
+    controls.target.set(0, 10, 0);
     controls.update();
 
     const onResize = () => {
@@ -116,8 +144,7 @@ export default function Village3D() {
     let rafId = 0;
     const clock = new THREE.Clock();
     const animate = () => {
-      const t = clock.getElapsedTime();
-      scene.rotation.y = Math.sin(t * 0.02) * 0.05;
+      clock.getElapsedTime();
       controls.update();
       renderer.render(scene, camera);
       rafId = requestAnimationFrame(animate);
@@ -238,7 +265,7 @@ export default function Village3D() {
             textShadow: "0 2px 8px rgba(0,0,0,0.5)",
           }}
         >
-          🏘️ កំពុងផ្ទុកភូមិ...
+          🏘️ កំពុងផ្ទុកភូមិកសិកម្ម និងឧស្សាហកម្ម...
         </div>
       )}
     </div>
