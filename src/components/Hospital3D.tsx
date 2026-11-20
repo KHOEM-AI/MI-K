@@ -9,7 +9,10 @@ import {
   createHelicopter, createCar, createSurgeryRoom, createVisitor,
   createStars, createRain, createTrafficSign, createColorfulLights,
   createFence, createStringLights, createACUnit, createStretcher,
-  createVIPRoom, createReception, createDigitalTV, createLongBench, createGuardBooth
+  createVIPRoom, createReception, createDigitalTV, createLongBench, createGuardBooth,
+  createElevator, createStairs, createFireHydrant, createFireHoseCabinet,
+  createSmallTrashBin, createBigTrashBin, createGarbageTruck, createAmbulanceVariant,
+  createGarage
 } from "./hospitalGeometry";
 
 const SvgSoundOn = () => (<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>);
@@ -26,6 +29,7 @@ export default function Hospital3D() {
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
   const helicopterRef = useRef<THREE.Group | null>(null);
+  const elevatorRef = useRef<THREE.Group | null>(null);
 
   const [isNight, setIsNight] = useState(false);
   const [isFlying, setIsFlying] = useState(false);
@@ -138,6 +142,24 @@ export default function Hospital3D() {
     const helicopter = createHelicopter(); helicopter.position.set(0, 30.8, -5); scene.add(helicopter);
     helicopterRef.current = helicopter;
 
+    // ជណ្តើរយន្ត និងជណ្តើរជើង
+    const elevator = createElevator(); elevator.position.set(8, 0, 1); scene.add(elevator);
+    elevatorRef.current = elevator;
+    const stairs = createStairs(); stairs.position.set(-8, 0, 1); stairs.rotation.y = Math.PI; scene.add(stairs);
+
+    // បំពង់ពន្លត់អគ្គីភ័យ និងទូទុយោទឹក
+    const hydrant1 = createFireHydrant(); hydrant1.position.set(-10, 0, 5); scene.add(hydrant1);
+    const hydrant2 = createFireHydrant(); hydrant2.position.set(10, 0, 5); scene.add(hydrant2);
+    const cabinet1 = createFireHoseCabinet(); cabinet1.position.set(-5, 1.5, 1.2); scene.add(cabinet1);
+    const cabinet2 = createFireHoseCabinet(); cabinet2.position.set(5, 1.5, 1.2); scene.add(cabinet2);
+
+    // ធុងសំរាម
+    const smallBin1 = createSmallTrashBin(); smallBin1.position.set(-4, 0, 8); scene.add(smallBin1);
+    const smallBin2 = createSmallTrashBin(); smallBin2.position.set(4, 0, 8); scene.add(smallBin2);
+    const smallBin3 = createSmallTrashBin(); smallBin3.position.set(0, 0, 15); scene.add(smallBin3);
+    const bigBin1 = createBigTrashBin(); bigBin1.position.set(18, 0, 10); scene.add(bigBin1);
+    const bigBin2 = createBigTrashBin(); bigBin2.position.set(18, 0, 12); scene.add(bigBin2);
+
     // ធម្មជាតិ របង ភ្លើងអាលីបាបា
     [{ x: -12, z: 5, big: true }, { x: -10, z: 10, big: false }, { x: 12, z: 5, big: true }, { x: 10, z: 10, big: false }].forEach(pos => {
       const tree = createTree(pos.big); tree.position.set(pos.x, 0, pos.z); scene.add(tree);
@@ -154,9 +176,24 @@ export default function Hospital3D() {
     const bench2 = createBench(); bench2.position.set(6, 0, 12); bench2.rotation.y = -Math.PI / 2; scene.add(bench2);
     const lamp1 = createStreetLamp(); lamp1.position.set(-8, 0, 6); scene.add(lamp1);
     const lamp2 = createStreetLamp(); lamp2.position.set(8, 0, 6); lamp2.rotation.y = Math.PI; scene.add(lamp2);
+    
+    // ឡានពេទ្យ និងឡានផ្សេងៗ
     const ambulance = createAmbulance(); ambulance.position.set(-8, 0, 18); scene.add(ambulance);
     const siren = createSirenLight(); siren.position.set(-8.6, 2.6, 20.5); scene.add(siren);
     
+    const fastAmb = createAmbulanceVariant("fast"); fastAmb.position.set(-15, 0, 25); scene.add(fastAmb);
+    const slowAmb = createAmbulanceVariant("slow"); slowAmb.position.set(-11, 0, 25); scene.add(slowAmb);
+    const provinceAmb = createAmbulanceVariant("province"); provinceAmb.position.set(-7, 0, 25); scene.add(provinceAmb);
+    const intlAmb = createAmbulanceVariant("international"); intlAmb.position.set(-3, 0, 25); scene.add(intlAmb);
+
+    const garbageTruck = createGarbageTruck(); garbageTruck.position.set(20, 0, 25); garbageTruck.rotation.y = -Math.PI / 2; scene.add(garbageTruck);
+
+    // រោងចំណត
+    const ambulanceGarage = createGarage(0xff4444); ambulanceGarage.position.set(-11, 0, 30); scene.add(ambulanceGarage);
+    const garbageGarage = createGarage(0x44ff44); garbageGarage.position.set(20, 0, 30); scene.add(garbageGarage);
+    const carGarage = createGarage(0x4444ff); carGarage.position.set(25, 0, 15); scene.add(carGarage);
+    const motoGarage = createGarage(0xffaa00); motoGarage.position.set(25, 0, 5); scene.add(motoGarage);
+
     // ឡានចត
     const car1 = createCar(0xff0000); car1.position.set(10, 0, 22); car1.rotation.y = Math.PI / 2; scene.add(car1);
     const car2 = createCar(0x0000ff); car2.position.set(13, 0, 22); car2.rotation.y = Math.PI / 2; scene.add(car2);
@@ -167,23 +204,18 @@ export default function Hospital3D() {
     const vipRoom = createVIPRoom(); vipRoom.position.set(15, 0, -5); scene.add(vipRoom);
     const reception = createReception(); reception.position.set(0, 0, 8); scene.add(reception);
 
-    // បន្ថែមកៅអីអង្គុយវែង តាមទីតាំងផ្សេងៗ
-    // 1. នៅតាមសួនច្បារ (អង្គុយលេង)
+    // កៅអីអង្គុយវែង
     const gardenBench1 = createLongBench(5); gardenBench1.position.set(-13, 0, 8); gardenBench1.rotation.y = Math.PI / 2; scene.add(gardenBench1);
     const gardenBench2 = createLongBench(3); gardenBench2.position.set(13, 0, 8); gardenBench2.rotation.y = -Math.PI / 2; scene.add(gardenBench2);
-    
-    // 2. នៅកន្លែងសង្គ្រោះបន្ទាន់ (ក្បែរឡានសង្គ្រោះ)
     const emergencyBench = createLongBench(3); emergencyBench.position.set(-3, 0, 19); emergencyBench.rotation.y = Math.PI / 2; scene.add(emergencyBench);
-    
-    // 3. នៅកន្លែងគិតប្រាក់ (Reception)
     const receptionBench1 = createLongBench(6); receptionBench1.position.set(-5, 0, 10); scene.add(receptionBench1);
     const receptionBench2 = createLongBench(5); receptionBench2.position.set(5, 0, 10); scene.add(receptionBench2);
     
-    // 4. កន្លែងយាម (បន្ទប់យាម និងកៅអីអង្គុយយាម)
+    // បន្ទប់យាម
     const guardBooth = createGuardBooth(); guardBooth.position.set(-15, 0, 18); scene.add(guardBooth);
     const guardBench = createLongBench(3); guardBench.position.set(-11, 0, 18); guardBench.rotation.y = -Math.PI / 2; scene.add(guardBench);
 
-    // បន្ថែមទូរទស្សន៍អក្សររត់
+    // ទូរទស្សន៍អក្សររត់
     const digitalTV = createDigitalTV(); digitalTV.position.set(0, 2.8, 7.2); digitalTV.rotation.y = Math.PI; scene.add(digitalTV);
 
     // មនុស្ស និងរទេះ
@@ -195,11 +227,8 @@ export default function Hospital3D() {
     const doc2 = createDoctor(true); doc2.position.set(2, 0, 12); scene.add(doc2);
     const nurse1 = createNurse(); nurse1.position.set(4, 0, 6); scene.add(nurse1);
     const wc = createWheelchair(); wc.position.set(-4, 0, 6); scene.add(wc);
-    
-    // រទេះរុញគ្រែ និងគិលានុបដ្ឋាយិការុញ
     const stretcher = createStretcher(); stretcher.position.set(0, 0, 15); scene.add(stretcher);
     const stretcherNurse = createNurse(); stretcherNurse.position.set(0.8, 0, 14); scene.add(stretcherNurse);
-
     const visitor1 = createVisitor(0xffaa00); visitor1.position.set(-5, 0, 15); scene.add(visitor1);
     const visitor2 = createVisitor(0x9900ff); visitor2.position.set(5, 0, 16); scene.add(visitor2);
 
@@ -255,7 +284,12 @@ export default function Hospital3D() {
         camera.position.lerp(targetCamPos, 0.05);
       }
 
-      // ចលនារទេះរុញគ្រែ និងគិលានុបដ្ឋាយិកា
+      // ជណ្តើរយន្តឡើងចុះ
+      if (elevatorRef.current) {
+        elevatorRef.current.position.y = Math.abs(Math.sin(elapsed * 0.5)) * 25; // ឡើងចុះ ០ ដល់ ២៥
+      }
+
+      // ចលនារទេះរុញគ្រែ
       const stretcherX = Math.sin(elapsed * 0.8) * 8;
       stretcher.position.x = stretcherX;
       stretcherNurse.position.x = stretcherX + 0.8;
@@ -278,17 +312,14 @@ export default function Hospital3D() {
         const ctx = digitalTV.userData.ctx;
         ctx.fillStyle = '#001122';
         ctx.fillRect(0, 0, 512, 256);
-        
         ctx.fillStyle = '#00ffcc';
         ctx.font = 'bold 40px sans-serif';
         ctx.textAlign = 'center';
-        
         const textX = 512 - ((elapsed * 100) % 1000);
         ctx.fillText('Welcome to KHOEM-AI Hospital', textX, 128);
         ctx.font = 'bold 20px sans-serif';
         ctx.fillStyle = '#ffaa00';
         ctx.fillText('Emergency: 119', 256, 200);
-        
         digitalTV.userData.texture.needsUpdate = true;
       }
 

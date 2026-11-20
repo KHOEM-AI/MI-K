@@ -911,3 +911,166 @@ export function createGuardBooth() {
 
   return booth;
 }
+
+// 37. ជណ្តើរយន្ត (Elevator) ខាងក្រៅ
+export function createElevator() {
+  const elevator = new THREE.Group();
+  const glassMat = new THREE.MeshStandardMaterial({ color: 0x88ccff, transparent: true, opacity: 0.5, metalness: 0.8, roughness: 0.1 });
+  const frameMat = new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.9 });
+  const floorMat = new THREE.MeshStandardMaterial({ color: 0xcccccc });
+
+  // ប្រអប់ជណ្តើរយន្ត
+  const box = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 3), glassMat);
+  box.position.y = 1.5;
+  elevator.add(box);
+
+  // ស៊ុម
+  const frame = new THREE.Mesh(new THREE.BoxGeometry(3.2, 3.2, 3.2), frameMat);
+  frame.position.y = 1.5;
+  elevator.add(frame);
+
+  // ជាន់
+  const floor = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.1, 2.8), floorMat);
+  floor.position.y = 0.1;
+  elevator.add(floor);
+
+  elevator.userData = { isElevator: true };
+  return elevator;
+}
+
+// 38. ជណ្តើរជើង (Stairs)
+export function createStairs() {
+  const stairs = new THREE.Group();
+  const stepMat = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, roughness: 0.7 });
+  for (let i = 0; i < 10; i++) {
+    const step = new THREE.Mesh(new THREE.BoxGeometry(2, 0.2, 0.5), stepMat);
+    step.position.set(0, i * 0.3, i * 0.5);
+    stairs.add(step);
+  }
+  return stairs;
+}
+
+// 39. បំពង់ពន្លត់អគ្គីភ័យ (Fire Hydrant)
+export function createFireHydrant() {
+  const hydrant = new THREE.Group();
+  const redMat = new THREE.MeshStandardMaterial({ color: 0xff0000, metalness: 0.5, roughness: 0.4 });
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.8, 8), redMat);
+  body.position.y = 0.4;
+  hydrant.add(body);
+  const cap = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 8), redMat);
+  cap.position.y = 0.8;
+  hydrant.add(cap);
+  const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.3, 8), redMat);
+  nozzle.rotation.z = Math.PI / 2;
+  nozzle.position.set(0.25, 0.5, 0);
+  hydrant.add(nozzle);
+  return hydrant;
+}
+
+// 40. ទូដាក់ទុយោទឹកពន្លត់អគ្គីភ័យ (Fire Hose Cabinet)
+export function createFireHoseCabinet() {
+  const cabinet = new THREE.Group();
+  const redMat = new THREE.MeshStandardMaterial({ color: 0xff0000, metalness: 0.5, roughness: 0.5 });
+  const glassMat = new THREE.MeshStandardMaterial({ color: 0x88ccff, transparent: true, opacity: 0.6 });
+  const box = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.2, 0.3), redMat);
+  cabinet.add(box);
+  const glass = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.9, 0.05), glassMat);
+  glass.position.set(0, 0.1, 0.16);
+  cabinet.add(glass);
+  return cabinet;
+}
+
+// 41. ធុងសំរាមតូច (Small Trash Bin)
+export function createSmallTrashBin() {
+  const bin = new THREE.Group();
+  const greenMat = new THREE.MeshStandardMaterial({ color: 0x2e8b57, roughness: 0.8 });
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.5, 8), greenMat);
+  body.position.y = 0.25;
+  bin.add(body);
+  return bin;
+}
+
+// 42. ធុងសំរាមធំ (Big Trash Bin) មានគម្រប
+export function createBigTrashBin() {
+  const bin = new THREE.Group();
+  const greyMat = new THREE.MeshStandardMaterial({ color: 0x555555, roughness: 0.7 });
+  const lidMat = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.5 });
+  const body = new THREE.Mesh(new THREE.BoxGeometry(1, 1.2, 0.8), greyMat);
+  body.position.y = 0.6;
+  bin.add(body);
+  const lid = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.1, 0.9), lidMat);
+  lid.position.y = 1.25;
+  bin.add(lid);
+  return bin;
+}
+
+// 43. ឡានដឹកសំរាម (Garbage Truck)
+export function createGarbageTruck() {
+  const truck = new THREE.Group();
+  const whiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5 });
+  const greenMat = new THREE.MeshStandardMaterial({ color: 0x2e8b57 });
+  const glassMat = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.9 });
+  const wheelMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+
+  const cabin = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.8, 2), whiteMat);
+  cabin.position.set(0, 1.5, 2.5);
+  truck.add(cabin);
+
+  const container = new THREE.Mesh(new THREE.BoxGeometry(2.4, 2.2, 4), greenMat);
+  container.position.set(0, 1.6, -1);
+  truck.add(container);
+
+  const windshield = new THREE.Mesh(new THREE.BoxGeometry(2, 0.8, 0.1), glassMat);
+  windshield.position.set(0, 1.8, 3.5);
+  truck.add(windshield);
+
+  const wheelGeo = new THREE.CylinderGeometry(0.5, 0.5, 0.4, 16);
+  for (let x of [-1.2, 1.2]) {
+    for (let z of [-2, 2]) {
+      const wheel = new THREE.Mesh(wheelGeo, wheelMat);
+      wheel.rotation.z = Math.PI / 2;
+      wheel.position.set(x, 0.5, z);
+      truck.add(wheel);
+    }
+  }
+  return truck;
+}
+
+// 44. ឡានពេទ្យប្រភេទផ្សេងៗ (Ambulance Variants)
+export function createAmbulanceVariant(type: "fast" | "slow" | "province" | "international") {
+  const amb = createAmbulance();
+  if (type === "fast") {
+    amb.scale.set(1.2, 1.2, 1.2);
+    amb.userData = { speed: 1.5 };
+  } else if (type === "slow") {
+    amb.scale.set(0.9, 0.9, 0.9);
+    amb.userData = { speed: 0.5 };
+  } else if (type === "province") {
+    amb.scale.set(1.1, 1.1, 1.1);
+    amb.userData = { speed: 1.0 };
+  } else if (type === "international") {
+    amb.scale.set(1.3, 1.3, 1.3);
+    amb.userData = { speed: 1.8 };
+  }
+  return amb;
+}
+
+// 45. រោងចំណតយានយន្ត (Garage)
+export function createGarage(color: number) {
+  const garage = new THREE.Group();
+  const roofMat = new THREE.MeshStandardMaterial({ color: color, metalness: 0.5, roughness: 0.5 });
+  const poleMat = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.8 });
+
+  const roof = new THREE.Mesh(new THREE.BoxGeometry(8, 0.2, 8), roofMat);
+  roof.position.y = 4;
+  garage.add(roof);
+
+  for (let x of [-4, 4]) {
+    for (let z of [-4, 4]) {
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 4, 8), poleMat);
+      pole.position.set(x, 2, z);
+      garage.add(pole);
+    }
+  }
+  return garage;
+}
