@@ -12,7 +12,9 @@ import {
   createVIPRoom, createReception, createDigitalTV, createLongBench, createGuardBooth,
   createElevator, createStairs, createFireHydrant, createFireHoseCabinet,
   createSmallTrashBin, createBigTrashBin, createGarbageTruck, createAmbulanceVariant,
-  createGarage, createSittingPerson, createCleaner, createSecurityGuard, createExamRoom
+  createGarage, createSittingPerson, createCleaner, createSecurityGuard, createExamRoom,
+  createHandrail, createBathroom, createPharmacy, createDirectorOffice, createFemaleSupervisor,
+  createMaleCleaner, createFemaleDoctor
 } from "./hospitalGeometry";
 
 const SvgSoundOn = () => (<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>);
@@ -130,6 +132,11 @@ export default function Hospital3D() {
     const driveway = createDriveway(); driveway.position.set(0, 0, 5); scene.add(driveway);
     const hospital = createHospitalBuilding(); hospital.position.set(0, 0, -5); scene.add(hospital);
     
+    // បន្ថែមរបារចាប់ដៃអ៊ីណុក (Handrails)
+    const hr1 = createHandrail(20); hr1.position.set(-6, 0, 10); scene.add(hr1);
+    const hr2 = createHandrail(20); hr2.position.set(6, 0, 10); scene.add(hr2);
+    const hrEntrance = createHandrail(8); hrEntrance.position.set(0, 0, 5); scene.add(hrEntrance);
+
     // AC Units
     for (let i = -2; i <= 2; i++) {
       const ac = createACUnit(); ac.position.set(i * 4, 15, 1.2); scene.add(ac);
@@ -146,6 +153,16 @@ export default function Hospital3D() {
     elevatorRef.current = elevator;
     const stairs = createStairs(); stairs.position.set(-8, 0, 1); stairs.rotation.y = Math.PI; scene.add(stairs);
 
+    // បន្ទប់ទឹក ១០ (៥ ស្រី, ៥ ប្រុស)
+    for (let i = 0; i < 5; i++) {
+      const fBath = createBathroom(i < 3); fBath.position.set(-25 + i * 2.5, 0, -15); scene.add(fBath);
+      const mBath = createBathroom(i < 3); mBath.position.set(-25 + i * 2.5, 0, -25); scene.add(mBath);
+    }
+
+    // ការិយាល័យប្រធាន និងទូដាក់ថ្នាំ
+    const directorOffice = createDirectorOffice(); directorOffice.position.set(15, 0, 8); directorOffice.rotation.y = -Math.PI / 2; scene.add(directorOffice);
+    const pharmacy = createPharmacy(); pharmacy.position.set(-15, 0, 8); pharmacy.rotation.y = Math.PI / 2; scene.add(pharmacy);
+
     // បំពង់ពន្លត់អគ្គីភ័យ និងទូទុយោទឹក
     const hydrant1 = createFireHydrant(); hydrant1.position.set(-10, 0, 5); scene.add(hydrant1);
     const hydrant2 = createFireHydrant(); hydrant2.position.set(10, 0, 5); scene.add(hydrant2);
@@ -155,7 +172,6 @@ export default function Hospital3D() {
     // ធុងសំរាម
     const smallBin1 = createSmallTrashBin(); smallBin1.position.set(-4, 0, 8); scene.add(smallBin1);
     const smallBin2 = createSmallTrashBin(); smallBin2.position.set(4, 0, 8); scene.add(smallBin2);
-    const smallBin3 = createSmallTrashBin(); smallBin3.position.set(0, 0, 15); scene.add(smallBin3);
     const bigBin1 = createBigTrashBin(); bigBin1.position.set(18, 0, 10); scene.add(bigBin1);
     const bigBin2 = createBigTrashBin(); bigBin2.position.set(18, 0, 12); scene.add(bigBin2);
 
@@ -178,7 +194,6 @@ export default function Hospital3D() {
     const ambulance = createAmbulance(); ambulance.position.set(-8, 0, 18); scene.add(ambulance);
     const siren = createSirenLight(); siren.position.set(-8.6, 2.6, 20.5); scene.add(siren);
     
-    // Option 2: ឡានពេទ្យ ៤ ប្រភេទ
     const fastAmb = createAmbulanceVariant("fast"); fastAmb.position.set(-15, 0, 25); fastAmb.rotation.y = Math.PI; scene.add(fastAmb);
     const slowAmb = createAmbulanceVariant("slow"); slowAmb.position.set(-11, 0, 25); slowAmb.rotation.y = Math.PI; scene.add(slowAmb);
     const provinceAmb = createAmbulanceVariant("province"); provinceAmb.position.set(-7, 0, 25); provinceAmb.rotation.y = Math.PI; scene.add(provinceAmb);
@@ -203,7 +218,7 @@ export default function Hospital3D() {
     const car2 = createCar(0x0000ff); car2.position.set(13, 0, 22); car2.rotation.y = Math.PI / 2; scene.add(car2);
     const car3 = createCar(0x00ff00); car3.position.set(16, 0, 22); car3.rotation.y = Math.PI / 2; scene.add(car3);
     
-    // បន្ទប់វះកាត់, VIP, ទីស្នាក់ការគិតលុយ, បន្ទប់ពិនិត្យ (Option 3)
+    // បន្ទប់វះកាត់, VIP, ទីស្នាក់ការគិតលុយ, បន្ទប់ពិនិត្យ
     const surgeryRoom = createSurgeryRoom(); surgeryRoom.position.set(-15, 0, -5); scene.add(surgeryRoom);
     const vipRoom = createVIPRoom(); vipRoom.position.set(15, 0, -5); scene.add(vipRoom);
     const reception = createReception(); reception.position.set(0, 0, 8); scene.add(reception);
@@ -218,7 +233,7 @@ export default function Hospital3D() {
     const guardBooth = createGuardBooth(); guardBooth.position.set(-15, 0, 18); scene.add(guardBooth);
     const guardBench = createLongBench(3); guardBench.position.set(-11, 0, 18); guardBench.rotation.y = -Math.PI / 2; scene.add(guardBench);
 
-    // Option 1: មនុស្សអង្គុយ
+    // មនុស្សអង្គុយ
     const bench1_people = [createSittingPerson(0xff0000), createSittingPerson(0x00ff00), createSittingPerson(0x0000ff)];
     bench1_people.forEach((p, i) => { p.position.set(-13.5 + i * 0.8, 0, 8); p.rotation.y = Math.PI / 2; scene.add(p); });
     const bench2_people = [createSittingPerson(0xffff00), createSittingPerson(0xff00ff)];
@@ -226,31 +241,26 @@ export default function Hospital3D() {
     const reception_people = [createSittingPerson(0x888888), createSittingPerson(0x444444), createSittingPerson(0xcccccc), createSittingPerson(0xff8800), createSittingPerson(0x0088ff)];
     reception_people.forEach((p, i) => { p.position.set(-6.5 + i * 0.8, 0, 10); scene.add(p); });
 
-    // អ្នកអនាម័យ (2M, 3F, 1F Supervisor)
-    const cleaner1 = createCleaner(false); cleaner1.position.set(-5, 0, 5); scene.add(cleaner1);
-    const cleaner2 = createCleaner(false); cleaner2.position.set(5, 0, 5); scene.add(cleaner2);
-    const cleaner3 = createCleaner(true); cleaner3.position.set(-8, 0, 12); scene.add(cleaner3);
-    const cleaner4 = createCleaner(true); cleaner4.position.set(8, 0, 12); scene.add(cleaner4);
-    const supervisor = createCleaner(true, true); supervisor.position.set(0, 0, 5); scene.add(supervisor);
+    // បុគ្គលិក (Cleaners & Supervisors)
+    const cleanerM1 = createMaleCleaner(); cleanerM1.position.set(-5, 0, 5); scene.add(cleanerM1);
+    const cleanerM2 = createMaleCleaner(); cleanerM2.position.set(5, 0, 5); scene.add(cleanerM2);
+    const cleanerF1 = createCleaner(true); cleanerF1.position.set(-8, 0, 12); scene.add(cleanerF1);
+    const cleanerF2 = createCleaner(true); cleanerF2.position.set(8, 0, 12); scene.add(cleanerF2);
+    const cleanerSup = createFemaleSupervisor("cleaner"); cleanerSup.position.set(0, 0, 5); scene.add(cleanerSup);
 
-    // សន្តិសុខ (5 នាក់)
-    const guard1 = createSecurityGuard(); guard1.position.set(8, 0, 22); scene.add(guard1);
-    const guard2 = createSecurityGuard(); guard2.position.set(12, 0, 22); scene.add(guard2);
-    const guard3 = createSecurityGuard(); guard3.position.set(0, 0, 7.5); scene.add(guard3);
-    const guard4 = createSecurityGuard(); guard4.position.set(-3, 0, 3); scene.add(guard4);
-    const guard5 = createSecurityGuard(); guard5.position.set(3, 0, 3); scene.add(guard5);
+    // សន្តិសុខ (Security)
+    const guard1 = createSecurityGuard(); guard1.position.set(8, 0, 22); scene.add(guard1); // ចំណតឡាន
+    const guard2 = createSecurityGuard(); guard2.position.set(12, 0, 22); scene.add(guard2); // ចំណតឡាន
+    const guard3 = createSecurityGuard(); guard3.position.set(-3, 0, 8); scene.add(guard3); // ក្នុងអាគារ
+    const guard4 = createSecurityGuard(); guard4.position.set(3, 0, 8); scene.add(guard4); // ក្នុងអាគារ
+    const securitySup = createFemaleSupervisor("security"); securitySup.position.set(0, 0, 7.5); scene.add(securitySup); // ទ្វារចូល
 
-    // ទូរទស្សន៍អក្សររត់
-    const digitalTV = createDigitalTV(); digitalTV.position.set(0, 2.8, 7.2); digitalTV.rotation.y = Math.PI; scene.add(digitalTV);
-
-    // មនុស្ស និងរទេះ
-    [{ x: 12, z: -2 }, { x: 12, z: -6 }].forEach(pos => {
-      const bed = createHospitalBed(); bed.position.set(pos.x, 0, pos.z); scene.add(bed);
-      const patient = createPatient(); patient.position.set(pos.x, 0, pos.z); scene.add(patient);
-    });
-    const doc1 = createDoctor(false); doc1.position.set(-2, 0, 12); scene.add(doc1);
-    const doc2 = createDoctor(true); doc2.position.set(2, 0, 12); scene.add(doc2);
+    // វេជ្ជបណ្ឌិត និងគិលានុបដ្ឋាយិកា
+    const docM = createDoctor(false); docM.position.set(-2, 0, 12); scene.add(docM);
+    const docF = createFemaleDoctor(); docF.position.set(2, 0, 12); scene.add(docF);
     const nurse1 = createNurse(); nurse1.position.set(4, 0, 6); scene.add(nurse1);
+
+    // អ្នកជំងឺ និងរទេះ
     const wc = createWheelchair(); wc.position.set(-4, 0, 6); scene.add(wc);
     const stretcher = createStretcher(); stretcher.position.set(0, 0, 15); scene.add(stretcher);
     const stretcherNurse = createNurse(); stretcherNurse.position.set(0.8, 0, 14); scene.add(stretcherNurse);
@@ -263,6 +273,9 @@ export default function Hospital3D() {
     const sign1 = createTrafficSign(); sign1.position.set(-12, 0, 20); scene.add(sign1);
     const sign2 = createTrafficSign(); sign2.position.set(12, 0, 20); sign2.rotation.y = Math.PI; scene.add(sign2);
     const colorfulLights = createColorfulLights(); colorfulLights.position.set(0, 0, 12); scene.add(colorfulLights);
+
+    // ទូរទស្សន៍អក្សររត់
+    const digitalTV = createDigitalTV(); digitalTV.position.set(0, 2.8, 7.2); digitalTV.rotation.y = Math.PI; scene.add(digitalTV);
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true; controls.target.set(0, 10, 0);
@@ -310,25 +323,22 @@ export default function Hospital3D() {
       }
 
       // ជណ្តើរយន្តឡើងចុះ
-      if (elevatorRef.current) {
-        elevatorRef.current.position.y = Math.abs(Math.sin(elapsed * 0.5)) * 25;
-      }
+      if (elevatorRef.current) elevatorRef.current.position.y = Math.abs(Math.sin(elapsed * 0.5)) * 25;
 
-      // Option 2: ឡានពេទ្យ ៤ ប្រភេទ ធ្វើដំណើរ
+      // ឡានពេទ្យ ៤ ប្រភេទ
       ambulanceGroup.forEach(amb => {
         const moveZ = 25 + Math.sin(elapsed * amb.userData.speed + amb.userData.offset) * 5;
         amb.position.z = moveZ;
-        amb.rotation.z = Math.cos(elapsed * amb.userData.speed + amb.userData.offset) * 0.05;
       });
 
-      // ចលនាអ្នកអនាម័យ និងសន្តិសុខ
-      cleaner1.position.x = -5 + Math.sin(elapsed * 1) * 3;
-      cleaner2.position.x = 5 + Math.cos(elapsed * 0.8) * 3;
-      cleaner3.position.z = 12 + Math.sin(elapsed * 0.9) * 2;
-      cleaner4.position.z = 12 + Math.cos(elapsed * 1.1) * 2;
-      supervisor.position.z = 5 + Math.sin(elapsed * 0.5) * 2;
-      guard4.position.x = -3 + Math.sin(elapsed * 0.6) * 2;
-      guard5.position.x = 3 + Math.cos(elapsed * 0.7) * 2;
+      // ចលនាបុគ្គលិក
+      cleanerM1.position.x = -5 + Math.sin(elapsed * 1) * 3;
+      cleanerM2.position.x = 5 + Math.cos(elapsed * 0.8) * 3;
+      cleanerF1.position.z = 12 + Math.sin(elapsed * 0.9) * 2;
+      cleanerF2.position.z = 12 + Math.cos(elapsed * 1.1) * 2;
+      cleanerSup.position.z = 5 + Math.sin(elapsed * 0.5) * 2;
+      guard3.position.x = -3 + Math.sin(elapsed * 0.6) * 2;
+      guard4.position.x = 3 + Math.cos(elapsed * 0.7) * 2;
 
       // ចលនារទេះរុញគ្រែ
       const stretcherX = Math.sin(elapsed * 0.8) * 8;
@@ -337,9 +347,9 @@ export default function Hospital3D() {
       stretcherNurse.rotation.y = Math.cos(elapsed * 0.8) > 0 ? Math.PI/2 : -Math.PI/2;
 
       // មនុស្សផ្សេងទៀត
-      doc1.position.z = 12 + Math.sin(elapsed * 1.5) * 3;
-      doc1.rotation.y = Math.cos(elapsed * 1.5) > 0 ? 0 : Math.PI;
-      doc2.position.x = 2 + Math.cos(elapsed * 1.2) * 2; doc2.position.z = 6 + Math.sin(elapsed * 1.2) * 2;
+      docM.position.z = 12 + Math.sin(elapsed * 1.5) * 3;
+      docM.rotation.y = Math.cos(elapsed * 1.5) > 0 ? 0 : Math.PI;
+      docF.position.x = 2 + Math.cos(elapsed * 1.2) * 2; docF.position.z = 6 + Math.sin(elapsed * 1.2) * 2;
       nurse1.position.z = 6 + Math.sin(elapsed * 2 + 2) * 4;
       nurse1.rotation.y = Math.cos(elapsed * 2 + 2) > 0 ? 0 : Math.PI;
       wc.position.x = -4 + Math.sin(elapsed * 0.8) * 5;

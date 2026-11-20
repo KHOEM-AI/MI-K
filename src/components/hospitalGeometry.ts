@@ -1166,3 +1166,128 @@ export function createExamRoom() {
 
   return room;
 }
+
+// 50. របារចាប់ដៃអ៊ីណុក (Stainless Steel Handrail) សម្រាប់មនុស្សចាស់
+export function createHandrail(length: number = 4) {
+  const handrail = new THREE.Group();
+  const steelMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.9, roughness: 0.1 });
+  const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, length, 8), steelMat);
+  bar.rotation.z = Math.PI / 2;
+  bar.position.y = 0.8; // កម្ពស់ ០.៨ ម៉ែត្រ
+  handrail.add(bar);
+  for (let i = -length/2 + 1; i <= length/2 - 1; i += 2) {
+    const bracket = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.2, 8), steelMat);
+    bracket.rotation.x = Math.PI / 2;
+    bracket.position.set(i, 0.8, -0.1);
+    handrail.add(bracket);
+  }
+  return handrail;
+}
+
+// 51. បន្ទប់ទឹក (Bathroom) មានបត់ជើង និងមុជទឹក
+export function createBathroom(hasShower: boolean) {
+  const bath = new THREE.Group();
+  const wallMat = new THREE.MeshStandardMaterial({ color: 0xe0e0e0 });
+  const floorMat = new THREE.MeshStandardMaterial({ color: 0x88ccff });
+  
+  const floor = new THREE.Mesh(new THREE.BoxGeometry(2, 0.1, 2), floorMat);
+  bath.add(floor);
+  
+  const back = new THREE.Mesh(new THREE.BoxGeometry(2, 2.5, 0.1), wallMat); back.position.set(0, 1.25, -1); bath.add(back);
+  const left = new THREE.Mesh(new THREE.BoxGeometry(0.1, 2.5, 2), wallMat); left.position.set(-1, 1.25, 0); bath.add(left);
+  const right = new THREE.Mesh(new THREE.BoxGeometry(0.1, 2.5, 2), wallMat); right.position.set(1, 1.25, 0); bath.add(right);
+  
+  const toilet = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.4, 16), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+  toilet.position.set(-0.5, 0.2, -0.5);
+  bath.add(toilet);
+  const tank = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.2), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+  tank.position.set(-0.5, 0.5, -0.8); bath.add(tank);
+
+  if (hasShower) {
+    const showerHead = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.1, 8), new THREE.MeshStandardMaterial({ color: 0xaaaaaa }));
+    showerHead.position.set(0.5, 2.2, -0.8); bath.add(showerHead);
+    const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.5, 8), new THREE.MeshStandardMaterial({ color: 0xaaaaaa }));
+    pipe.position.set(0.5, 2.0, -0.85); pipe.rotation.x = Math.PI/4; bath.add(pipe);
+  }
+  
+  const hRail = createHandrail(1.5);
+  hRail.position.set(0, 0, -0.9); bath.add(hRail);
+
+  return bath;
+}
+
+// 52. ទូដាក់ថ្នាំពេទ្យ (Pharmacy Cabinet) មានថ្នាំគ្រប់ប្រភេទ
+export function createPharmacy() {
+  const pharmacy = new THREE.Group();
+  const woodMat = new THREE.MeshStandardMaterial({ color: 0x8b5a2b });
+  const glassMat = new THREE.MeshStandardMaterial({ color: 0xaaccff, transparent: true, opacity: 0.4 });
+  
+  const cabinet = new THREE.Mesh(new THREE.BoxGeometry(4, 2.5, 0.5), woodMat);
+  cabinet.position.y = 1.25; pharmacy.add(cabinet);
+  
+  for (let y = 0.5; y < 2.5; y += 0.5) {
+    const shelf = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.05, 0.4), glassMat);
+    shelf.position.set(0, y, 0.05); pharmacy.add(shelf);
+    for (let x = -1.5; x <= 1.5; x += 0.3) {
+      if (Math.random() > 0.3) {
+        const medColor = [0xff0000, 0x00ff00, 0x0000ff, 0xffffff, 0xffff00][Math.floor(Math.random()*5)];
+        const med = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.2, 0.15), new THREE.MeshStandardMaterial({ color: medColor }));
+        med.position.set(x, y + 0.15, 0.1); pharmacy.add(med);
+      }
+    }
+  }
+  const front = new THREE.Mesh(new THREE.BoxGeometry(4, 2.5, 0.05), glassMat);
+  front.position.set(0, 1.25, 0.3); pharmacy.add(front);
+  return pharmacy;
+}
+
+// 53. ការិយាល័យប្រធានមន្ទីរពេទ្យ (Director Office)
+export function createDirectorOffice() {
+  const office = new THREE.Group();
+  const wallMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+  const floorMat = new THREE.MeshStandardMaterial({ color: 0x8b4513 });
+  
+  const floor = new THREE.Mesh(new THREE.BoxGeometry(6, 0.2, 6), floorMat); floor.position.y = 0.1; office.add(floor);
+  const back = new THREE.Mesh(new THREE.BoxGeometry(6, 3, 0.2), wallMat); back.position.set(0, 1.5, -3); office.add(back);
+  const left = new THREE.Mesh(new THREE.BoxGeometry(0.2, 3, 6), wallMat); left.position.set(-3, 1.5, 0); office.add(left);
+  const right = new THREE.Mesh(new THREE.BoxGeometry(0.2, 3, 6), wallMat); right.position.set(3, 1.5, 0); office.add(right);
+  
+  const desk = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.1, 1.2), new THREE.MeshStandardMaterial({ color: 0x5c4033 })); desk.position.set(0, 1, 0); office.add(desk);
+  const deskLegs = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1, 1), new THREE.MeshStandardMaterial({ color: 0x5c4033 })); deskLegs.position.set(0, 0.5, 0); office.add(deskLegs);
+  const chairSeat = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.1, 0.6), new THREE.MeshStandardMaterial({ color: 0x111111 })); chairSeat.position.set(0, 0.6, 0.8); office.add(chairSeat);
+  const chairBack = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.8, 0.1), new THREE.MeshStandardMaterial({ color: 0x111111 })); chairBack.position.set(0, 1, 1.1); office.add(chairBack);
+  const pc = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.4, 0.1), new THREE.MeshStandardMaterial({ color: 0x222222 })); pc.position.set(0, 1.3, -0.2); office.add(pc);
+  const shelf = new THREE.Mesh(new THREE.BoxGeometry(1.5, 2.5, 0.5), new THREE.MeshStandardMaterial({ color: 0x8b5a2b })); shelf.position.set(-2, 1.25, -2.7); office.add(shelf);
+  
+  const director = createDoctor(false); director.scale.set(1.1, 1.1, 1.1); director.position.set(0, 0, 0.5); director.rotation.y = Math.PI; office.add(director);
+  const hr = createHandrail(4); hr.position.set(2.8, 0, 0); hr.rotation.y = Math.PI/2; office.add(hr);
+
+  return office;
+}
+
+// 54. មេការអនាម័យ និងមេសន្តិសុខ (Female Supervisor - Beautiful & Tall)
+export function createFemaleSupervisor(role: "cleaner" | "security") {
+  const sup = new THREE.Group();
+  const skinMat = new THREE.MeshStandardMaterial({ color: 0xfff0e0 }); // សាច់ស
+  const hairMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+  const uniformMat = new THREE.MeshStandardMaterial({ color: role === "cleaner" ? 0x9b59b6 : 0x2c3e50 });
+  
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.35, 1.6, 16), uniformMat); body.position.y = 1.2; sup.add(body);
+  const skirt = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.45, 0.5, 16), uniformMat); skirt.position.y = 0.5; sup.add(skirt);
+  for (let x of [-0.1, 0.1]) {
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.6, 8), skinMat); leg.position.set(x, 0.3, 0); sup.add(leg);
+  }
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.28, 32, 32), skinMat); head.position.y = 2.2; sup.add(head);
+  const hair = new THREE.Mesh(new THREE.SphereGeometry(0.29, 32, 32, 0, Math.PI * 2, 0, Math.PI / 1.5), hairMat); hair.position.y = 2.25; sup.add(hair);
+  return sup;
+}
+
+// 55. អ្នកអនាម័យប្រុស (Male Cleaner)
+export function createMaleCleaner() {
+  return createCleaner(false);
+}
+
+// 56. វេជ្ជបណ្ឌិតស្រី (Female Doctor)
+export function createFemaleDoctor() {
+  return createDoctor(true);
+}
