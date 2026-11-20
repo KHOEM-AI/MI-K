@@ -54,6 +54,7 @@ import {
   type Villager,
   type HouseLight,
 } from "./villageLife";
+import { VillageRegistry, createCropCycle, updateCropCycle, createSmartTraffic, updateSmartTraffic, type CropCycle, type SmartVehicle } from "./villageSimulation";
 
 export default function Village3D() {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -82,6 +83,9 @@ export default function Village3D() {
   const ambientRef = useRef<THREE.AmbientLight | null>(null);
   const villagersRef = useRef<Villager[]>([]);
   const houseLightsRef = useRef<HouseLight[]>([]);
+  const registryRef = useRef<VillageRegistry | null>(null);
+  const cropCyclesRef = useRef<CropCycle[]>([]);
+  const smartTrafficRef = useRef<SmartVehicle[]>([]);
   const starsRef = useRef<THREE.Points | null>(null);
   const moonRef = useRef<THREE.Group | null>(null);
   const sunRef = useRef<THREE.DirectionalLight | null>(null);
@@ -255,6 +259,19 @@ export default function Village3D() {
     scene.add(traffic.group);
     trafficVehiclesRef.current = traffic.vehicles;
 
+    // ចរាចរណ៍ឆ្លាតវៃ (ឈប់តាមភ្លើងស្តុប)
+    const stopPoints = [
+      { t: 0.25, lightIndex: 0 },
+      { t: 0.5, lightIndex: 1 },
+      { t: 0.75, lightIndex: 2 },
+      { t: 0.95, lightIndex: 3 },
+    ];
+    smartTrafficRef.current = createSmartTraffic(
+      traffic.vehicles.slice(0, 10).map((v) => v.mesh),
+      traffic.vehicles[0].curve,
+      stopPoints
+    );
+
     // ========== សត្វ (គោ ៥ + ជ្រូក ៦ + ទា ១៥) ==========
     const animals = createVillageAnimals();
     scene.add(animals.group);
@@ -277,6 +294,10 @@ export default function Village3D() {
     cropPositions.forEach(([cx, cz]) => {
       const sw = createSwayCrops(64, cx, cz, 28);
       scene.add(sw.group);
+      // បន្ថែមវដ្តដាំដុះ
+      sw.crops.forEach((crop) => {
+        cropCyclesRef.current.push(createCropCycle(crop.mesh, 1));
+      });
       cropsRef.current.push(...sw.crops);
     });
 
@@ -310,14 +331,16 @@ export default function Village3D() {
     shoppersRef.current = marketLife.shoppers;
 
     // ========== A: ជីវិតប្រជាជន (៣០ នាក់) ==========
-    const villagers = createVillagers(30);
+    const villagers = createVillagers(100);
     scene.add(villagers.group);
     villagersRef.current = villagers.villagers;
 
     // ========== B: ភ្លើងផ្ទះ (៣០) ==========
-    const houseLights = createHouseLights(30);
+    const registry = new VillageRegistry();
+    const houseLights = createHouseLights(100, registry);
     scene.add(houseLights.group);
     houseLightsRef.current = houseLights.lights;
+    registryRef.current = registry;
 
     // ========== B: ផ្កាយ + ព្រះច័ន្ទ (សម្រាប់ពេលយប់) ==========
     const stars = createStars(1500, 800);
@@ -484,6 +507,19 @@ export default function Village3D() {
         });
       }
 
+      // Update crop cycles
+      if (cropCyclesRef.current.length > 0) {
+        cropCyclesRef.current.forEach((crop) => {
+          updateCropCycle(crop, delta, elapsedSec);
+        });
+      }
+
+      // Update smart traffic
+      if (smartTrafficRef.current.length > 0 && trafficLightsRef.current.length > 0) {
+        const phases = trafficLightsRef.current.map((tl) => tl.phase);
+        updateSmartTraffic(smartTrafficRef.current, phases, delta);
+      }
+
       // Update A: ជីវិតប្រជាជន
       if (villagersRef.current.length > 0 && timeControllerRef.current) {
         const h = timeControllerRef.current.getHour();
@@ -614,6 +650,30 @@ export default function Village3D() {
               {busy ? "⏳ កំពុង Export..." : "🎬 Export GLB"}
             </button>
           </div>
+          {/* Stats Display */}
+          {registryRef.current && (
+            <div
+              style={{
+                position: "absolute",
+                bottom: 16,
+                left: 16,
+                padding: "10px 16px",
+                borderRadius: 8,
+                background: "rgba(0,0,0,0.7)",
+                color: "#fff",
+                fontSize: 12,
+                fontFamily: "monospace",
+                zIndex: 20,
+                lineHeight: 1.6,
+              }}
+            >
+              🏠 {registryRef.current.totalFamilies} គ្រួសារ
+              <br />
+              👥 {registryRef.current.totalPeople} នាក់
+              <br />
+              💡 {registryRef.current.houses.filter((h) => h.hasLight).length} ភ្លើង
+            </div>
+          )}
           <button
             type="button"
             onClick={() => setIsRaining((r) => !r)}

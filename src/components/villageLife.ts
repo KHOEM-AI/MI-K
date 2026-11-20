@@ -1,3 +1,4 @@
+import { VillageRegistry, type HouseInfo } from "./villageSimulation";
 import * as THREE from "three";
 
 const mat = (color: string, opts: Partial<THREE.MeshStandardMaterialParameters> = {}) =>
@@ -198,7 +199,7 @@ export interface HouseLight {
   windowMat: THREE.MeshStandardMaterial;
 }
 
-export function createHouseLights(count = 30): {
+export function createHouseLights(count = 100, registry?: VillageRegistry): {
   group: THREE.Group;
   lights: HouseLight[];
 } {
@@ -236,6 +237,23 @@ export function createHouseLights(count = 30): {
       );
       windowMesh.position.set(x + 1.5, 2, z + 1.6);
       group.add(windowMesh);
+
+      // Register house
+      if (registry) {
+        const wealth = built % 3 === 0 ? 2 : built % 3 === 1 ? 1 : 0;
+        const familySize = 2 + Math.floor(Math.random() * 4);
+        registry.register({
+          x, z,
+          wealth: wealth as 0 | 1 | 2,
+          familySize,
+          hasLight: true,
+          hasCar: wealth === 2,
+          hasBike: wealth === 1,
+          hasBicycle: wealth === 0,
+          windowMat,
+          light,
+        });
+      }
 
       lights.push({ light, windowMesh, windowMat });
       built++;
