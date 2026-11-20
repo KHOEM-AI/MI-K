@@ -26,7 +26,6 @@ import {
   createBridge,
   createChicken,
   createMixedFarm,
-  createWindingRoad,
 } from "./natureElements";
 
 export default function Village3D() {
@@ -102,6 +101,84 @@ export default function Village3D() {
 
     // ចង្កៀងផ្លូវ
     scene.add(createStreetLamps());
+
+    // ========== បរិស្ថានធម្មជាតិ ==========
+
+    // ភ្នំ ៤
+    const mountains = [
+      { pos: [-250, 0, -250], h: 60, r: 50, c: "#4a5568" },
+      { pos: [250, 0, -250], h: 70, r: 55, c: "#5d6d7e" },
+      { pos: [-280, 0, 200], h: 50, r: 40, c: "#4a5568" },
+      { pos: [280, 0, 200], h: 55, r: 45, c: "#5d6d7e" },
+    ];
+    mountains.forEach(({ pos, h, r, c }) => {
+      const m = createMountain(h, r, c);
+      m.position.set(pos[0], h / 2, pos[2]);
+      scene.add(m);
+    });
+
+    // ព្រៃឈើ ៣
+    scene.add(createForest(60, -200, 150, 100, 111));
+    scene.add(createForest(60, 200, 150, 100, 222));
+    scene.add(createForest(40, 0, -200, 120, 333));
+
+    // បឹងធំ
+    const lake = createLake(40);
+    lake.position.set(-180, 0, -100);
+    scene.add(lake);
+
+    // ស្រះត្រី ៤
+    const ponds: [number, number, number][] = [
+      [-80, 0, 40],
+      [80, 0, 40],
+      [-80, 0, -40],
+      [80, 0, -40],
+    ];
+    ponds.forEach(([x, y, z]) => {
+      const pond = createFishPond(10);
+      pond.position.set(x, y, z);
+      scene.add(pond);
+    });
+
+    // ស្ពាន ២
+    const bridge1 = createBridge(15, 5);
+    bridge1.position.set(-40, 0, 0);
+    bridge1.rotation.y = Math.PI / 2;
+    scene.add(bridge1);
+
+    const bridge2 = createBridge(15, 5);
+    bridge2.position.set(40, 0, 0);
+    bridge2.rotation.y = Math.PI / 2;
+    scene.add(bridge2);
+
+    // ចម្ការបន្លែចម្រុះ ៦
+    const mixedFarms: [number, number, number][] = [
+      [-130, 0, 150],
+      [130, 0, 150],
+      [-130, 0, -150],
+      [130, 0, -150],
+      [-150, 0, 60],
+      [150, 0, 60],
+    ];
+    mixedFarms.forEach(([x, y, z]) => {
+      const farm = createMixedFarm(25);
+      farm.position.set(x, y, z);
+      scene.add(farm);
+    });
+
+    // មាន់ ២០
+    for (let i = 0; i < 20; i++) {
+      const chicken = createChicken(i % 2 === 0 ? "#f39c12" : "#ffffff");
+      const angle = (i / 20) * Math.PI * 2;
+      const radius = 60 + (i % 3) * 10;
+      chicken.position.set(
+        Math.cos(angle) * radius,
+        0,
+        Math.sin(angle) * radius
+      );
+      chicken.rotation.y = angle;
+      scene.add(chicken);
+    }
 
     const markets = [
       { f: createMarketStall("#e74c3c"), pos: [-70, 0, 60] as const },
