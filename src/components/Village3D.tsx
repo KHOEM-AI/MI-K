@@ -42,6 +42,9 @@ import {
   type SwayVeg,
   type DriftCloud,
 } from "./villageAnimations";
+import { createRain, updateRain, type RainSystem, createLightning, updateLightning, type LightningSystem } from "./rainSystem";
+import { createMarketLife, updateShoppers, type Shopper } from "./marketLife";
+import { createStars, updateStars, createMoon } from "./nightSky";
 
 export default function Village3D() {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -61,8 +64,24 @@ export default function Village3D() {
   const cropsRef = useRef<SwayCrop[]>([]);
   const veggiesRef = useRef<SwayVeg[]>([]);
   const cloudsRef = useRef<DriftCloud[]>([]);
+  const rainRef = useRef<RainSystem | null>(null);
+  const lightningRef = useRef<LightningSystem | null>(null);
+  const shoppersRef = useRef<Shopper[]>([]);
+  const [isRaining, setIsRaining] = useState(false);
+  const starsRef = useRef<THREE.Points | null>(null);
+  const moonRef = useRef<THREE.Group | null>(null);
   const sunRef = useRef<THREE.DirectionalLight | null>(null);
   useAutoQuality(rendererRef);
+
+  // Toggle rain
+  useEffect(() => {
+    if (rainRef.current) {
+      rainRef.current.points.visible = isRaining;
+    }
+    if (lightningRef.current) {
+      lightningRef.current.light.visible = isRaining;
+    }
+  }, [isRaining]);
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -247,6 +266,29 @@ export default function Village3D() {
     scene.add(cloudSystem.group);
     cloudsRef.current = cloudSystem.clouds;
 
+    // ========== A: ភ្លៀង (Rain) ==========
+    const rain = createRain(2000, 500, 150);
+    scene.add(rain.points);
+    rainRef.current = rain;
+
+    const lightning = createLightning();
+    scene.add(lightning.light);
+    lightningRef.current = lightning;
+
+    // ========== C: ជីវិតផ្សារ ==========
+    const marketLife = createMarketLife();
+    scene.add(marketLife.group);
+    shoppersRef.current = marketLife.shoppers;
+
+    // ========== B: ផ្កាយ + ព្រះច័ន្ទ (សម្រាប់ពេលយប់) ==========
+    const stars = createStars(1500, 800);
+    scene.add(stars);
+    starsRef.current = stars;
+
+    const moon = createMoon();
+    scene.add(moon);
+    moonRef.current = moon;
+
     const markets = [
       { f: createMarketStall("#e74c3c"), pos: [-70, 0, 60] as const },
       { f: createMarketStall("#f39c12"), pos: [70, 0, 60] as const },
@@ -368,6 +410,28 @@ export default function Village3D() {
         updateClouds(cloudsRef.current, elapsedSec, 500);
       }
 
+      // Update A: ភ្លៀង
+      const delta = 1 / 60;
+      if (rainRef.current) {
+        updateRain(rainRef.current, delta, 500, 150);
+      }
+      if (lightningRef.current && isRaining) {
+        updateLightning(lightningRef.current, delta);
+      }
+
+      // Update C: ផ្សារ
+      if (shoppersRef.current.length > 0) {
+        updateShoppers(shoppersRef.current, elapsedSec);
+      }
+
+      // Update B: ផ្កាយ + ព្រះច័ន្ទ
+      if (starsRef.current) {
+        updateStars(starsRef.current, isNight, delta);
+      }
+      if (moonRef.current) {
+        moonRef.current.visible = isNight;
+      }
+
       controls.update();
       renderer.render(scene, camera);
       rafId = requestAnimationFrame(animate);
@@ -477,6 +541,27 @@ export default function Village3D() {
               {busy ? "⏳ កំពុង Export..." : "🎬 Export GLB"}
             </button>
           </div>
+          <button
+            type="button"
+            onClick={() => setIsRaining((r) => !r)}
+            style={{
+              position: "absolute",
+              top: 16,
+              right: 130,
+              padding: "10px 16px",
+              borderRadius: 8,
+              border: "none",
+              background: isRaining ? "#3498db" : "#34495e",
+              color: "#fff",
+              fontSize: 14,
+              fontWeight: "bold",
+              cursor: "pointer",
+              zIndex: 20,
+              boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+            }}
+          >
+            {isRaining ? "🌧️ Stop Rain" : "🌧️ Start Rain"}
+          </button>
           <button
             type="button"
             onClick={() => setIsNight((n) => !n)}
