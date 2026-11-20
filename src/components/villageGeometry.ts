@@ -786,3 +786,191 @@ export function createSchoolSurroundings(): THREE.Group {
 
   return g;
 }
+
+/* ============================================================
+   INSTANCED VERSION — សម្រាប់ FPS ខ្ពស់ (144)
+   ប្រើ InstancedMesh ដើម្បីគូរផ្ទះ ៣០០ ក្នុង draw call ១
+   ============================================================ */
+export interface InstancedVillageResult {
+  group: THREE.Group;
+  baseMesh: THREE.InstancedMesh;
+  roofMesh: THREE.InstancedMesh;
+}
+
+export function createVillageHousesInstanced(count = 300, seed = 42): InstancedVillageResult {
+  const group = new THREE.Group();
+  const rng = mulberry32(seed);
+
+  const cols = 20;
+  const rows = Math.ceil(count / cols);
+  const spacingX = 9;
+  const spacingZ = 10;
+  const startX = -((cols - 1) * spacingX) / 2;
+  const startZ = -((rows - 1) * spacingZ) / 2;
+
+  // គណនាចំនួនផ្ទះពិត (ដកជួរផ្លូវកណ្តាល)
+  const positions: { x: number; z: number; rotY: number; wealth: Wealth }[] = [];
+  for (let r = 0; r < rows && positions.length < count; r++) {
+    for (let c = 0; c < cols && positions.length < count; c++) {
+      if (c === 10) continue; // ទុកផ្លូវ
+      const wealth = pickWealth(rng);
+      positions.push({
+        x: startX + c * spacingX,
+        z: startZ + r * spacingZ,
+        rotY: c < 10 ? Math.PI / 2 : -Math.PI / 2,
+        wealth,
+      });
+    }
+  }
+
+  // --- Base mesh (body នៃផ្ទះ) ---
+  // ប្រើ BoxGeometry ដូចគ្នាសម្រាប់គ្រប់ផ្ទះ (geometry shared = 1 draw call)
+  const baseGeo = new THREE.BoxGeometry(1, 1, 1);
+  const baseMat = new THREE.MeshStandardMaterial({
+    color: "#ffffff",
+    roughness: 0.85,
+    metalness: 0.05,
+  });
+  const baseMesh = new THREE.InstancedMesh(baseGeo, baseMat, positions.length);
+  baseMesh.castShadow = true;
+  baseMesh.receiveShadow = true;
+  baseMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+
+  // --- Roof mesh (cone) ---
+  const roofGeo = new THREE.ConeGeometry(1, 1, 4);
+  const roofMat = new THREE.MeshStandardMaterial({
+    color: "#ffffff",
+    roughness: 0.9,
+    metalness: 0.05,
+  });
+  const roofMesh = new THREE.InstancedMesh(roofGeo, roofMat, positions.length);
+  roofMesh.castShadow = true;
+  roofMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+
+  // --- Set instance transforms + colors ---
+  const dummy = new THREE.Object3D();
+  const color = new THREE.Color();
+
+  const poorColors = ["#d4c4a8", "#c9b898", "#bfae8e"];
+  const middleColors = ["#e8dcc4", "#f0e0d0", "#ddd4b8"];
+  const richColors = ["#fdfefe", "#f5f5f5", "#ececec"];
+
+  const poorRoofs = ["#8b4513", "#6b3410", "#a0522d"];
+  const middleRoofs = ["#8d6e63", "#a0522d", "#5d4037"];
+  const richRoofs = ["#2c3e50", "#34495e", "#1a1a2e"];
+
+  positions.forEach((p, i) => {
+    // Base: ទំហំតាមឋានៈ
+    let bw: number, bh: number, bd: number, by: number;
+    let roofR: number, roofH: number, roofY: number;
+    let bodyColor: string, roofColor: string;
+
+    if (p.wealth === 0) {
+      // ផ្ទះក្រ (តូច)
+      bw = 4; bh = 2.8; bd = 4; by = 1.4;
+      roofR = 3.4; roofH = 2; roofY = 3.6;
+      bodyColor = poorColors[i % poorColors.length];
+      roofColor = poorRoofs[i % poorRoofs.length];
+    } else if (p.wealth === 1) {
+      // ផ្ទះកណ្តាល (មធ្យម)
+      bw = 5.5; bh = 5.5; bd = 5.5; by = 2.75;
+      roofR = 4.5; roofH = 1.8; roofY = 6.4;
+      bodyColor = middleColors[i % middleColors.length];
+      roofColor = middleRoofs[i % middleRoofs.length];
+    } else {
+      // ផ្ទះមាន (ធំ)
+      bw = 8; bh = 7; bd = 7; by = 3.5;
+      roofR = 6.5; roofH = 2.5; roofY = 8.7;
+      bodyColor = richColors[i % richColors.length];
+      roofColor = richRoofs[i % richRoofs.length];
+    }
+
+    // Body
+    dummy.position.set(p.x, by, p.z);
+    dummy.rotation.set(0, p.rotY, 0);
+    dummy.scale.set(bw, bh, bd);
+    dummy.updateMatrix();
+    baseMesh.setMatrixAt(i, dummy.matrix);
+
+    color.set(bodyColor);
+    baseMesh.setColorAt(i, color);
+
+    // Roof
+    dummy.position.set(p.x, roofY, p.z);
+    dummy.rotation.set(0, p.rotY + Math.PI / 4, 0);
+    dummy.scale.set(roofR, roofH, roofR);
+    dummy.updateMatrix();
+    roofMesh.setMatrixAt(i, dummy.matrix);
+
+    color.set(roofColor);
+    roofMesh.setColorAt(i, color);
+  });
+
+  baseMesh.instanceMatrix.needsUpdate = true;
+  roofMesh.instanceMatrix.needsUpdate = true;
+  if (baseMesh.instanceColor) baseMesh.instanceColor.needsUpdate = true;
+  if (roofMesh.instanceColor) roofMesh.instanceColor.needsUpdate = true;
+
+  group.add(baseMesh);
+  group.add(roofMesh);
+
+  // --- យានជំនិះតាមឋានៈ (ចំនួនតិច — មិនចាំបាច់ instanced) ---
+  const carPositions = positions.filter((p) => p.wealth === 2);
+  const bikePositions = positions.filter((p) => p.wealth === 1);
+  const bicyclePositions = positions.filter((p) => p.wealth === 0);
+
+  // ឡាន (InstancedMesh ដែរ)
+  if (carPositions.length > 0) {
+    const carGeo = new THREE.BoxGeometry(4, 0.9, 1.8);
+    const carMat = new THREE.MeshStandardMaterial({ color: "#c0392b", metalness: 0.6, roughness: 0.3 });
+    const carMesh = new THREE.InstancedMesh(carGeo, carMat, carPositions.length);
+    carMesh.castShadow = true;
+    carPositions.forEach((p, i) => {
+      dummy.position.set(p.x + 2, 0.9, p.z + 4);
+      dummy.rotation.set(0, Math.PI / 2, 0);
+      dummy.scale.set(1, 1, 1);
+      dummy.updateMatrix();
+      carMesh.setMatrixAt(i, dummy.matrix);
+    });
+    carMesh.instanceMatrix.needsUpdate = true;
+    group.add(carMesh);
+  }
+
+  // ម៉ូតូ
+  if (bikePositions.length > 0) {
+    const bikeGeo = new THREE.BoxGeometry(1.6, 0.5, 0.4);
+    const bikeMat = new THREE.MeshStandardMaterial({ color: "#34495e", metalness: 0.5 });
+    const bikeMesh = new THREE.InstancedMesh(bikeGeo, bikeMat, bikePositions.length);
+    bikeMesh.castShadow = true;
+    bikePositions.forEach((p, i) => {
+      dummy.position.set(p.x + 2, 0.7, p.z + 4);
+      dummy.rotation.set(0, Math.PI / 2, 0);
+      dummy.scale.set(1, 1, 1);
+      dummy.updateMatrix();
+      bikeMesh.setMatrixAt(i, dummy.matrix);
+    });
+    bikeMesh.instanceMatrix.needsUpdate = true;
+    group.add(bikeMesh);
+  }
+
+  // កង់ (តូច — មិនចាំបាច់ instanced សម្រាប់ ៧២ គ្រឿង)
+  // ប៉ុន្តែយើងប្រើ instanced ដែរ ដើម្បី FPS
+  if (bicyclePositions.length > 0) {
+    const wheelGeo = new THREE.TorusGeometry(0.3, 0.05, 6, 16);
+    const wheelMat = new THREE.MeshStandardMaterial({ color: "#222" });
+    const wheelMesh = new THREE.InstancedMesh(wheelGeo, wheelMat, bicyclePositions.length * 2);
+    bicyclePositions.forEach((p, i) => {
+      for (let k = 0; k < 2; k++) {
+        dummy.position.set(p.x + 2 + (k === 0 ? -0.4 : 0.4), 0.3, p.z + 3.5);
+        dummy.rotation.set(0, Math.PI / 2, 0);
+        dummy.scale.set(1, 1, 1);
+        dummy.updateMatrix();
+        wheelMesh.setMatrixAt(i * 2 + k, dummy.matrix);
+      }
+    });
+    wheelMesh.instanceMatrix.needsUpdate = true;
+    group.add(wheelMesh);
+  }
+
+  return { group, baseMesh, roofMesh };
+}
