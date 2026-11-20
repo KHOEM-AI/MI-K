@@ -14,6 +14,7 @@ const Character3D = lazy(() => import("./components/Character3D"));
 const Vehicles3D = lazy(() => import("./vehicles3d/Vehicles3D"));
 const KaraokeViewer = lazy(() => import("./components/KaraokeViewer"));
 const Hospital3D = lazy(() => import("./components/Hospital3D"));
+const School3D = lazy(() => import("./components/School3D"));
 
 // Prefetch Studio3D on hover to make opening instant
 const prefetchStudio3D = () => {
@@ -122,6 +123,7 @@ export default function App() {
   const [vehiclesOpen, setVehiclesOpen] = useState(false);
   const [karaokeOpen, setKaraokeOpen] = useState(false);
   const [hospitalOpen, setHospitalOpen] = useState(false);
+  const [schoolOpen, setSchoolOpen] = useState(false);
   const [theme, setTheme] = useState<"day" | "night">(() => {
     try {
       return localStorage.getItem("khoem-ai-theme") === "day"
@@ -419,6 +421,13 @@ export default function App() {
         >
           {hospitalOpen ? "Close Hospital" : "Open Hospital 3D"}
         </button>
+        <button
+          type="button"
+          className="upload-button"
+          onClick={() => setSchoolOpen((open) => !open)}
+        >
+          {schoolOpen ? "Close School" : "Open School 3D"}
+        </button>
       </section>
 
       {studioOpen && (
@@ -487,6 +496,12 @@ export default function App() {
       {karaokeOpen && (
         <Suspense fallback={<div className="studio-panel">Loading Karaoke 3D...</div>}>
           <KaraokeViewer onClose={() => setKaraokeOpen(false)} />
+        </Suspense>
+      )}
+
+      {schoolOpen && (
+        <Suspense fallback={<div className="studio-panel">Loading School...</div>}>
+          <School3D />
         </Suspense>
       )}
 

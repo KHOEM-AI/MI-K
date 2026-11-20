@@ -601,3 +601,70 @@ export function createVisitor(shirtColor: number) {
 
   return visitor;
 }
+
+// 21. ផ្កាយ (Stars) ពេលយប់
+export function createStars() {
+  const count = 800;
+  const positions = new Float32Array(count * 3);
+  for (let i = 0; i < count * 3; i += 3) {
+    positions[i] = (Math.random() - 0.5) * 300;
+    positions[i + 1] = Math.random() * 80 + 40;
+    positions[i + 2] = (Math.random() - 0.5) * 300;
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+  const mat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.4, transparent: true, opacity: 0 });
+  return new THREE.Points(geo, mat);
+}
+
+// 22. ភ្លៀង (Rain)
+export function createRain() {
+  const count = 3000;
+  const positions = new Float32Array(count * 3);
+  for (let i = 0; i < count * 3; i += 3) {
+    positions[i] = (Math.random() - 0.5) * 100;
+    positions[i + 1] = Math.random() * 50;
+    positions[i + 2] = (Math.random() - 0.5) * 100;
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+  const mat = new THREE.PointsMaterial({ color: 0xaaccff, size: 0.15, transparent: true, opacity: 0.7 });
+  return new THREE.Points(geo, mat);
+}
+
+// 23. ផ្លាកសញ្ញាចរាចរណ៍ (Traffic Sign)
+export function createTrafficSign() {
+  const sign = new THREE.Group();
+  const poleMat = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.8, roughness: 0.3 });
+  const redMat = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0x550000 });
+  const whiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 3, 8), poleMat);
+  pole.position.y = 1.5;
+  sign.add(pole);
+
+  const board = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 0.1, 24), redMat);
+  board.rotation.x = Math.PI / 2;
+  board.position.y = 3;
+  sign.add(board);
+
+  const inner = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.15, 0.11), whiteMat);
+  inner.position.set(0, 3, 0.06);
+  sign.add(inner);
+  return sign;
+}
+
+// 24. ពន្លឺចម្រុះពណ៌ (Colorful Lights)
+export function createColorfulLights() {
+  const group = new THREE.Group();
+  const colors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff, 0x00ffff];
+  const lights: THREE.PointLight[] = [];
+  for (let i = 0; i < 6; i++) {
+    const light = new THREE.PointLight(colors[i], 0, 20);
+    light.position.set(-15 + i * 6, 6, 0);
+    group.add(light);
+    lights.push(light);
+  }
+  group.userData = { lights };
+  return group;
+}
