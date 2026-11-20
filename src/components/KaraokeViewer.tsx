@@ -419,6 +419,39 @@ export default function KaraokeViewer({ onClose }: { onClose: () => void }) {
           }
         });
 
+        // Round 10 animations
+        karaoke.traverse((obj: any) => {
+          if (obj.name === "ceilingRibbon") {
+            const delay = obj.userData.ribbonDelay || 0;
+            const baseY = obj.userData.ribbonBaseY || 6.8;
+            obj.position.y = baseY + Math.sin(t * 1.5 + delay) * 0.15;
+            obj.rotation.z = Math.sin(t * 1.2 + delay) * 0.15;
+          }
+          if (obj.name === "miniMirrorBall") {
+            const delay = obj.userData.miniBallDelay || 0;
+            obj.rotation.y = t * 0.8 + delay;
+            obj.rotation.x = Math.sin(t * 0.5 + delay) * 0.3;
+          }
+          if (obj.name === "ceilingPendant") {
+            const delay = obj.userData.pendantDelay || 0;
+            if (obj.material) {
+              obj.material.emissiveIntensity = 2.0 + Math.sin(t * 2 + delay) * 0.8;
+            }
+          }
+          if (obj.name === "candleFlame") {
+            const delay = obj.userData.candleDelay || 0;
+            if (obj.material) {
+              obj.material.emissiveIntensity = 2.5 + Math.sin(t * 8 + delay) * 1.5 + Math.sin(t * 13 + delay) * 0.8;
+            }
+            obj.scale.y = 1.0 + Math.sin(t * 6 + delay) * 0.2;
+          }
+          if (obj.name === "balconyLed") {
+            if (obj.material) {
+              obj.material.emissiveIntensity = 1.5 + Math.sin(t * 2.5) * 0.8;
+            }
+          }
+        });
+
         controls.update();
         renderer.render(scene, camera);
         raf = requestAnimationFrame(animate);

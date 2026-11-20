@@ -7637,6 +7637,76 @@ export function createKaraokeGeometry(
     group.add(led);
   }
 
+  // ---------- TROPHY CASE ----------
+  const trophyBack = new THREE.Mesh(
+    new THREE.BoxGeometry(0.2, 2.5, 3.5),
+    new THREE.MeshStandardMaterial({ color: "#2a1a0a", roughness: 0.6, metalness: 0.2 })
+  );
+  trophyBack.position.set(6, 1.25, D / 2 - 0.7);
+  group.add(trophyBack);
+  const trophyGlass = new THREE.Mesh(
+    new THREE.PlaneGeometry(3.4, 2.3),
+    new THREE.MeshStandardMaterial({
+      color: "#a8d8ea", metalness: 0.7, roughness: 0.05,
+      transparent: true, opacity: 0.25,
+    })
+  );
+  trophyGlass.position.set(6, 1.25, D / 2 - 0.55);
+  group.add(trophyGlass);
+  for (const [fw, fh, fx, fy] of [
+    [3.5, 0.08, 6, 2.4], [3.5, 0.08, 6, 0.1],
+    [0.08, 2.4, 4.25, 1.25], [0.08, 2.4, 7.75, 1.25],
+  ]) {
+    const frame = new THREE.Mesh(
+      new THREE.BoxGeometry(fw, fh, 0.15),
+      gold
+    );
+    frame.position.set(fx, fy, D / 2 - 0.62);
+    group.add(frame);
+  }
+  for (let ts = 0; ts < 3; ts++) {
+    const trophyShelf = new THREE.Mesh(
+      new THREE.BoxGeometry(3.4, 0.05, 0.4),
+      gold
+    );
+    trophyShelf.position.set(6, 0.5 + ts * 0.75, D / 2 - 0.7);
+    group.add(trophyShelf);
+  }
+  for (let ti = 0; ti < 8; ti++) {
+    const shelfIdx = Math.floor(ti / 3);
+    const posInShelf = ti % 3;
+    const tx = 5.0 + posInShelf * 1.0;
+    const ty = 0.6 + shelfIdx * 0.75;
+    const cupBase = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.1, 0.12, 0.06, 12),
+      gold
+    );
+    cupBase.position.set(tx, ty, D / 2 - 0.7);
+    group.add(cupBase);
+    const cupBody = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.08, 0.05, 0.18, 12),
+      gold
+    );
+    cupBody.position.set(tx, ty + 0.12, D / 2 - 0.7);
+    group.add(cupBody);
+    const star = new THREE.Mesh(
+      new THREE.OctahedronGeometry(0.04, 0),
+      new THREE.MeshStandardMaterial({
+        color: "#ffd700", emissive: "#ffd700", emissiveIntensity: 1.5,
+      })
+    );
+    star.position.set(tx, ty + 0.28, D / 2 - 0.7);
+    group.add(star);
+  }
+  const trophyLight = new THREE.Mesh(
+    new THREE.BoxGeometry(3.2, 0.04, 0.1),
+    new THREE.MeshStandardMaterial({
+      color: "#fff8dc", emissive: "#fff8dc", emissiveIntensity: 2.5,
+    })
+  );
+  trophyLight.position.set(6, 2.3, D / 2 - 0.7);
+  group.add(trophyLight);
+
   // ---------- COAT CHECK ----------
   const coatRack = new THREE.Mesh(
     new THREE.BoxGeometry(0.15, 2.2, 4),
@@ -8046,6 +8116,64 @@ export function createKaraokeGeometry(
   const underline = new THREE.Mesh(new THREE.BoxGeometry(13, 0.1, 0.1), neonGold);
   underline.position.set(0, H - 3.4, D / 2 - 0.05);
   group.add(underline);
+
+  // ---------- CEILING DECORATIONS ----------
+  const ribbonColors = ["#ff1493", "#00e5ff", "#ffd700", "#7c3aed"];
+  for (let ri = 0; ri < 16; ri++) {
+    const ribbonX = -18 + (ri * 2.4);
+    for (const ribbonZ of [-15, -8, 0, 8, 15]) {
+      if (Math.random() > 0.6) continue;
+      const ribbon = new THREE.Mesh(
+        new THREE.BoxGeometry(0.04, 1.2 + Math.random() * 0.8, 0.15),
+        new THREE.MeshStandardMaterial({
+          color: ribbonColors[ri % 4], roughness: 0.6, metalness: 0.2,
+          transparent: true, opacity: 0.85,
+        })
+      );
+      ribbon.position.set(ribbonX, H - 1.2, ribbonZ);
+      ribbon.name = "ceilingRibbon";
+      ribbon.userData.ribbonDelay = ri * 0.15 + ribbonZ * 0.02;
+      ribbon.userData.ribbonBaseY = H - 1.2;
+      group.add(ribbon);
+    }
+  }
+
+  const miniBallPositions: [number, number][] = [
+    [-15, -8], [-8, 8], [0, 0], [8, -8], [15, 8],
+  ];
+  miniBallPositions.forEach(([mx, mz], mi) => {
+    const chain = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.02, 0.02, 0.6, 6),
+      gold
+    );
+    chain.position.set(mx, H - 0.3, mz);
+    group.add(chain);
+    const ball = new THREE.Mesh(
+      new THREE.IcosahedronGeometry(0.35, 1),
+      new THREE.MeshStandardMaterial({
+        color: "#e0e8ff", metalness: 1.0, roughness: 0.05,
+        envMapIntensity: 2.0,
+      })
+    );
+    ball.position.set(mx, H - 1.0, mz);
+    ball.name = "miniMirrorBall";
+    ball.userData.miniBallDelay = mi * 0.4;
+    group.add(ball);
+  });
+
+  for (let pi = 0; pi < 10; pi++) {
+    const px = -10 + pi * 2;
+    const pend = new THREE.Mesh(
+      new THREE.SphereGeometry(0.12, 10, 8),
+      new THREE.MeshStandardMaterial({
+        color: "#fff8dc", emissive: "#fff8dc", emissiveIntensity: 2.8,
+      })
+    );
+    pend.position.set(px, H - 0.6, D / 2 - 3);
+    pend.name = "ceilingPendant";
+    pend.userData.pendantDelay = pi * 0.3;
+    group.add(pend);
+  }
 
   // ---------- CEILING + CHANDELIER (over dance floor) ----------
   // Ceiling trim ring above dance floor
@@ -9108,6 +9236,32 @@ export function createKaraokeGeometry(
   ceilingStars.name = "ceilingStars";
   group.add(ceilingStars);
 
+  // ---------- DANCE FLOOR MIRROR PANELS ----------
+  for (const side of [-1, 1]) {
+    const mirrorPanel = new THREE.Mesh(
+      new THREE.PlaneGeometry(8, 3),
+      new THREE.MeshStandardMaterial({
+        color: "#c0d4e0", metalness: 1.0, roughness: 0.02,
+        envMapIntensity: 2.0,
+      })
+    );
+    mirrorPanel.rotation.y = side > 0 ? -Math.PI / 2 : Math.PI / 2;
+    mirrorPanel.position.set(side * 8, 1.6, 12.5);
+    group.add(mirrorPanel);
+    const topTrim = new THREE.Mesh(
+      new THREE.BoxGeometry(0.08, 0.1, 8.2),
+      gold
+    );
+    topTrim.position.set(side * 7.95, 3.15, 12.5);
+    group.add(topTrim);
+    const botTrim = new THREE.Mesh(
+      new THREE.BoxGeometry(0.08, 0.1, 8.2),
+      gold
+    );
+    botTrim.position.set(side * 7.95, 0.1, 12.5);
+    group.add(botTrim);
+  }
+
   // DANCE neon sign above dance floor
   const danceNeon = new THREE.Mesh(
     new THREE.BoxGeometry(4.5, 0.5, 0.1),
@@ -9515,6 +9669,87 @@ export function createKaraokeGeometry(
     group.add(ball);
   }
 
+  // ---------- BALCONY (level 2) ----------
+  const balconyFloor = new THREE.Mesh(
+    new THREE.BoxGeometry(20, 0.2, 4),
+    new THREE.MeshStandardMaterial({ color: "#1a1410", roughness: 0.4, metalness: 0.5 })
+  );
+  balconyFloor.position.set(0, 4.5, -18);
+  group.add(balconyFloor);
+
+  for (let bp = 0; bp < 20; bp++) {
+    const post = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.04, 0.04, 1.0, 6),
+      gold
+    );
+    post.position.set(-10 + bp, 5.0, -16.1);
+    group.add(post);
+  }
+  const balconyRail = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.06, 0.06, 20, 8),
+    gold
+  );
+  balconyRail.rotation.z = Math.PI / 2;
+  balconyRail.position.set(0, 5.5, -16.1);
+  group.add(balconyRail);
+
+  for (const [bx, bz] of [[-6, -18], [0, -18], [6, -18]]) {
+    const table = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.5, 0.5, 0.06, 16),
+      new THREE.MeshStandardMaterial({
+        color: "#d4af37", metalness: 0.9, roughness: 0.15,
+      })
+    );
+    table.position.set(bx, 5.15, bz);
+    group.add(table);
+    const tablePole = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.04, 0.04, 0.55, 6),
+      gold
+    );
+    tablePole.position.set(bx, 4.85, bz);
+    group.add(tablePole);
+    for (const cx of [-0.7, 0.7]) {
+      const chair = new THREE.Mesh(
+        new THREE.BoxGeometry(0.35, 0.06, 0.35),
+        new THREE.MeshStandardMaterial({ color: "#8b0000", roughness: 0.7 })
+      );
+      chair.position.set(bx + cx, 4.85, bz);
+      group.add(chair);
+      const chairBack = new THREE.Mesh(
+        new THREE.BoxGeometry(0.35, 0.4, 0.05),
+        new THREE.MeshStandardMaterial({ color: "#8b0000", roughness: 0.7 })
+      );
+      chairBack.position.set(bx + cx, 5.05, bz + 0.15);
+      group.add(chairBack);
+    }
+  }
+
+  const balconyLed = new THREE.Mesh(
+    new THREE.BoxGeometry(20, 0.05, 0.08),
+    new THREE.MeshStandardMaterial({
+      color: "#7c3aed", emissive: "#7c3aed", emissiveIntensity: 1.8,
+    })
+  );
+  balconyLed.position.set(0, 4.6, -16.2);
+  balconyLed.name = "balconyLed";
+  group.add(balconyLed);
+
+  // FIX: hairStyle type includes "bun"
+  const balconyGuestConfigs: Array<[number, number, string, "long" | "short" | "bun", "male" | "female"]> = [
+    [-6.7, -17.7, "#8b0000", "long", "female"],
+    [0.7, -17.7, "#2a1a3a", "short", "male"],
+    [6.7, -17.7, "#c0c0c0", "bun", "female"],
+  ];
+  balconyGuestConfigs.forEach(([bx, bz, color, hair, gender]) => {
+    const guest = buildDetailedHuman(THREE, {
+      role: "guest", gender, primaryColor: color,
+      hairStyle: hair, skinTone: "#f0c8a0",
+    });
+    guest.position.set(bx, 4.6, bz);
+    guest.rotation.y = 0;
+    group.add(guest);
+  });
+
   // ---------- ROOFTOP TERRACE (front right) ----------
   const rooftopPlatform = new THREE.Mesh(
     new THREE.BoxGeometry(6, 0.2, 4),
@@ -9696,6 +9931,66 @@ export function createKaraokeGeometry(
   );
   barNeon.position.set(-W / 2 + 0.5, 3.5, 0);
   group.add(barNeon);
+
+  // ---------- COCKTAIL TABLES (6 near bar) ----------
+  const barTablePositions: [number, number][] = [
+    [-W / 2 + 4, -8], [-W / 2 + 4, -4], [-W / 2 + 4, 4],
+    [-W / 2 + 4, 8], [-W / 2 + 8, -6], [-W / 2 + 8, 6],
+  ];
+  barTablePositions.forEach(([tx, tz]) => {
+    const barTable = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.6, 0.6, 0.06, 20),
+      new THREE.MeshStandardMaterial({ color: "#1a1410", roughness: 0.3, metalness: 0.5 })
+    );
+    barTable.position.set(tx, 1.0, tz);
+    group.add(barTable);
+    const rim = new THREE.Mesh(
+      new THREE.TorusGeometry(0.6, 0.04, 6, 20),
+      gold
+    );
+    rim.rotation.x = Math.PI / 2;
+    rim.position.set(tx, 1.04, tz);
+    group.add(rim);
+    const pole = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.05, 0.05, 0.9, 8),
+      gold
+    );
+    pole.position.set(tx, 0.5, tz);
+    group.add(pole);
+    const base = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.35, 0.4, 0.05, 12),
+      new THREE.MeshStandardMaterial({ color: "#1a1410", roughness: 0.3, metalness: 0.5 })
+    );
+    base.position.set(tx, 0.03, tz);
+    group.add(base);
+    for (const gx of [-0.2, 0.2]) {
+      const glass = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.06, 0.07, 0.15, 8),
+        new THREE.MeshStandardMaterial({
+          color: "#a8d8ea", metalness: 0.5, roughness: 0.05,
+          transparent: true, opacity: 0.75,
+        })
+      );
+      glass.position.set(tx + gx, 1.12, tz);
+      group.add(glass);
+    }
+    const candle = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.06, 0.06, 0.15, 10),
+      new THREE.MeshStandardMaterial({ color: "#f5f5dc", roughness: 0.8 })
+    );
+    candle.position.set(tx, 1.15, tz);
+    group.add(candle);
+    const candleFlame = new THREE.Mesh(
+      new THREE.SphereGeometry(0.03, 6, 4),
+      new THREE.MeshStandardMaterial({
+        color: "#ffaa00", emissive: "#ffaa00", emissiveIntensity: 3.0,
+      })
+    );
+    candleFlame.position.set(tx, 1.25, tz);
+    candleFlame.name = "candleFlame";
+    candleFlame.userData.candleDelay = Math.random() * Math.PI * 2;
+    group.add(candleFlame);
+  });
 
   // Shelf under bottles
   for (let s = 0; s < 2; s++) {
@@ -10107,6 +10402,68 @@ export function createKaraokeGeometry(
   fireplaceRug.rotation.x = -Math.PI / 2;
   fireplaceRug.position.set(-16, 0.06, -17);
   group.add(fireplaceRug);
+
+  // ---------- WALL MURALS ----------
+  const mural1 = new THREE.Mesh(
+    new THREE.PlaneGeometry(8, 5),
+    new THREE.MeshStandardMaterial({
+      color: "#2a1a3a", roughness: 0.85, metalness: 0.2,
+      emissive: "#4a2a6a", emissiveIntensity: 0.15,
+    })
+  );
+  mural1.position.set(-8, 2.8, -D / 2 + 0.17);
+  group.add(mural1);
+  for (let mg = 0; mg < 5; mg++) {
+    const accent = new THREE.Mesh(
+      new THREE.CircleGeometry(0.4 + mg * 0.1, 6),
+      gold
+    );
+    accent.position.set(-10 + mg * 1.5, 2.8 + (mg % 3 - 1) * 0.6, -D / 2 + 0.19);
+    accent.rotation.z = mg * 0.5;
+    group.add(accent);
+  }
+
+  const mural2 = new THREE.Mesh(
+    new THREE.PlaneGeometry(10, 4.5),
+    new THREE.MeshStandardMaterial({
+      color: "#1a2a3a", roughness: 0.85,
+      emissive: "#2a4a6a", emissiveIntensity: 0.15,
+    })
+  );
+  mural2.rotation.y = -Math.PI / 2;
+  mural2.position.set(W / 2 - 0.17, 2.6, -8);
+  group.add(mural2);
+  for (let sa = 0; sa < 3; sa++) {
+    const stripe = new THREE.Mesh(
+      new THREE.BoxGeometry(0.05, 3.5, 0.1),
+      new THREE.MeshStandardMaterial({
+        color: sa % 2 ? "#ff1493" : "#00e5ff",
+        emissive: sa % 2 ? "#ff1493" : "#00e5ff",
+        emissiveIntensity: 1.5,
+      })
+    );
+    stripe.position.set(W / 2 - 0.15, 2.6, -8 + (sa - 1) * 2);
+    group.add(stripe);
+  }
+
+  const mural3 = new THREE.Mesh(
+    new THREE.PlaneGeometry(7, 4),
+    new THREE.MeshStandardMaterial({
+      color: "#1a1410", roughness: 0.85,
+      emissive: "#2a2010", emissiveIntensity: 0.2,
+    })
+  );
+  mural3.rotation.y = Math.PI / 2;
+  mural3.position.set(-W / 2 + 0.17, 2.5, 8);
+  group.add(mural3);
+  for (let gd = 0; gd < 12; gd++) {
+    const dot = new THREE.Mesh(
+      new THREE.SphereGeometry(0.08, 8, 6),
+      gold
+    );
+    dot.position.set(-W / 2 + 0.19, 1.2 + (gd % 4) * 0.7, 5.5 + Math.floor(gd / 4) * 1.5);
+    group.add(dot);
+  }
 
   // ---------- MIRROR WALL (premium side, reflective) ----------
   const mirrorWall = new THREE.Mesh(new THREE.BoxGeometry(0.1, 3, D - 4), mirrorMat);
