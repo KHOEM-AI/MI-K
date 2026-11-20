@@ -1074,3 +1074,95 @@ export function createGarage(color: number) {
   }
   return garage;
 }
+
+// 46. មនុស្សអង្គុយ (Sitting Person)
+export function createSittingPerson(shirtColor: number) {
+  const person = new THREE.Group();
+  const shirt = new THREE.MeshStandardMaterial({ color: shirtColor, roughness: 0.9 });
+  const pants = new THREE.MeshStandardMaterial({ color: 0x333333 });
+  const skin = new THREE.MeshStandardMaterial({ color: 0xffdbac });
+
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.8, 8), shirt);
+  body.position.y = 1.2; person.add(body);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.25, 16, 16), skin);
+  head.position.y = 1.8; person.add(head);
+  
+  const thigh = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.15, 0.6), pants);
+  thigh.position.set(-0.15, 0.8, 0.3); person.add(thigh);
+  const thigh2 = thigh.clone(); thigh2.position.x = 0.15; person.add(thigh2);
+  
+  const calf = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.6, 0.15), pants);
+  calf.position.set(-0.15, 0.5, 0.6); person.add(calf);
+  const calf2 = calf.clone(); calf2.position.x = 0.15; person.add(calf2);
+
+  return person;
+}
+
+// 47. អ្នកអនាម័យ (Cleaner)
+export function createCleaner(isFemale: boolean, isSupervisor: boolean = false) {
+  const cleaner = new THREE.Group();
+  const uniformMat = new THREE.MeshStandardMaterial({ color: isSupervisor ? 0x9b59b6 : 0x3498db, roughness: 0.8 }); 
+  const skinMat = new THREE.MeshStandardMaterial({ color: 0xffdbac });
+  const hairMat = new THREE.MeshStandardMaterial({ color: 0x1a0f08 });
+
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.4, 1.4, 8), uniformMat);
+  body.position.y = 1.0; cleaner.add(body);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.3, 16, 16), skinMat);
+  head.position.y = 1.9; cleaner.add(head);
+
+  if (isFemale) {
+    const hair = new THREE.Mesh(new THREE.SphereGeometry(0.32, 16, 16, 0, Math.PI * 2, 0, Math.PI / 1.5), hairMat);
+    hair.position.y = 1.95; cleaner.add(hair);
+  } else {
+    const cap = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.1, 0.4), uniformMat);
+    cap.position.y = 2.15; cleaner.add(cap);
+  }
+
+  // ច្បារូសម្រាប់រុញ (Mop/Broom)
+  const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1.5, 8), new THREE.MeshStandardMaterial({ color: 0x8b4513 }));
+  stick.position.set(0.4, 0.8, 0.2); stick.rotation.z = -Math.PI / 6; cleaner.add(stick);
+  const broom = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.1, 0.2), new THREE.MeshStandardMaterial({ color: 0xffd700 }));
+  broom.position.set(0.65, 0.1, 0.2); cleaner.add(broom);
+
+  return cleaner;
+}
+
+// 48. សន្តិសុខ (Security Guard)
+export function createSecurityGuard() {
+  const guard = new THREE.Group();
+  const uniformMat = new THREE.MeshStandardMaterial({ color: 0x1e3a8a, roughness: 0.8 });
+  const skinMat = new THREE.MeshStandardMaterial({ color: 0xffdbac });
+  const capMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 1.5, 8), uniformMat);
+  body.position.y = 1.05; guard.add(body);
+  const belt = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.1, 8), new THREE.MeshStandardMaterial({ color: 0x111111 }));
+  belt.position.y = 0.8; guard.add(belt);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.3, 16, 16), skinMat);
+  head.position.y = 1.95; guard.add(head);
+  const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.2, 8), capMat);
+  cap.position.y = 2.2; guard.add(cap);
+
+  return guard;
+}
+
+// 49. បន្ទប់ពិនិត្យអ្នកជំងឺ (Examination Room)
+export function createExamRoom() {
+  const room = new THREE.Group();
+  const wallMat = new THREE.MeshStandardMaterial({ color: 0xf0f8ff });
+  const floorMat = new THREE.MeshStandardMaterial({ color: 0xdddddd });
+
+  const floor = new THREE.Mesh(new THREE.BoxGeometry(6, 0.2, 6), floorMat);
+  floor.position.y = 0.1; room.add(floor);
+  const wallBack = new THREE.Mesh(new THREE.BoxGeometry(6, 3, 0.2), wallMat);
+  wallBack.position.set(0, 1.5, -3); room.add(wallBack);
+  const wallLeft = new THREE.Mesh(new THREE.BoxGeometry(0.2, 3, 6), wallMat);
+  wallLeft.position.set(-3, 1.5, 0); room.add(wallLeft);
+
+  const bed = createHospitalBed();
+  bed.position.set(0, 0, 0); bed.scale.set(0.8, 0.8, 0.8); room.add(bed);
+  const doc = createDoctor(false);
+  doc.position.set(1, 0, 1); room.add(doc);
+
+  return room;
+}
