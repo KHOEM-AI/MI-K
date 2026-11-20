@@ -42,7 +42,7 @@ for (const [fn, shapes] of plan) {
     const bad = [];
     for (const shape of shapes) {
       try {
-        const g = geo[fn](THREE, shape, undefined, undefined, undefined);
+        const g = geo[fn](THREE, shape, "#ffffff", 0.5, 0.5);
         const p = problems(g);
         if (p) bad.push(shape + ': ' + p);
       } catch (e) {

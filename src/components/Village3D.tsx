@@ -84,6 +84,8 @@ import {
   startAutoSave,
   type VillageSaveState,
 } from "./villageSave";
+import { createAncientZone, updateAncientZone } from "./ancientRuins";
+import { createWildAnimals, updateWildAnimals, type WildAnimal } from "./wildAnimals";
 
 export default function Village3D() {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -120,6 +122,8 @@ export default function Village3D() {
   const leavesRef = useRef<FallingLeaf[]>([]);
   const soundRef = useRef<SoundSystem>(createSoundSystem());
   const [soundOn, setSoundOn] = useState(false);
+  const ancientWindowMatsRef = useRef<THREE.MeshStandardMaterial[]>([]);
+  const wildAnimalsRef = useRef<WildAnimal[]>([]);
   const starsRef = useRef<THREE.Points | null>(null);
   const moonRef = useRef<THREE.Group | null>(null);
   const sunRef = useRef<THREE.DirectionalLight | null>(null);
@@ -433,6 +437,16 @@ export default function Village3D() {
     scene.add(leaves.group);
     leavesRef.current = leaves.leaves;
 
+    // ========== តំបន់បុរាណ ==========
+    const ancient = createAncientZone();
+    scene.add(ancient.group);
+    ancientWindowMatsRef.current = ancient.windowMats;
+
+    // ========== សត្វព្រៃ ==========
+    const wildAnimals = createWildAnimals();
+    scene.add(wildAnimals.group);
+    wildAnimalsRef.current = wildAnimals.animals;
+
     // ========== B: ផ្កាយ + ព្រះច័ន្ទ (សម្រាប់ពេលយប់) ==========
     const stars = createStars(1500, 800);
     scene.add(stars);
@@ -596,6 +610,16 @@ export default function Village3D() {
             m.emissiveIntensity += (target - m.emissiveIntensity) * 0.05;
           }
         });
+      }
+
+      // Update ancient zone (windows បើកពេលយប់)
+      if (ancientWindowMatsRef.current.length > 0 && timeControllerRef.current) {
+        updateAncientZone(ancientWindowMatsRef.current, timeControllerRef.current.getHour());
+      }
+
+      // Update wild animals
+      if (wildAnimalsRef.current.length > 0) {
+        updateWildAnimals(wildAnimalsRef.current, elapsedSec);
       }
 
       // Update A: ត្រី + រលក + ស្លឹកឈើ
