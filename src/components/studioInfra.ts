@@ -1330,7 +1330,7 @@ function makeHotelRoom(THREE: T3, mk: Mk): Grp {
   // window with city glow + curtains
   const gl = new THREE.BoxGeometry(0.03, 1.35, 1.9); gl.translate(-W / 2 + 0.02, 1.5, -0.2);
   gPaintFn(THREE, gl, (_x, y) => { const t = clamp01((y - 0.8) / 1.4); return hslRGB(THREE, 215 - 30 * (1 - t), 0.6 - 0.2 * t, 0.35 + 0.3 * (1 - t)); });
-  const wg = new THREE.Mesh(gl, new THREE.MeshBasicMaterial({ vertexColors: true })); g.add(wg);
+  const wg = new THREE.Mesh(gl, new THREE.MeshBasicMaterial({ color: 0xffffff, vertexColors: true })); g.add(wg);
   dark.push(gPaint(THREE, gBox(THREE, 0.06, 0.06, 2.0, -W / 2 + 0.03, 2.2, -0.2), [0.06, 0.06, 0.07]), gPaint(THREE, gBox(THREE, 0.06, 0.06, 2.0, -W / 2 + 0.03, 0.82, -0.2), [0.06, 0.06, 0.07]), gPaint(THREE, gBox(THREE, 0.06, 1.4, 0.05, -W / 2 + 0.03, 1.5, -0.2), [0.06, 0.06, 0.07]));
   for (const s of [-1, 1]) for (let f = 0; f < 5; f++) soft.push(gPaint(THREE, gRBox(THREE, 0.12, 2.4, 0.2, 0.05, -W / 2 + 0.14, 1.4, -0.2 + s * (0.95 + 0.0) - s * (0.06 + f * 0.2) * 1.0), hslRGB(THREE, 188, 0.3, 0.2 + 0.05 * (f % 2))));
   const fl = new THREE.CylinderGeometry(0.01, 0.01, 1.5, 6); fl.translate(-W / 2 + 0.45, 0.78, -D / 2 + 0.5); metal.push(gPaint(THREE, fl, [0.1, 0.1, 0.1]));
