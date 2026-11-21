@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { createHumanFigure } from "./humanFigure";
 
 // 1. អគារមន្ទីរពេទ្យ ៩ ជាន់ (Realistic Building)
 export function createHospitalBuilding() {
@@ -199,23 +200,10 @@ export function createAmbulance() {
 
 // 6. គ្រូពេទ្យ (Doctor)
 export function createDoctor(isFemale: boolean = false) {
-  const doctor = new THREE.Group();
-  const coatMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8 });
-  const skinMat = new THREE.MeshStandardMaterial({ color: 0xffdbac });
-  
-  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 2, 16), coatMat);
-  body.position.y = 1.5;
-  doctor.add(body);
-
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.5, 16, 16), skinMat);
-  head.position.y = 3;
-  doctor.add(head);
-
-  const cap = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.2, 0.8), coatMat);
-  cap.position.set(0, 3.3, 0);
-  doctor.add(cap);
-
-  return doctor;
+  return createHumanFigure({
+    height: 3.4, shirt: 0xffffff, pants: 0x3b4a5c, skin: 0xc99672, female: isFemale,
+    hairStyle: isFemale ? "bun" : "short", coat: true, shoe: 0xeeeeee, tie: isFemale ? undefined : 0x2c6fb5,
+  });
 }
 
 // 7. សួនច្បារ (Garden)
@@ -334,28 +322,10 @@ export function createSirenLight() {
 
 // 12. គិលានុបដ្ឋាយិកា (Nurse)
 export function createNurse() {
-  const nurse = new THREE.Group();
-  const uniformMat = new THREE.MeshStandardMaterial({ color: 0xffb6c1, roughness: 0.8 }); // ពណ៌ផ្កាឈូក
-  const skinMat = new THREE.MeshStandardMaterial({ color: 0xffdbac });
-  const hairMat = new THREE.MeshStandardMaterial({ color: 0x2a1b10 });
-
-  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.6, 1.8, 16), uniformMat);
-  body.position.y = 1.4;
-  nurse.add(body);
-
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.45, 16, 16), skinMat);
-  head.position.y = 2.7;
-  nurse.add(head);
-
-  const hair = new THREE.Mesh(new THREE.SphereGeometry(0.47, 16, 16, 0, Math.PI * 2, 0, Math.PI / 1.5), hairMat);
-  hair.position.y = 2.75;
-  nurse.add(hair);
-
-  const cap = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.15, 0.6), uniformMat);
-  cap.position.set(0, 2.95, 0);
-  nurse.add(cap);
-
-  return nurse;
+  return createHumanFigure({
+    height: 3.1, shirt: 0xffb6c1, pants: 0xffb6c1, skin: 0xcf9f7b, female: true, hairStyle: "bun",
+    hat: "nurse", hatColor: 0xffffff, shoe: 0xf2f2f2, longSleeves: false,
+  });
 }
 
 // 13. រទេះរុញអ្នកជំងឺ (Wheelchair)
@@ -575,31 +545,7 @@ export function createSurgeryRoom() {
 
 // 20. អ្នកទស្សនា (Visitor) ដើរលេងក្នុងសួន
 export function createVisitor(shirtColor: number) {
-  const visitor = new THREE.Group();
-  const shirtMat = new THREE.MeshStandardMaterial({ color: shirtColor, roughness: 0.8 });
-  const pantsMat = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.9 });
-  const skinMat = new THREE.MeshStandardMaterial({ color: 0xffdbac });
-  const hairMat = new THREE.MeshStandardMaterial({ color: 0x2a1b10 });
-
-  // ខ្លួន
-  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 1.2, 8), shirtMat);
-  body.position.y = 1.2;
-  visitor.add(body);
-
-  // ជើង
-  const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.8, 8), pantsMat);
-  leg.position.set(-0.2, 0.4, 0); visitor.add(leg);
-  const leg2 = leg.clone(); leg2.position.x = 0.2; visitor.add(leg2);
-
-  // ក្បាល និងសក់
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.35, 16, 16), skinMat);
-  head.position.y = 2;
-  visitor.add(head);
-  const hair = new THREE.Mesh(new THREE.SphereGeometry(0.36, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2), hairMat);
-  hair.position.y = 2.05;
-  visitor.add(hair);
-
-  return visitor;
+  return createHumanFigure({ height: 2.35, shirt: shirtColor, pants: 0x333333, skin: 0xc99672, longSleeves: false });
 }
 
 // 21. ផ្កាយ (Stars) ពេលយប់
@@ -1077,73 +1023,25 @@ export function createGarage(color: number) {
 
 // 46. មនុស្សអង្គុយ (Sitting Person)
 export function createSittingPerson(shirtColor: number) {
-  const person = new THREE.Group();
-  const shirt = new THREE.MeshStandardMaterial({ color: shirtColor, roughness: 0.9 });
-  const pants = new THREE.MeshStandardMaterial({ color: 0x333333 });
-  const skin = new THREE.MeshStandardMaterial({ color: 0xffdbac });
-
-  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.8, 8), shirt);
-  body.position.y = 1.2; person.add(body);
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.25, 16, 16), skin);
-  head.position.y = 1.8; person.add(head);
-  
-  const thigh = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.15, 0.6), pants);
-  thigh.position.set(-0.15, 0.8, 0.3); person.add(thigh);
-  const thigh2 = thigh.clone(); thigh2.position.x = 0.15; person.add(thigh2);
-  
-  const calf = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.6, 0.15), pants);
-  calf.position.set(-0.15, 0.5, 0.6); person.add(calf);
-  const calf2 = calf.clone(); calf2.position.x = 0.15; person.add(calf2);
-
-  return person;
+  return createHumanFigure({ height: 2.2, shirt: shirtColor, pants: 0x333333, skin: 0xc99672, sitting: true, seatHeight: 0.8, longSleeves: false });
 }
 
 // 47. អ្នកអនាម័យ (Cleaner)
 export function createCleaner(isFemale: boolean, isSupervisor: boolean = false) {
-  const cleaner = new THREE.Group();
-  const uniformMat = new THREE.MeshStandardMaterial({ color: isSupervisor ? 0x9b59b6 : 0x3498db, roughness: 0.8 }); 
-  const skinMat = new THREE.MeshStandardMaterial({ color: 0xffdbac });
-  const hairMat = new THREE.MeshStandardMaterial({ color: 0x1a0f08 });
-
-  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.4, 1.4, 8), uniformMat);
-  body.position.y = 1.0; cleaner.add(body);
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.3, 16, 16), skinMat);
-  head.position.y = 1.9; cleaner.add(head);
-
-  if (isFemale) {
-    const hair = new THREE.Mesh(new THREE.SphereGeometry(0.32, 16, 16, 0, Math.PI * 2, 0, Math.PI / 1.5), hairMat);
-    hair.position.y = 1.95; cleaner.add(hair);
-  } else {
-    const cap = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.1, 0.4), uniformMat);
-    cap.position.y = 2.15; cleaner.add(cap);
-  }
-
-  // ច្បារូសម្រាប់រុញ (Mop/Broom)
+  const cleaner = createHumanFigure({
+    height: 2.3, shirt: isSupervisor ? 0x9b59b6 : 0x3498db, pants: 0x2c3e50, skin: 0xc58e69,
+    female: isFemale, hairStyle: isFemale ? "bun" : "short", hat: isFemale ? "none" : "cap", hatColor: isSupervisor ? 0x9b59b6 : 0x3498db,
+  });
   const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1.5, 8), new THREE.MeshStandardMaterial({ color: 0x8b4513 }));
   stick.position.set(0.4, 0.8, 0.2); stick.rotation.z = -Math.PI / 6; cleaner.add(stick);
   const broom = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.1, 0.2), new THREE.MeshStandardMaterial({ color: 0xffd700 }));
   broom.position.set(0.65, 0.1, 0.2); cleaner.add(broom);
-
   return cleaner;
 }
 
 // 48. សន្តិសុខ (Security Guard)
 export function createSecurityGuard() {
-  const guard = new THREE.Group();
-  const uniformMat = new THREE.MeshStandardMaterial({ color: 0x1e3a8a, roughness: 0.8 });
-  const skinMat = new THREE.MeshStandardMaterial({ color: 0xffdbac });
-  const capMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
-
-  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 1.5, 8), uniformMat);
-  body.position.y = 1.05; guard.add(body);
-  const belt = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.1, 8), new THREE.MeshStandardMaterial({ color: 0x111111 }));
-  belt.position.y = 0.8; guard.add(belt);
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.3, 16, 16), skinMat);
-  head.position.y = 1.95; guard.add(head);
-  const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.2, 8), capMat);
-  cap.position.y = 2.2; guard.add(cap);
-
-  return guard;
+  return createHumanFigure({ height: 2.4, shirt: 0x1e3a8a, pants: 0x111111, hat: "cap", hatColor: 0x111111, skin: 0xc58e69, shoe: 0x0b0b0d });
 }
 
 // 49. បន្ទប់ពិនិត្យអ្នកជំងឺ (Examination Room)
@@ -1267,19 +1165,10 @@ export function createDirectorOffice() {
 
 // 54. មេការអនាម័យ និងមេសន្តិសុខ (Female Supervisor - Beautiful & Tall)
 export function createFemaleSupervisor(role: "cleaner" | "security") {
-  const sup = new THREE.Group();
-  const skinMat = new THREE.MeshStandardMaterial({ color: 0xfff0e0 }); // សាច់ស
-  const hairMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
-  const uniformMat = new THREE.MeshStandardMaterial({ color: role === "cleaner" ? 0x9b59b6 : 0x2c3e50 });
-  
-  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.35, 1.6, 16), uniformMat); body.position.y = 1.2; sup.add(body);
-  const skirt = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.45, 0.5, 16), uniformMat); skirt.position.y = 0.5; sup.add(skirt);
-  for (let x of [-0.1, 0.1]) {
-    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.6, 8), skinMat); leg.position.set(x, 0.3, 0); sup.add(leg);
-  }
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.28, 32, 32), skinMat); head.position.y = 2.2; sup.add(head);
-  const hair = new THREE.Mesh(new THREE.SphereGeometry(0.29, 32, 32, 0, Math.PI * 2, 0, Math.PI / 1.5), hairMat); hair.position.y = 2.25; sup.add(hair);
-  return sup;
+  return createHumanFigure({
+    height: 2.45, shirt: role === "cleaner" ? 0x9b59b6 : 0x2c3e50, pants: role === "cleaner" ? 0x9b59b6 : 0x2c3e50,
+    skin: 0xdcb08c, female: true, skirt: true, hairStyle: "long", hair: 0x111111, shoe: 0x111111,
+  });
 }
 
 // 55. អ្នកអនាម័យប្រុស (Male Cleaner)

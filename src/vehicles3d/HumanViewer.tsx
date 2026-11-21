@@ -6,8 +6,8 @@ import { isGlb } from "./modelTools.mjs";
 import { TabIcon, PersonPortrait } from "./icons";
 
 // 3D people for the studio. Turn them 360° (auto-turn or drag), and make them idle / walk / wave.
-// If /characters/<id>.glb exists it is used (and its own animation clips are listed). Otherwise a simple
-// built-in mannequin is shown: it moves, but it is a test figure, NOT a realistic person.
+// If /characters/<id>.glb exists it is used (and its own animation clips are listed). Otherwise a built-in
+// human figure (face, hands, clothing) is shown. For photoreal people, add a rigged GLB in /characters.
 
 type Three = typeof import("three");
 type Mode = "idle" | "walk" | "wave";
@@ -33,12 +33,18 @@ interface Rig {
   legL: Group; legR: Group; kneeL: Group; kneeR: Group;
 }
 
-// Body built from capsules. Units: metres for a 1.75 m person, then scaled to the person's height.
+// Body built from tapered limbs, with a face, hands, fingers, shoes and clothing details.
+// Units: metres for a 1.75 m person, then scaled to the person's height.
 // The figure faces +z. A limb hangs down (-y) from its joint, so rotation.x > 0 swings it backwards.
 function buildPerson(T: Three, p: Person): Rig {
-  const mat = (color: number, rough: number): Material => new T.MeshStandardMaterial({ color, roughness: rough });
-  const skin = mat(p.skin, 0.8), top = mat(p.top, 0.75), bottom = mat(p.bottom, 0.85);
-  const hair = mat(p.hair, 0.6), shoe = mat(0x15171c, 0.7), dark = mat(0x0b0b0d, 0.5);
+  const mat = (color: number, rough: number, extra: { side?: 0 | 1 | 2 } = {}): Material =>
+    new T.MeshStandardMaterial({ color, roughness: rough, ...extra });
+  const skin = mat(p.skin, 0.62), top = mat(p.top, 0.8, { side: T.DoubleSide }), bottom = mat(p.bottom, 0.85);
+  const hair = mat(p.hair, 0.45), dark = mat(0x0b0b0d, 0.5);
+  const white = mat(0xf6f6f4, 0.3), iris = mat(p.female ? 0x3a2418 : 0x2e1d14, 0.3);
+  const lip = mat(p.female ? 0xa8504f : 0x9a5a50, 0.5);
+  const lightShoe = p.id === "nurse" || p.id === "student" || p.id === "doctor";
+  const shoe = mat(lightShoe ? 0xeeeeee : 0x15171c, 0.55), sole = mat(lightShoe ? 0xcfcfcf : 0x050506, 0.9);
   const sleeve = p.longSleeves ? top : skin;
   const add = (parent: Object3D, geo: BufferGeometry, m: Material, x = 0, y = 0, z = 0): Mesh => {
     const mesh = new T.Mesh(geo, m);
@@ -46,8 +52,15 @@ function buildPerson(T: Three, p: Person): Rig {
     parent.add(mesh);
     return mesh;
   };
-  const seg = (parent: Object3D, len: number, r: number, m: Material): Mesh =>
-    add(parent, new T.CapsuleGeometry(r, Math.max(0.01, len - 2 * r), 4, 10), m, 0, -len / 2, 0);
+  // Ellipsoid: a unit sphere scaled to the half-sizes rx, ry, rz.
+  const ball = (parent: Object3D, rx: number, ry: number, rz: number, m: Material, x = 0, y = 0, z = 0): Mesh => {
+    const mesh = add(parent, new T.SphereGeometry(1, 24, 16), m, x, y, z);
+    mesh.scale.set(rx, ry, rz);
+    return mesh;
+  };
+  // A tapered limb segment hanging down from the joint (r0 at the top, r1 at the bottom).
+  const taper = (parent: Object3D, len: number, r0: number, r1: number, m: Material): Mesh =>
+    add(parent, new T.CylinderGeometry(r0, r1, len, 20, 1), m, 0, -len / 2, 0);
   const joint = (parent: Object3D, x: number, y: number): Group => {
     const g = new T.Group();
     g.position.set(x, y, 0);
@@ -55,47 +68,116 @@ function buildPerson(T: Three, p: Person): Rig {
     return g;
   };
 
-  const rt = p.female ? 0.14 : 0.165;
+  const f = p.female;
+  const chestR = f ? 0.145 : 0.168;   // half shoulder/chest width
+  const waistR = f ? 0.118 : 0.138;
+  const hipR = f ? 0.165 : 0.15;
   const root = new T.Group();
   const hips = joint(root, 0, 0.92);
   const torso = joint(hips, 0, 0);
-  add(torso, new T.CapsuleGeometry(rt, 0.54 - 2 * rt, 4, 12), top, 0, 0.27, 0).scale.z = 0.7;
-  add(hips, new T.CapsuleGeometry(rt * 0.95, 0.06, 4, 12), bottom, 0, 0, 0).scale.z = 0.75;
+
+  // Pelvis, waist and chest as smooth ellipsoids / tapered cylinders, so there are no hard capsule seams.
+  ball(hips, hipR, 0.11, hipR * 0.72, bottom, 0, 0.0, 0);
+  const waist = add(torso, new T.CylinderGeometry(chestR * 0.9, hipR * 0.92, 0.32, 24, 1), top, 0, 0.16, 0);
+  waist.scale.z = 0.72;
+  ball(torso, chestR, 0.17, chestR * 0.66, top, 0, 0.4, 0);
+  ball(torso, chestR * 0.85, 0.06, chestR * 0.55, top, 0, 0.5, 0);
+  if (f) for (const s of [-1, 1]) ball(torso, 0.05, 0.05, 0.05, top, s * 0.058, 0.4, chestR * 0.6);
+  // belt for trousers
+  if (!p.skirt) add(torso, new T.CylinderGeometry(hipR * 0.9, hipR * 0.9, 0.03, 24, 1, true), mat(0x1a1410, 0.5, { side: T.DoubleSide }), 0, 0.01, 0).scale.z = 0.74;
+
   if (p.skirt) {
-    const skirt = new T.MeshStandardMaterial({ color: p.bottom, roughness: 0.85, side: T.DoubleSide });
-    add(hips, new T.CylinderGeometry(rt * 0.9, rt * 1.55, 0.3, 20, 1, true), skirt, 0, -0.1, 0);
+    const skirt = mat(p.bottom, 0.85, { side: T.DoubleSide });
+    add(hips, new T.CylinderGeometry(hipR * 0.95, hipR * 1.5, 0.34, 28, 1, true), skirt, 0, -0.15, 0).scale.z = 0.85;
   }
-  add(torso, new T.CylinderGeometry(0.045, 0.05, 0.09, 12), skin, 0, 0.58, 0);
-  if (p.shirt !== undefined) add(torso, new T.BoxGeometry(0.11, 0.34, 0.02), mat(p.shirt, 0.7), 0, 0.34, rt * 0.7 + 0.004);
-  if (p.tie !== undefined) add(torso, new T.BoxGeometry(0.04, 0.3, 0.012), mat(p.tie, 0.6), 0, 0.33, rt * 0.7 + 0.016);
+  // Doctor: long white coat. Businessman: suit jacket with lapels.
+  if (p.id === "doctor") {
+    add(hips, new T.CylinderGeometry(hipR * 1.02, hipR * 1.28, 0.5, 28, 1, true), top, 0, -0.22, 0).scale.z = 0.85;
+  } else if (p.id === "businessman") {
+    add(hips, new T.CylinderGeometry(hipR * 1.0, hipR * 1.12, 0.26, 28, 1, true), top, 0, -0.1, 0).scale.z = 0.8;
+    for (const s of [-1, 1]) {
+      const lapel = add(torso, new T.BoxGeometry(0.05, 0.3, 0.012), top, s * 0.065, 0.38, chestR * 0.66 + 0.005);
+      lapel.rotation.z = s * 0.28;
+    }
+  }
 
+  // Neck and collar
+  add(torso, new T.CylinderGeometry(0.047, 0.055, 0.12, 18), skin, 0, 0.59, 0);
+  if (p.shirt !== undefined) {
+    const shirt = mat(p.shirt, 0.7, { side: T.DoubleSide });
+    add(torso, new T.BoxGeometry(0.1, 0.34, 0.016), shirt, 0, 0.36, chestR * 0.66 + 0.003);
+    add(torso, new T.CylinderGeometry(0.062, 0.07, 0.035, 18, 1, true), shirt, 0, 0.6, 0);
+  }
+  if (p.tie !== undefined) {
+    const tie = mat(p.tie, 0.5);
+    add(torso, new T.BoxGeometry(0.036, 0.3, 0.012), tie, 0, 0.35, chestR * 0.66 + 0.014);
+    add(torso, new T.BoxGeometry(0.05, 0.04, 0.016), tie, 0, 0.55, chestR * 0.66 + 0.012);
+  }
+
+  // Head: skull + jaw + ears + nose + eyes + brows + lips + hair
   const head = joint(torso, 0, 0.72);
-  add(head, new T.SphereGeometry(0.105, 20, 16), skin).scale.y = 1.12;
-  for (const s of [-1, 1]) add(head, new T.SphereGeometry(0.012, 8, 6), dark, s * 0.04, 0.015, 0.098);
-  const cap = add(head, new T.SphereGeometry(0.113, 20, 12, 0, Math.PI * 2, 0, Math.PI * 0.55), hair, 0, 0.012, -0.004);
-  cap.rotation.x = -0.5;
-  if (p.longHair) add(head, new T.CapsuleGeometry(0.085, 0.2, 4, 10), hair, 0, -0.12, -0.07);
-  if (p.bun) add(head, new T.SphereGeometry(0.045, 10, 8), hair, 0, 0.1, -0.1);
+  const skull = ball(head, 0.095, 0.118, 0.105, skin, 0, 0.0, 0);
+  skull.name = "skull";
+  ball(head, 0.078, 0.075, 0.088, skin, 0, -0.055, 0.016);                    // jaw / chin
+  for (const s of [-1, 1]) {
+    ball(head, 0.012, 0.026, 0.018, skin, s * 0.097, -0.005, 0);                // ears
+    ball(head, 0.016, 0.0095, 0.008, white, s * 0.038, 0.018, 0.088);          // eye white
+    ball(head, 0.0082, 0.0082, 0.006, iris, s * 0.038, 0.018, 0.0955);          // iris
+    ball(head, 0.0036, 0.0036, 0.004, dark, s * 0.038, 0.018, 0.0985);          // pupil
+    const brow = add(head, new T.BoxGeometry(0.038, p.female ? 0.005 : 0.0075, 0.008), hair, s * 0.04, 0.048, 0.094);
+    brow.rotation.z = -s * 0.1;
+  }
+  ball(head, 0.012, 0.017, 0.015, skin, 0, -0.012, 0.104);                      // nose tip
+  ball(head, 0.007, 0.022, 0.01, skin, 0, 0.008, 0.099);                        // nose bridge
+  const mouth = add(head, new T.CapsuleGeometry(0.0055, 0.03, 4, 8), lip, 0, -0.05, 0.094);
+  mouth.rotation.z = Math.PI / 2;
+  // hair: crown + back + (long / bun)
+  const cap = add(head, new T.SphereGeometry(0.113, 24, 14, 0, Math.PI * 2, 0, Math.PI * 0.56), hair, 0, 0.012, -0.006);
+  cap.rotation.x = -0.42;
+  ball(head, 0.106, 0.1, 0.1, hair, 0, 0.0, -0.03);
+  if (p.longHair) {
+    add(head, new T.CapsuleGeometry(0.088, 0.22, 6, 12), hair, 0, -0.14, -0.06);
+    for (const s of [-1, 1]) add(head, new T.CapsuleGeometry(0.03, 0.14, 4, 8), hair, s * 0.09, -0.07, 0.0);
+  }
+  if (p.bun) ball(head, 0.05, 0.05, 0.05, hair, 0, 0.1, -0.1);
 
+  // Arms: shoulder, upper arm, elbow, forearm, hand with fingers
   const arms: Group[] = [];
   const elbows: Group[] = [];
   for (const s of [-1, 1]) {
-    const arm = joint(torso, s * (rt + 0.06), 0.5);
-    seg(arm, 0.29, 0.05, top);
+    const arm = joint(torso, s * (chestR + 0.03), 0.5);
+    ball(arm, 0.058, 0.058, 0.058, top, 0, 0, 0);
+    taper(arm, 0.29, 0.05, 0.04, top);
     const elbow = joint(arm, 0, -0.29);
-    seg(elbow, 0.26, 0.042, sleeve);
-    add(elbow, new T.SphereGeometry(0.043, 10, 8), skin, 0, -0.275, 0);
+    ball(elbow, 0.041, 0.041, 0.041, sleeve, 0, 0, 0);
+    taper(elbow, 0.26, 0.04, 0.03, sleeve);
+    const hand = joint(elbow, 0, -0.27);
+    ball(hand, 0.034, 0.045, 0.014, skin, 0, -0.03, 0);                         // palm
+    for (let i = 0; i < 4; i++) {
+      const fx = (i - 1.5) * 0.0165;
+      const len = [0.05, 0.058, 0.054, 0.042][i];
+      const finger = add(hand, new T.CapsuleGeometry(0.0078, len, 3, 6), skin, fx, -0.075 - len / 2 + 0.01, 0.004);
+      finger.rotation.x = -0.18;
+    }
+    const thumb = add(hand, new T.CapsuleGeometry(0.0095, 0.04, 3, 6), skin, -s * 0.036, -0.045, 0.012);
+    thumb.rotation.z = -s * 0.45;
+    thumb.rotation.x = -0.2;
     arms.push(arm);
     elbows.push(elbow);
   }
+
+  // Legs: thigh, knee, calf, ankle, shoe with sole
   const legs: Group[] = [];
   const knees: Group[] = [];
   for (const s of [-1, 1]) {
-    const leg = joint(hips, s * (p.female ? 0.08 : 0.09), 0);
-    seg(leg, 0.44, 0.075, bottom);
+    const leg = joint(hips, s * (f ? 0.082 : 0.09), 0);
+    taper(leg, 0.44, f ? 0.088 : 0.09, 0.06, bottom);
     const knee = joint(leg, 0, -0.44);
-    seg(knee, 0.44, 0.058, bottom);
-    add(knee, new T.BoxGeometry(0.095, 0.06, 0.25), shoe, 0, -0.45, 0.05);
+    ball(knee, 0.06, 0.06, 0.06, bottom, 0, 0, 0);
+    taper(knee, 0.43, 0.058, 0.038, bottom);
+    ball(knee, 0.04, 0.04, 0.04, skin, 0, -0.43, 0);                            // ankle
+    ball(knee, 0.047, 0.04, 0.125, shoe, 0, -0.455, 0.04);                      // shoe upper
+    add(knee, new T.BoxGeometry(0.095, 0.012, 0.255), sole, 0, -0.482, 0.045);  // sole
     legs.push(leg);
     knees.push(knee);
   }

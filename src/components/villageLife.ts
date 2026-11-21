@@ -1,5 +1,6 @@
 import { VillageRegistry, type HouseInfo } from "./villageSimulation";
 import * as THREE from "three";
+import { createHumanFigure } from "./humanFigure";
 
 const mat = (color: string, opts: Partial<THREE.MeshStandardMaterialParameters> = {}) =>
   new THREE.MeshStandardMaterial({ color, roughness: 0.85, metalness: 0.05, ...opts });
@@ -19,50 +20,13 @@ export interface Villager {
 }
 
 export function createVillager(shirtColor = "#3498db"): THREE.Group {
-  const g = new THREE.Group();
-
-  // តួ
-  const body = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.25, 0.3, 0.9, 8),
-    mat(shirtColor)
-  );
-  body.position.y = 1.05;
-  body.castShadow = true;
-  g.add(body);
-
-  // ក្បាល
-  const head = new THREE.Mesh(
-    new THREE.SphereGeometry(0.22, 8, 8),
-    mat("#f5cba7")
-  );
-  head.position.y = 1.7;
-  head.castShadow = true;
-  g.add(head);
-
-  // ដៃ ២
-  [-0.32, 0.32].forEach((x) => {
-    const arm = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.07, 0.07, 0.7, 6),
-      mat(shirtColor)
-    );
-    arm.position.set(x, 1.05, 0);
-    arm.rotation.z = x > 0 ? -0.2 : 0.2;
-    arm.name = "arm";
-    g.add(arm);
+  const n = shirtColor.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+  const skins = [0xc58e69, 0xc99672, 0xb98560, 0xd0a07c];
+  const female = n % 3 === 0;
+  return createHumanFigure({
+    height: 1.95 + (n % 5) * 0.04, shirt: shirtColor, pants: female ? 0x3b2f5e : 0x2c3e50,
+    skin: skins[n % skins.length], female, skirt: female, hairStyle: female ? "long" : "short", longSleeves: false,
   });
-
-  // ជើង ២
-  [-0.12, 0.12].forEach((x) => {
-    const leg = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.08, 0.08, 0.6, 6),
-      mat("#2c3e50")
-    );
-    leg.position.set(x, 0.3, 0);
-    leg.name = "leg";
-    g.add(leg);
-  });
-
-  return g;
 }
 
 /* ============================================================
@@ -169,10 +133,10 @@ export function updateVillagers(
       // ជើងញាក់
       v.mesh.traverse((child) => {
         if (child.name === "leg") {
-          child.rotation.x = Math.sin(elapsed * 8 + v.legPhase) * 0.4;
+          child.rotation.x = (child.userData.side ?? 1) * Math.sin(elapsed * 8 + v.legPhase) * 0.4;
         }
         if (child.name === "arm") {
-          child.rotation.z = Math.sin(elapsed * 8 + v.legPhase) * 0.3;
+          child.rotation.x = (child.userData.side ?? 1) * Math.sin(elapsed * 8 + v.legPhase) * 0.3;
         }
       });
     } else if (v.state === "work") {
@@ -180,7 +144,7 @@ export function updateVillagers(
       v.mesh.position.copy(v.workPos);
       v.mesh.traverse((child) => {
         if (child.name === "arm") {
-          child.rotation.z = Math.sin(elapsed * 3 + v.legPhase) * 0.2;
+          child.rotation.x = (child.userData.side ?? 1) * Math.sin(elapsed * 3 + v.legPhase) * 0.2;
         }
       });
     } else {

@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { createHumanFigure } from "./humanFigure";
 
 const mat = (color: string, opts: Partial<THREE.MeshStandardMaterialParameters> = {}) =>
   new THREE.MeshStandardMaterial({ color, roughness: 0.85, metalness: 0.05, ...opts });
@@ -7,63 +8,10 @@ const mat = (color: string, opts: Partial<THREE.MeshStandardMaterialParameters> 
    អ្នកយាម (Security Guard)
    ============================================================ */
 export function createSecurityGuard(): THREE.Group {
-  const g = new THREE.Group();
-
-  // តួ (ឯកសណ្ឋានខ្មៅ)
-  const body = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.28, 0.32, 1.2, 8),
-    mat("#2c3e50")
-  );
-  body.position.y = 1.2;
-  body.castShadow = true;
-  g.add(body);
-
-  // ក្បាល
-  const head = new THREE.Mesh(
-    new THREE.SphereGeometry(0.24, 10, 10),
-    mat("#f5cba7")
-  );
-  head.position.y = 2;
-  g.add(head);
-
-  // មួកយាម (កំពូល)
-  const cap = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.28, 0.28, 0.15, 12),
-    mat("#1a1a2e")
-  );
-  cap.position.y = 2.2;
-  g.add(cap);
-
-  // Badge (លឿង)
-  const badge = new THREE.Mesh(
-    new THREE.BoxGeometry(0.12, 0.12, 0.02),
-    mat("#f1c40f", { emissive: "#f1c40f", emissiveIntensity: 0.3 })
-  );
-  badge.position.set(0.2, 1.4, 0.3);
+  const g = createHumanFigure({ height: 2.35, shirt: 0x2c3e50, pants: 0x1a1a1a, hat: "cap", hatColor: 0x1a1a2e, skin: 0xc58e69, shoe: 0x0b0b0d });
+  const badge = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.015), mat("#f1c40f", { emissive: "#f1c40f", emissiveIntensity: 0.25 }));
+  badge.position.set(0.12, 1.55, 0.2);
   g.add(badge);
-
-  // ដៃ ២
-  [-0.35, 0.35].forEach((x) => {
-    const arm = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.07, 0.07, 0.8, 6),
-      mat("#2c3e50")
-    );
-    arm.position.set(x, 1.3, 0);
-    arm.name = "arm";
-    g.add(arm);
-  });
-
-  // ជើង ២
-  [-0.13, 0.13].forEach((x) => {
-    const leg = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.08, 0.08, 0.7, 6),
-      mat("#1a1a1a")
-    );
-    leg.position.set(x, 0.35, 0);
-    leg.name = "leg";
-    g.add(leg);
-  });
-
   return g;
 }
 
@@ -71,64 +19,14 @@ export function createSecurityGuard(): THREE.Group {
    អ្នកសម្អាត (Cleaner)
    ============================================================ */
 export function createCleaner(): THREE.Group {
-  const g = new THREE.Group();
-
-  // តួ (អាវពណ៌ខៀវ)
-  const body = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.28, 0.32, 1.2, 8),
-    mat("#3498db")
-  );
-  body.position.y = 1.2;
-  body.castShadow = true;
-  g.add(body);
-
-  // ក្បាល
-  const head = new THREE.Mesh(
-    new THREE.SphereGeometry(0.24, 10, 10),
-    mat("#f5cba7")
-  );
-  head.position.y = 2;
-  g.add(head);
-
-  // ដៃ ២
-  [-0.35, 0.35].forEach((x) => {
-    const arm = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.07, 0.07, 0.8, 6),
-      mat("#3498db")
-    );
-    arm.position.set(x, 1.3, 0);
-    arm.name = "arm";
-    g.add(arm);
-  });
-
-  // ជើង ២
-  [-0.13, 0.13].forEach((x) => {
-    const leg = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.08, 0.08, 0.7, 6),
-      mat("#2c3e50")
-    );
-    leg.position.set(x, 0.35, 0);
-    leg.name = "leg";
-    g.add(leg);
-  });
-
-  // ជក់បោស (នៅដៃស្តាំ)
-  const broom = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.03, 0.03, 1.5, 4),
-    mat("#8b6f47")
-  );
+  const g = createHumanFigure({ height: 2.25, shirt: 0x3498db, pants: 0x2c3e50, hat: "none", skin: 0xbf8a64, hairStyle: "short" });
+  const broom = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1.5, 8), mat("#8b6f47"));
   broom.position.set(0.5, 0.75, 0.3);
   broom.rotation.z = -0.3;
   g.add(broom);
-
-  // ក្បាលជក់
-  const brush = new THREE.Mesh(
-    new THREE.BoxGeometry(0.3, 0.1, 0.4),
-    mat("#f1c40f")
-  );
-  brush.position.set(0.7, 0, 0.4);
+  const brush = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.1, 0.4), mat("#f1c40f"));
+  brush.position.set(0.7, 0.05, 0.4);
   g.add(brush);
-
   return g;
 }
 
@@ -136,112 +34,14 @@ export function createCleaner(): THREE.Group {
    ចុងភៅ (Cook)
    ============================================================ */
 export function createCook(): THREE.Group {
-  const g = new THREE.Group();
-
-  // តួ (អាវស)
-  const body = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.28, 0.32, 1.2, 8),
-    mat("#ffffff")
-  );
-  body.position.y = 1.2;
-  body.castShadow = true;
-  g.add(body);
-
-  // ក្បាល
-  const head = new THREE.Mesh(
-    new THREE.SphereGeometry(0.24, 10, 10),
-    mat("#f5cba7")
-  );
-  head.position.y = 2;
-  g.add(head);
-
-  // មួកចុងភៅ (ខ្ពស់)
-  const chefHat = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.3, 0.3, 0.4, 12),
-    mat("#ffffff")
-  );
-  chefHat.position.y = 2.35;
-  g.add(chefHat);
-
-  // ដៃ ២
-  [-0.35, 0.35].forEach((x) => {
-    const arm = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.07, 0.07, 0.8, 6),
-      mat("#ffffff")
-    );
-    arm.position.set(x, 1.3, 0);
-    arm.name = "arm";
-    g.add(arm);
-  });
-
-  // ជើង ២
-  [-0.13, 0.13].forEach((x) => {
-    const leg = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.08, 0.08, 0.7, 6),
-      mat("#2c3e50")
-    );
-    leg.position.set(x, 0.35, 0);
-    leg.name = "leg";
-    g.add(leg);
-  });
-
-  return g;
+  return createHumanFigure({ height: 2.3, shirt: 0xffffff, pants: 0x2c3e50, hat: "chef", hatColor: 0xffffff, skin: 0xc99672, shoe: 0x222222 });
 }
 
 /* ============================================================
    អ្នកបើកឡាន (Driver)
    ============================================================ */
 export function createDriver(): THREE.Group {
-  const g = new THREE.Group();
-
-  // តួ (អាវក្រហម)
-  const body = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.28, 0.32, 1.2, 8),
-    mat("#c0392b")
-  );
-  body.position.y = 1.2;
-  body.castShadow = true;
-  g.add(body);
-
-  // ក្បាល
-  const head = new THREE.Mesh(
-    new THREE.SphereGeometry(0.24, 10, 10),
-    mat("#f5cba7")
-  );
-  head.position.y = 2;
-  g.add(head);
-
-  // មួកបើកឡាន (ពណ៌ខ្មៅ)
-  const cap = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.28, 0.3, 0.15, 12),
-    mat("#1a1a1a")
-  );
-  cap.position.y = 2.2;
-  g.add(cap);
-
-  // ដៃ ២
-  [-0.35, 0.35].forEach((x) => {
-    const arm = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.07, 0.07, 0.8, 6),
-      mat("#c0392b")
-    );
-    arm.position.set(x, 1.3, 0);
-    arm.name = "arm";
-    g.add(arm);
-  });
-
-  // ជើង ២
-  [-0.13, 0.13].forEach((x) => {
-    const leg = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.08, 0.08, 0.7, 6),
-      mat("#2c3e50")
-    );
-    leg.position.set(x, 0.35, 0);
-    leg.name = "leg";
-    g.add(leg);
-  });
-
-  return g;
+  return createHumanFigure({ height: 2.3, shirt: 0xc0392b, pants: 0x2c3e50, hat: "cap", hatColor: 0x1a1a1a, skin: 0xc08a66 });
 }
 
 /* ============================================================
@@ -378,10 +178,10 @@ export function updateMoreStaff(staff: NewStaff[], elapsed: number): void {
     // ជើងញាក់
     s.mesh.traverse((child) => {
       if (child.name === "leg") {
-        child.rotation.x = Math.sin(elapsed * 6 + s.phase) * 0.3;
+        child.rotation.x = (child.userData.side ?? 1) * Math.sin(elapsed * 6 + s.phase) * 0.3;
       }
       if (child.name === "arm") {
-        child.rotation.z = Math.sin(elapsed * 4 + s.phase) * 0.2;
+        child.rotation.x = (child.userData.side ?? 1) * Math.sin(elapsed * 4 + s.phase) * 0.2;
       }
     });
   });

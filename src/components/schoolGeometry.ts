@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { createHumanFigure } from "./humanFigure";
 
 export function createSchoolBuilding() {
   const g = new THREE.Group();
@@ -49,23 +50,7 @@ export function createFlagPole() {
 }
 
 export function createStudent(shirtColor: number) {
-  const g = new THREE.Group();
-  const shirt = new THREE.MeshStandardMaterial({ color: shirtColor, roughness: 0.9 });
-  const pants = new THREE.MeshStandardMaterial({ color: 0x1e3a8a });
-  const skin = new THREE.MeshStandardMaterial({ color: 0xffdbac });
-  const hair = new THREE.MeshStandardMaterial({ color: 0x1a0f08 });
-
-  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 1.1, 8), shirt);
-  body.position.y = 1.05; g.add(body);
-  for (let x of [-0.15, 0.15]) {
-    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.7, 8), pants);
-    leg.position.set(x, 0.35, 0); g.add(leg);
-  }
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.3, 16, 16), skin);
-  head.position.y = 1.8; g.add(head);
-  const cap = new THREE.Mesh(new THREE.SphereGeometry(0.31, 16, 16, 0, Math.PI*2, 0, Math.PI/2), hair);
-  cap.position.y = 1.83; g.add(cap);
-  return g;
+  return createHumanFigure({ height: 2.1, shirt: shirtColor, pants: 0x1e3a8a, skin: 0xd1a27d, longSleeves: false, shoe: 0xf0f0f0 });
 }
 
 export function createTeacher() {
