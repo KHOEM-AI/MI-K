@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 // មុខងារបង្កើតមនុស្សរលូនៗ (មិនជាប្រអប់)
-export function createSmoothHuman(color: string, role: 'prisoner' | 'guard' | 'chef' | 'cleaner'): THREE.Group {
+export function createSmoothHuman(color: string | number, role: 'prisoner' | 'guard' | 'chef' | 'cleaner'): THREE.Group {
   const g = new THREE.Group();
   const skin = new THREE.MeshStandardMaterial({ color: 0xe8b88a, roughness: 0.6 });
   const suit = new THREE.MeshStandardMaterial({ color, roughness: 0.8 });
