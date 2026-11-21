@@ -15,6 +15,7 @@ const KaraokeViewer = lazy(() => import("./components/KaraokeViewer"));
 const Hospital3D = lazy(() => import("./components/Hospital3D"));
 const School3D = lazy(() => import("./components/School3D"));
 const Village3D = lazy(() => import("./components/Village3D"));
+const OceanWorldViewer = lazy(() => import("./components/OceanWorldViewer").then(m => ({ default: m.OceanWorldViewer })));
 
 // Prefetch Studio3D on hover to make opening instant
 const prefetchStudio3D = () => {
@@ -124,6 +125,7 @@ export default function App() {
   const [hospitalOpen, setHospitalOpen] = useState(false);
   const [schoolOpen, setSchoolOpen] = useState(false);
   const [villageOpen, setVillageOpen] = useState(false);
+  const [oceanOpen, setOceanOpen] = useState(false);
   const [theme, setTheme] = useState<"day" | "night">(() => {
     try {
       return localStorage.getItem("khoem-ai-theme") === "day"
@@ -428,6 +430,14 @@ export default function App() {
         >
           {villageOpen ? "Close Village" : "Open Village 3D"}
         </button>
+
+        <button
+          type="button"
+          className="upload-button"
+          onClick={() => setOceanOpen((open) => !open)}
+        >
+          {oceanOpen ? "Close Ocean World" : "Open Ocean World 3D"}
+        </button>
       </section>
 
       {studioOpen && (
@@ -486,6 +496,12 @@ export default function App() {
       {villageOpen && (
         <Suspense fallback={<div className="studio-panel">Loading Village...</div>}>
           <Village3D />
+        </Suspense>
+      )}
+
+      {oceanOpen && (
+        <Suspense fallback={<div className="studio-panel">Loading Ocean World...</div>}>
+          <OceanWorldViewer />
         </Suspense>
       )}
 
