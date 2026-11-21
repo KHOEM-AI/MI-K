@@ -210,10 +210,10 @@ export function createTransportShip(): THREE.Group {
   cabin.castShadow = true;
   group.add(cabin);
 
-  const bridge = new THREE.Mesh(new THREE.BoxGeometry(2, 1.5, 4.5), cabinMat);
-  bridge.position.set(-6, 5.5, 0);
-  bridge.castShadow = true;
-  group.add(bridge);
+  const wheelhouse = new THREE.Mesh(new THREE.BoxGeometry(2, 1.5, 4.5), cabinMat);
+  wheelhouse.position.set(-6, 5.5, 0);
+  wheelhouse.castShadow = true;
+  group.add(wheelhouse);
 
   for (let i = 0; i < 3; i++) {
     for (let j = 0; j < 2; j++) {

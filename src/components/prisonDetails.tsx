@@ -1,0 +1,166 @@
+import * as THREE from 'three';
+
+// មុខងារបង្កើតមនុស្សរលូនៗ (មិនជាប្រអប់)
+export function createSmoothHuman(color: string, role: 'prisoner' | 'guard' | 'chef' | 'cleaner'): THREE.Group {
+  const g = new THREE.Group();
+  const skin = new THREE.MeshStandardMaterial({ color: 0xe8b88a, roughness: 0.6 });
+  const suit = new THREE.MeshStandardMaterial({ color, roughness: 0.8 });
+  const dark = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.5 });
+
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.25, 16, 16), skin);
+  head.position.y = 1.6; head.castShadow = true; g.add(head);
+
+  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.3, 0.6, 8, 16), suit);
+  body.position.y = 0.9; body.castShadow = true; g.add(body);
+
+  const armL = new THREE.Mesh(new THREE.CapsuleGeometry(0.1, 0.5, 8, 16), suit);
+  armL.position.set(-0.4, 1.0, 0); armL.rotation.z = 0.2; armL.castShadow = true; g.add(armL);
+
+  const armR = new THREE.Mesh(new THREE.CapsuleGeometry(0.1, 0.5, 8, 16), suit);
+  armR.position.set(0.4, 1.0, 0); armR.rotation.z = -0.2; armR.castShadow = true; g.add(armR);
+
+  const legL = new THREE.Mesh(new THREE.CapsuleGeometry(0.12, 0.6, 8, 16), dark);
+  legL.position.set(-0.15, 0.3, 0); legL.castShadow = true; g.add(legL);
+
+  const legR = new THREE.Mesh(new THREE.CapsuleGeometry(0.12, 0.6, 8, 16), dark);
+  legR.position.set(0.15, 0.3, 0); legR.castShadow = true; g.add(legR);
+
+  if (role === 'guard') {
+    const hat = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.1, 16), dark);
+    hat.position.y = 1.8; g.add(hat);
+  } else if (role === 'chef') {
+    const hat = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.3, 16), new THREE.MeshStandardMaterial({color: 0xffffff}));
+    hat.position.y = 1.85; g.add(hat);
+  }
+  return g;
+}
+
+// បង្កើតរបងខាងក្រៅ និងប៉មកាមេរ៉ា
+export function createOuterFenceAndSecurity(radius: number = 55): THREE.Group {
+  const g = new THREE.Group();
+  const fenceMat = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.9 });
+  const concreteMat = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.8 });
+  const cameraMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.8, roughness: 0.2 });
+
+  // របងខាងក្រៅ
+  const fence = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, 8, 64, 1, true), fenceMat);
+  fence.position.y = 4; fence.castShadow = true; fence.receiveShadow = true;
+  g.add(fence);
+
+  // បង្គោលភ្លើង និងកាមេរ៉ា
+  for (let i = 0; i < 8; i++) {
+    const angle = (i / 8) * Math.PI * 2;
+    const x = Math.cos(angle) * (radius - 2);
+    const z = Math.sin(angle) * (radius - 2);
+
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.4, 12, 8), concreteMat);
+    pole.position.set(x, 6, z); pole.castShadow = true; g.add(pole);
+
+    // កាមេរ៉ា
+    const camBase = new THREE.Mesh(new THREE.BoxGeometry(1, 0.5, 1.5), cameraMat);
+    camBase.position.set(x, 11.5, z);
+    camBase.lookAt(0, 0, 0);
+    g.add(camBase);
+    const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.5, 8), new THREE.MeshStandardMaterial({color: 0xff0000, emissive: 0xff0000}));
+    lens.rotation.x = Math.PI / 2;
+    lens.position.set(0, 0, 0.8);
+    camBase.add(lens);
+  }
+  return g;
+}
+
+// បង្កើតតំបន់ស៊ីបាយ, បន្ទប់ទឹក, តំបន់ហាត់កីឡា, និងកន្លែងរៀន
+export function createPrisonFacilitiesDetails(): THREE.Group {
+  const g = new THREE.Group();
+  const woodMat = new THREE.MeshStandardMaterial({ color: 0x8b5a2b, roughness: 0.9 });
+  const metalMat = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, metalness: 0.7, roughness: 0.4 });
+  const soilMat = new THREE.MeshStandardMaterial({ color: 0x4a3219, roughness: 1.0 });
+  const plantMat = new THREE.MeshStandardMaterial({ color: 0x2e8b57, roughness: 0.8 });
+  const courtMat = new THREE.MeshStandardMaterial({ color: 0x1b5e20, roughness: 0.9 });
+
+  // ១. តំបន់ស៊ីបាយ (Cafeteria)
+  for (let i = 0; i < 4; i++) {
+    const tableGroup = new THREE.Group();
+    const table = new THREE.Mesh(new THREE.BoxGeometry(6, 0.2, 2), woodMat);
+    table.position.y = 1.2; table.castShadow = true; tableGroup.add(table);
+    const bench1 = new THREE.Mesh(new THREE.BoxGeometry(6, 0.2, 0.8), woodMat);
+    bench1.position.set(0, 0.6, 1.5); bench1.castShadow = true; tableGroup.add(bench1);
+    const bench2 = bench1.clone(); bench2.position.z = -1.5; tableGroup.add(bench2);
+
+    // អ្នកទោសអង្គុយស៊ីបាយ
+    for (let j = 0; j < 3; j++) {
+      const prisoner = createSmoothHuman(0xffa500, 'prisoner');
+      prisoner.position.set(-2 + j * 2, 0.6, 1.5);
+      prisoner.rotation.x = -Math.PI / 2; // អង្គុយ
+      tableGroup.add(prisoner);
+    }
+    tableGroup.position.set(-15 + i * 10, 2.5, 15);
+    g.add(tableGroup);
+  }
+
+  // ២. បន្ទប់ទឹក (Bathroom block)
+  const bath = new THREE.Mesh(new THREE.BoxGeometry(15, 6, 10), new THREE.MeshStandardMaterial({color: 0x7f8c8d, roughness: 0.9}));
+  bath.position.set(25, 5.5, -5); bath.castShadow = true; bath.receiveShadow = true; g.add(bath);
+  for(let i=0;i<3;i++) {
+    const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 6, 8), metalMat);
+    pipe.position.set(25 - 4 + i*4, 6, -5); g.add(pipe);
+  }
+
+  // ៣. តំបន់ហាត់កីឡា (Sports Area)
+  const court = new THREE.Mesh(new THREE.CylinderGeometry(12, 12, 0.2, 32), courtMat);
+  court.position.set(-25, 2.5, -20); court.receiveShadow = true; g.add(court);
+  // បង្គោលបាល់ប៉េង
+  const hoopPole = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 6, 8), metalMat);
+  hoopPole.position.set(-25, 5.5, -32); g.add(hoopPole);
+  const hoop = new THREE.Mesh(new THREE.TorusGeometry(0.6, 0.1, 8, 16), metalMat);
+  hoop.rotation.x = Math.PI / 2; hoop.position.set(-25, 8.5, -31.5); g.add(hoop);
+
+  // ៤. កន្លែងដាំបន្លែ (Vegetable Garden)
+  for(let i=0;i<6;i++) {
+    const plot = new THREE.Mesh(new THREE.BoxGeometry(3, 0.3, 8), soilMat);
+    plot.position.set(15 + i * 4, 2.6, 25); plot.receiveShadow = true; g.add(plot);
+    for(let j=0;j<4;j++) {
+      const plant = new THREE.Mesh(new THREE.SphereGeometry(0.4, 8, 8), plantMat);
+      plant.position.set(15 + i * 4, 2.9, 22 + j * 2); plant.castShadow = true; g.add(plant);
+    }
+  }
+  
+  // ៥. អ្នកយាម និងអ្នកអនាម័យ
+  const guard1 = createSmoothHuman(0x2c3e50, 'guard'); guard1.position.set(25, 2.5, -5); g.add(guard1);
+  const guard2 = createSmoothHuman(0x2c3e50, 'guard'); guard2.position.set(-25, 2.5, -20); g.add(guard2);
+  const cleaner = createSmoothHuman(0x3498db, 'cleaner'); cleaner.position.set(5, 2.5, 25); g.add(cleaner);
+  const chef = createSmoothHuman(0xffffff, 'chef'); chef.position.set(-15, 2.5, 10); g.add(chef);
+
+  return g;
+}
+
+// បង្កើតអគារខ្ពស់ និងកន្លែងរៀន
+export function createEducationAndAdmin(): THREE.Group {
+  const g = new THREE.Group();
+  const concrete = new THREE.MeshStandardMaterial({ color: 0x95a5a6, roughness: 0.9 });
+  const glass = new THREE.MeshStandardMaterial({ color: 0x88bbee, roughness: 0.1, metalness: 0.9 });
+
+  const addTallBuilding = (x: number, z: number, w: number, h: number, d: number) => {
+    const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), concrete);
+    b.position.set(x, h/2 + 2.5, z); b.castShadow = true; b.receiveShadow = true; g.add(b);
+    // បង្អួច
+    for(let r=1; r < h/3; r++) {
+      const win = new THREE.Mesh(new THREE.BoxGeometry(w-2, 1.5, 0.2), glass);
+      win.position.set(x, r*3, z + d/2 + 0.1); g.add(win);
+    }
+  };
+
+  addTallBuilding(-30, -35, 20, 18, 15); // អគាររដ្ឋបាលខ្ពស់
+  addTallBuilding(30, -35, 25, 15, 15);  // អគារសិក្សា (វិទ្យាសាស្ត្រ/កូដ)
+
+  // តុរៀននៅខាងក្នុង
+  for(let i=0;i<3;i++){
+    const desk = new THREE.Mesh(new THREE.BoxGeometry(4, 0.2, 2), new THREE.MeshStandardMaterial({color:0x8b5a2b}));
+    desk.position.set(30, 3.5, -35 - 4 + i*4); g.add(desk);
+    const student = createSmoothHuman(0xffa500, 'prisoner');
+    student.position.set(30, 2.5, -35 - 4 + i*4);
+    student.rotation.x = -Math.PI/2; g.add(student);
+  }
+
+  return g;
+}
