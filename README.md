@@ -143,3 +143,6 @@ npm run dev -- --port 5176
 ~~~
 
 The launcher listens on 127.0.0.1 only. To open it from another device on the same network: `MIK_HOST=0.0.0.0 ai`.
+
+## Owner
+This project and the 'Ocean World & Prison Island' module are the exclusive property of **@KHOEM-AI**.
