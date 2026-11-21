@@ -13,12 +13,12 @@ type Mk = (hex: string, rough?: number, metal?: number, extra?: Record<string, u
 export type InfraShape =
   | "railway" | "railway_curve" | "locomotive" | "passenger" | "passenger_vip" | "caboose" | "trainset"
   | "bridge_rail" | "bridge_river" | "bridge_sea" | "bridge_mountain" | "bridge_creek" | "bridge_lake"
-  | "flyover" | "forest" | "corridor";
+  | "flyover" | "forest" | "corridor" | "zone_city" | "zone_town" | "zone_remote";
 
 export const INFRA_SHAPES: InfraShape[] = [
   "railway", "railway_curve", "locomotive", "passenger", "passenger_vip", "caboose", "trainset",
   "bridge_rail", "bridge_river", "bridge_sea", "bridge_mountain", "bridge_creek", "bridge_lake",
-  "flyover", "forest", "corridor",
+  "flyover", "forest", "corridor", "zone_city", "zone_town", "zone_remote",
 ];
 export function isInfraShape(s: string): s is InfraShape { return (INFRA_SHAPES as string[]).includes(s); }
 export const INFRA_PRESETS: { name: string; shape: InfraShape }[] = [
@@ -38,6 +38,9 @@ export const INFRA_PRESETS: { name: string; shape: InfraShape }[] = [
   { name: "Flyover Elevated Road", shape: "flyover" },
   { name: "Forest", shape: "forest" },
   { name: "Highway Rail Corridor", shape: "corridor" },
+  { name: "City Zone (hotel, mall, hospital, police)", shape: "zone_city" },
+  { name: "Town Zone (shophouses, market, wat)", shape: "zone_town" },
+  { name: "Remote Village (stilt houses, rice fields)", shape: "zone_remote" },
 ];
 
 // ---------- math ----------
@@ -987,6 +990,9 @@ export function createInfraGeometry(THREE: T3, shape: InfraShape, _color?: strin
     case "bridge_lake": g = makeLake(THREE, mk); break;
     case "flyover": g = makeFlyover(THREE, mk); break;
     case "forest": g = makeForest(THREE, mk); break;
+    case "zone_city": g = makeCityZone(THREE, mk); break;
+    case "zone_town": g = makeTownZone(THREE, mk); break;
+    case "zone_remote": g = makeRemoteZone(THREE, mk); break;
     default: g = makeCorridor(THREE, mk);
   }
   g.traverse((o) => { const m = o as import("three").Mesh; if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
@@ -997,6 +1003,195 @@ export function createInfraGeometry(THREE: T3, shape: InfraShape, _color?: strin
   wrap.scale.setScalar(INFRA_SCALE);
   g.add(wrap);
   g.userData.infra = shape;
+  return g;
+}
+
+// ---------- zones (phase 2): city / town / remote ----------
+interface Acc { body: BG[]; glass: BG[]; roof: BG[]; trim: BG[]; road: BG[]; walk: BG[]; wood: BG[]; gold: BG[]; red: BG[] }
+const newAcc = (): Acc => ({ body: [], glass: [], roof: [], trim: [], road: [], walk: [], wood: [], gold: [], red: [] });
+function flushAcc(THREE: T3, g: Grp, mk: Mk, a: Acc): void {
+  const vc = (r: number, m = 0) => mk("#ffffff", r, m, { vertexColors: true });
+  addMerged(THREE, g, a.body, vc(0.85)); addMerged(THREE, g, a.glass, mk("#ffffff", 0.08, 0.75, { vertexColors: true }));
+  addMerged(THREE, g, a.roof, vc(0.9)); addMerged(THREE, g, a.trim, vc(0.6)); addMerged(THREE, g, a.road, vc(0.95));
+  addMerged(THREE, g, a.walk, vc(0.9)); addMerged(THREE, g, a.wood, vc(0.9)); addMerged(THREE, g, a.gold, mk("#ffffff", 0.3, 0.8, { vertexColors: true }));
+  addMerged(THREE, g, a.red, vc(0.6));
+}
+function tower(THREE: T3, a: Acc, x: number, z: number, w: number, d: number, h: number, hue: number, rnd: () => number): void {
+  const body = hslRGB(THREE, hue, 0.06 + 0.1 * rnd(), 0.5 + 0.25 * rnd()), gl = hslRGB(THREE, 200 + 25 * rnd(), 0.35, 0.16 + 0.1 * rnd());
+  const tiers = h > 50 ? 2 : 1;
+  let y0 = 0, ww = w, dd = d, hh = tiers === 2 ? h * 0.65 : h;
+  for (let t = 0; t < tiers; t++) {
+    a.body.push(gPaintFn(THREE, gBox(THREE, ww, hh, dd, x, y0 + hh / 2, z), (_x, y, _z) => body.map((v) => v * (0.92 + 0.08 * vnoise(y * 0.3, x))) as RGB));
+    const n = Math.floor(hh / 3.6);
+    for (let f = 1; f < n; f++) {
+      const y = y0 + f * 3.6 + 0.6;
+      a.glass.push(gPaint(THREE, gBox(THREE, ww * 0.93, 2.1, 0.14, x, y, z + dd / 2), gl), gPaint(THREE, gBox(THREE, ww * 0.93, 2.1, 0.14, x, y, z - dd / 2), gl));
+      a.glass.push(gPaint(THREE, gBox(THREE, 0.14, 2.1, dd * 0.93, x + ww / 2, y, z), gl), gPaint(THREE, gBox(THREE, 0.14, 2.1, dd * 0.93, x - ww / 2, y, z), gl));
+    }
+    a.roof.push(gPaint(THREE, gBox(THREE, ww + 0.5, 0.5, dd + 0.5, x, y0 + hh + 0.25, z), [0.3, 0.3, 0.32]));
+    y0 += hh; ww *= 0.7; dd *= 0.7; hh = h - y0;
+  }
+  a.roof.push(gPaint(THREE, gBox(THREE, 3, 2, 3, x + w * 0.1, h + 1.2, z), [0.4, 0.4, 0.42]));
+  if (h > 60) a.trim.push(gPaint(THREE, gCyl(THREE, 0.12, 0.2, 14, 5, x, h + 7, z), [0.7, 0.2, 0.2]));
+}
+function roadStrip(THREE: T3, a: Acc, x0: number, z0: number, x1: number, z1: number, w: number, dashes = true): void {
+  const len = Math.hypot(x1 - x0, z1 - z0), ry = Math.atan2(-(z1 - z0), x1 - x0), cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
+  a.road.push(gPaintFn(THREE, gBox(THREE, len, 0.12, w, cx, 0.06, cz, ry), (px, _y, pz) => hslRGB(THREE, 220, 0.04, 0.17 + 0.05 * fbm(px * 0.7, pz * 0.7, 2))));
+  if (dashes) for (let s = 4; s < len - 3; s += 8) {
+    const t = s / len; a.trim.push(gPaint(THREE, gBox(THREE, 3.2, 0.03, 0.18, x0 + (x1 - x0) * t, 0.14, z0 + (z1 - z0) * t, ry), [0.85, 0.84, 0.75]));
+  }
+}
+function parkedCar(THREE: T3, a: Acc, x: number, z: number, ry: number, c: RGB): void {
+  a.red.push(gPaint(THREE, gBox(THREE, 4.2, 0.8, 1.8, x, 0.7, z, ry), c));
+  a.red.push(gPaint(THREE, gBox(THREE, 2.2, 0.7, 1.6, x - Math.cos(ry) * 0.2, 1.4, z + Math.sin(ry) * 0.2, ry), [0.05, 0.08, 0.1]));
+  a.trim.push(gPaint(THREE, gBox(THREE, 4.0, 0.3, 1.9, x, 0.28, z, ry), [0.03, 0.03, 0.03]));
+}
+
+function makeCityZone(THREE: T3, mk: Mk): Grp {
+  const g = new THREE.Group(), a = newAcc(), rnd = rngf(61);
+  g.add(terrainMesh(THREE, mk, 250, 250, 50, (x, z) => -0.05 + 0.0 * x * z, {}));
+  const ground = gPaint(THREE, gBox(THREE, 220, 0.1, 220, 0, 0.05, 0), hslRGB(THREE, 40, 0.04, 0.5)); a.walk.push(ground);
+  for (let k = -2; k <= 2; k++) { roadStrip(THREE, a, -110, k * 50, 110, k * 50, 12); roadStrip(THREE, a, k * 50, -110, k * 50, 110, 12); }
+  const cx = [-75, -25, 25, 75];
+  const lot = (x: number, z: number, i: number, j: number) => {
+    const r = Math.hypot(x, z), h0 = 14 + 78 * Math.exp(-((r / 70) ** 2)) * (0.45 + 0.8 * rnd());
+    if (i === 1 && j === 1) return hotel(x, z);
+    if (i === 2 && j === 2) return mall(x, z);
+    if (i === 0 && j === 3) return hospital(x, z);
+    if (i === 3 && j === 0) return police(x, z);
+    if (i === 1 && j === 2) return park(x, z);
+    for (const [sx, sz] of [[-9.5, -9.5], [9.5, -9.5], [-9.5, 9.5], [9.5, 9.5]]) {
+      if (rnd() < 0.15) continue;
+      tower(THREE, a, x + sx + (rnd() - 0.5) * 2, z + sz + (rnd() - 0.5) * 2, 11 + 4 * rnd(), 11 + 4 * rnd(), Math.max(10, h0 * (0.6 + 0.7 * rnd())), 190 + 50 * rnd(), rnd);
+    }
+  };
+  const hotel = (x: number, z: number) => {
+    tower(THREE, a, x, z, 24, 20, 52, 28, rnd);
+    a.roof.push(gPaint(THREE, gBox(THREE, 20, 0.5, 8, x, 3.6, z + 14), [0.6, 0.5, 0.3]), gPaint(THREE, gBox(THREE, 0.4, 3.6, 0.4, x - 9, 1.8, z + 17.5), [0.7, 0.6, 0.4]), gPaint(THREE, gBox(THREE, 0.4, 3.6, 0.4, x + 9, 1.8, z + 17.5), [0.7, 0.6, 0.4]));
+    for (let f = 1; f < 14; f++) a.trim.push(gPaint(THREE, gBox(THREE, 24.6, 0.18, 1.4, x, f * 3.6 + 1.6, z + 10.4), [0.75, 0.7, 0.62]));
+  };
+  const mall = (x: number, z: number) => {
+    a.body.push(gPaint(THREE, gBox(THREE, 34, 14, 28, x, 7, z), hslRGB(THREE, 30, 0.15, 0.7)));
+    a.glass.push(gPaint(THREE, gBox(THREE, 26, 6.5, 0.2, x, 4.2, z + 14), [0.05, 0.09, 0.12]), gPaint(THREE, gBox(THREE, 34.2, 2.2, 0.2, x, 11, z + 14), [0.05, 0.09, 0.12]));
+    a.roof.push(gPaint(THREE, gBox(THREE, 34.6, 0.6, 28.6, x, 14.3, z), [0.25, 0.25, 0.27]), gPaint(THREE, gBox(THREE, 18, 3, 0.8, x, 16, z + 14.2), hslRGB(THREE, 355, 0.7, 0.4)));
+    a.trim.push(gPaint(THREE, gBox(THREE, 30, 0.5, 5, x, 7.4, z + 16.5), [0.8, 0.8, 0.82]));
+    for (let i = -3; i <= 3; i++) a.trim.push(gPaint(THREE, gBox(THREE, 0.4, 7.4, 0.4, x + i * 4.4, 3.7, z + 18.5), [0.8, 0.8, 0.82]));
+    for (let i = 0; i < 12; i++) parkedCar(THREE, a, x - 16 + (i % 6) * 6, z + 23 + Math.floor(i / 6) * 6, Math.PI / 2, [rnd(), rnd(), rnd()].map((v) => 0.1 + 0.8 * v) as RGB);
+  };
+  const hospital = (x: number, z: number) => {
+    const wh = [0.9, 0.9, 0.9] as RGB;
+    a.body.push(gPaint(THREE, gBox(THREE, 30, 16, 14, x, 8, z - 6), wh), gPaint(THREE, gBox(THREE, 12, 22, 14, x + 9, 11, z + 6), wh), gPaint(THREE, gBox(THREE, 12, 12, 10, x - 9, 6, z + 8), wh));
+    for (let f = 0; f < 4; f++) a.glass.push(gPaint(THREE, gBox(THREE, 28, 1.8, 0.14, x, f * 3.8 + 2.2, z + 1.05), [0.2, 0.35, 0.45]));
+    a.red.push(gPaint(THREE, gBox(THREE, 1.2, 5, 0.3, x + 9, 16, z + 13.2), [0.85, 0.08, 0.08]), gPaint(THREE, gBox(THREE, 5, 1.2, 0.3, x + 9, 16, z + 13.2), [0.85, 0.08, 0.08]));
+    a.roof.push(gPaint(THREE, gBox(THREE, 30.5, 0.5, 14.5, x, 16.3, z - 6), [0.6, 0.6, 0.62]), gPaint(THREE, gCyl(THREE, 4, 4, 0.2, 20, x - 4, 16.7, z - 6), [0.2, 0.2, 0.22]));
+    a.trim.push(gPaint(THREE, gBox(THREE, 12, 0.3, 6, x - 9, 4.6, z + 15), [0.8, 0.1, 0.1]));
+    parkedCar(THREE, a, x - 8, z + 17, 0, [0.9, 0.9, 0.9]);
+  };
+  const police = (x: number, z: number) => {
+    a.body.push(gPaint(THREE, gBox(THREE, 24, 10, 16, x, 5, z), hslRGB(THREE, 215, 0.35, 0.42)));
+    a.glass.push(gPaint(THREE, gBox(THREE, 20, 2, 0.14, x, 3, z + 8), [0.06, 0.1, 0.15]), gPaint(THREE, gBox(THREE, 20, 2, 0.14, x, 7, z + 8), [0.06, 0.1, 0.15]));
+    a.roof.push(gPaint(THREE, gBox(THREE, 24.6, 0.5, 16.6, x, 10.25, z), [0.2, 0.2, 0.24]));
+    a.trim.push(gPaint(THREE, gBox(THREE, 8, 1.6, 0.3, x, 9, z + 8.2), [0.9, 0.9, 0.9]), gPaint(THREE, gCyl(THREE, 0.08, 0.08, 9, 5, x + 10, 14.5, z + 9), [0.7, 0.7, 0.7]));
+    a.red.push(gPaint(THREE, gBox(THREE, 1.2, 0.5, 0.5, x - 1, 10.8, z + 6), [0.1, 0.2, 0.95]), gPaint(THREE, gBox(THREE, 1.2, 0.5, 0.5, x + 1, 10.8, z + 6), [0.95, 0.1, 0.1]));
+    for (let i = 0; i < 3; i++) { parkedCar(THREE, a, x - 8 + i * 7, z + 14, 0, [0.92, 0.93, 0.95]); a.red.push(gPaint(THREE, gBox(THREE, 4.22, 0.25, 1.82, x - 8 + i * 7, 0.9, z + 14), [0.1, 0.2, 0.8])); }
+  };
+  const park = (x: number, z: number) => {
+    a.walk.push(gPaintFn(THREE, gBox(THREE, 36, 0.14, 36, x, 0.1, z), (px, _y, pz) => hslRGB(THREE, 95 + 10 * fbm(px * 0.1, pz * 0.1), 0.45, 0.28 + 0.08 * fbm(px, pz, 2))));
+    const tr: BG[] = [], lf: BG[] = [];
+    for (let i = 0; i < 16; i++) addTree(THREE, rnd() < 0.3 ? "palm" : "broad", x - 15 + 30 * rnd(), 0.1, z - 15 + 30 * rnd(), 0.7 + 0.5 * rnd(), rnd, tr, lf);
+    flushTrees(THREE, g, mk, tr, lf);
+  };
+  for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) lot(cx[i], cx[j], i, j);
+  for (let i = 0; i < 40; i++) { const k = Math.floor(rnd() * 5) - 2, t = (rnd() - 0.5) * 200; if (rnd() < 0.5) parkedCar(THREE, a, t, k * 50 + (rnd() < 0.5 ? -2.2 : 2.2), 0, [rnd() * 0.9, rnd() * 0.9, rnd() * 0.9]); else parkedCar(THREE, a, k * 50 + (rnd() < 0.5 ? -2.2 : 2.2), t, Math.PI / 2, [rnd() * 0.9, rnd() * 0.9, rnd() * 0.9]); }
+  const tr: BG[] = [], lf: BG[] = [];
+  for (let k = -2; k <= 2; k++) for (let t = -100; t <= 100; t += 14) { if (rnd() < 0.3) continue; addTree(THREE, "broad", t, 0.1, k * 50 + 7.5, 0.45, rnd, tr, lf); }
+  flushTrees(THREE, g, mk, tr, lf); flushAcc(THREE, g, mk, a);
+  return g;
+}
+
+function shophouse(THREE: T3, a: Acc, x: number, z: number, w: number, d: number, floors: number, front: number, hue: number, rnd: () => number): void {
+  const h = floors * 3.3 + 0.8, c = hslRGB(THREE, hue, 0.35 + 0.2 * rnd(), 0.48 + 0.12 * rnd()), dk = [0.07, 0.09, 0.11] as RGB;
+  a.body.push(gPaintFn(THREE, gBox(THREE, w, h, d, x, h / 2, z), (_x, y, pz) => c.map((v) => v * (0.9 + 0.1 * vnoise(y * 0.5, pz * 0.3 + x)) * (0.85 + 0.15 * smooth(0, 3, y))) as RGB));
+  a.roof.push(gPaint(THREE, gBox(THREE, w + 0.2, 0.4, d + 0.2, x, h + 0.2, z), [0.55, 0.52, 0.48]));
+  a.glass.push(gPaint(THREE, gBox(THREE, w * 0.7, 2.6, 0.14, x, 1.5, z + front * d / 2), dk));
+  for (let f = 1; f < floors; f++) {
+    const y = f * 3.3 + 1.7;
+    a.glass.push(gPaint(THREE, gBox(THREE, w * 0.55, 1.7, 0.14, x, y, z + front * d / 2), dk));
+    a.trim.push(gPaint(THREE, gBox(THREE, w + 0.2, 0.18, 1.2, x, f * 3.3 + 0.55, z + front * (d / 2 + 0.6)), [0.8, 0.78, 0.72]), gPaint(THREE, gBox(THREE, w * 0.9, 0.9, 0.08, x, f * 3.3 + 1.05, z + front * (d / 2 + 1.15)), [0.2, 0.2, 0.22]));
+  }
+  if (rnd() < 0.5) a.red.push(gPaint(THREE, gBox(THREE, w * 0.9, 0.7, 0.12, x, h - 0.5, z + front * (d / 2 + 0.1)), hslRGB(THREE, 360 * rnd(), 0.7, 0.45)));
+  if (rnd() < 0.4) a.red.push(gPaint(THREE, gBox(THREE, w * 0.95, 0.15, 1.8, x, 3.0, z + front * (d / 2 + 0.9), 0, front * 0.35), hslRGB(THREE, 360 * rnd(), 0.6, 0.5)));
+}
+function makeTownZone(THREE: T3, mk: Mk): Grp {
+  const g = new THREE.Group(), a = newAcc(), rnd = rngf(71);
+  g.add(terrainMesh(THREE, mk, 210, 160, 50, (x, z) => 0.0 * x * z - 0.05, {}));
+  roadStrip(THREE, a, -80, 0, 80, 0, 9); roadStrip(THREE, a, -30, -60, -30, 60, 6); roadStrip(THREE, a, 35, -60, 35, 60, 6);
+  a.walk.push(gPaint(THREE, gBox(THREE, 168, 0.1, 5, 0, 0.06, 7), [0.55, 0.53, 0.5]), gPaint(THREE, gBox(THREE, 168, 0.1, 5, 0, 0.06, -7), [0.55, 0.53, 0.5]));
+  const pal = [48, 12, 160, 200, 330, 28, 95];
+  for (const side of [-1, 1]) for (let x = -76; x < 76; x += 4.8) {
+    if (Math.abs(x + 30) < 5 || Math.abs(x - 35) < 5) continue;
+    shophouse(THREE, a, x + 2.4, side * 17, 4.6, 14, 2 + Math.floor(rnd() * 2.2), -side, pal[Math.floor(rnd() * pal.length)] + 8 * rnd(), rnd);
+  }
+  for (const side of [-1, 1]) for (let z = 14; z < 56; z += 5) for (const sx of [-30, 35]) shophouse(THREE, a, sx + side * 8.5, z * (sx === -30 ? 1 : -1) * 1, 5, 6, 1 + Math.floor(rnd() * 2), side, pal[Math.floor(rnd() * pal.length)], rnd);
+  // market hall with saw-tooth roof
+  a.body.push(gPaint(THREE, gBox(THREE, 30, 5, 18, 0, 2.5, 52), hslRGB(THREE, 40, 0.2, 0.7)));
+  for (let i = 0; i < 5; i++) a.roof.push(gPaint(THREE, gBox(THREE, 6.2, 0.3, 19, -12 + i * 6, 6.2, 52, 0, 0.35), hslRGB(THREE, 15, 0.55, 0.35)));
+  for (let i = 0; i < 10; i++) a.trim.push(gPaint(THREE, gBox(THREE, 0.5, 5, 0.5, -13.5 + i * 3, 2.5, 61.2), [0.7, 0.68, 0.62]));
+  // wat / pagoda with gold stupa
+  const px = -60, pz = -50;
+  a.body.push(gPaint(THREE, gBox(THREE, 14, 5, 10, px, 2.5, pz), [0.85, 0.78, 0.6]));
+  for (const [r, y, hh] of [[9.5, 5.4, 2.2], [7.2, 7.4, 2.0], [4.8, 9.2, 1.8]]) { const c = new THREE.ConeGeometry(r, hh, 4, 1); c.rotateY(Math.PI / 4); c.translate(px, y + hh / 2, pz); a.red.push(gPaint(THREE, c, hslRGB(THREE, 8, 0.65, 0.3))); }
+  a.gold.push(gPaint(THREE, gCyl(THREE, 0.1, 0.5, 4, 8, px, 12.6, pz), hslRGB(THREE, 45, 0.9, 0.5)));
+  const st = new THREE.ConeGeometry(2.4, 11, 12); st.translate(px + 15, 5.5, pz); a.gold.push(gPaint(THREE, st, hslRGB(THREE, 46, 0.85, 0.48)));
+  a.walk.push(gPaint(THREE, gBox(THREE, 30, 0.1, 22, px + 7, 0.08, pz), hslRGB(THREE, 35, 0.2, 0.58)));
+  for (let i = 0; i < 24; i++) { const x = (rnd() - 0.5) * 150, z = rnd() < 0.5 ? -4.4 : 4.4; if (rnd() < 0.5) parkedCar(THREE, a, x, z, 0, [rnd() * 0.9, rnd() * 0.9, rnd() * 0.9]); }
+  const tr: BG[] = [], lf: BG[] = [];
+  for (let i = 0; i < 70; i++) { const x = (rnd() - 0.5) * 200, z = (rnd() - 0.5) * 150; if (Math.abs(z) < 28 && Math.abs(x) < 85) continue; if (Math.abs(x + 30) < 14 || Math.abs(x - 35) < 14) continue; addTree(THREE, rnd() < 0.5 ? "palm" : "broad", x, 0, z, 0.8 + 0.6 * rnd(), rnd, tr, lf); }
+  flushTrees(THREE, g, mk, tr, lf); flushAcc(THREE, g, mk, a);
+  return g;
+}
+
+function stiltHouse(THREE: T3, a: Acc, x: number, z: number, ry: number, rnd: () => number): void {
+  const wood = hslRGB(THREE, 26 + 8 * rnd(), 0.4, 0.22 + 0.1 * rnd()), roofC = rnd() < 0.5 ? hslRGB(THREE, 28, 0.25, 0.3) : hslRGB(THREE, 10, 0.05, 0.5);
+  const rot = (px: number, pz: number): [number, number] => [x + px * Math.cos(ry) + pz * Math.sin(ry), z - px * Math.sin(ry) + pz * Math.cos(ry)];
+  for (const [px, pz] of [[-2.6, -1.8], [2.6, -1.8], [-2.6, 1.8], [2.6, 1.8], [0, -1.8], [0, 1.8]]) { const [qx, qz] = rot(px, pz); a.wood.push(gPaint(THREE, gCyl(THREE, 0.14, 0.17, 2.4, 7, qx, 1.2, qz), wood)); }
+  const [fx, fz] = rot(0, 0);
+  a.wood.push(gPaintFn(THREE, gBox(THREE, 6.4, 0.22, 4.4, fx, 2.45, fz, ry), (px, _y, pz) => wood.map((v) => v * (0.85 + 0.3 * vnoise(px * 4, pz * 0.4))) as RGB));
+  a.wood.push(gPaintFn(THREE, gBox(THREE, 5.2, 2.3, 3.6, fx, 3.7, fz, ry), (px, py, pz) => wood.map((v) => v * (0.8 + 0.4 * vnoise(py * 6, px + pz))) as RGB));
+  for (const s of [-1, 1]) {
+    const hip = gBox(THREE, 7.4, 0.14, 2.9, 0, 0, 0, 0, 0, s * 0.62); hip.translate(0, 5.75, s * 1.2);
+    hip.applyMatrix4(new THREE.Matrix4().makeRotationY(ry)); hip.translate(fx, 0, fz);
+    a.roof.push(gPaintFn(THREE, hip, (px, _y, pz) => roofC.map((v) => v * (0.85 + 0.3 * vnoise(px * 2, pz * 2))) as RGB));
+  }
+  const [wx, wz] = rot(0, 1.82); a.glass.push(gPaint(THREE, gBox(THREE, 0.9, 0.9, 0.06, wx, 3.8, wz, ry), [0.03, 0.03, 0.03]));
+  const [lx, lz] = rot(3.7, 0); a.wood.push(gPaint(THREE, gBox(THREE, 0.7, 0.1, 2.6, lx + 0.6 * Math.cos(ry), 1.2, lz - 0.6 * Math.sin(ry), ry + Math.PI / 2, 0, 0.0), wood));
+  const [bx, bz] = rot(-2.6, 2.6); a.wood.push(gPaint(THREE, gCyl(THREE, 0.35, 0.35, 0.8, 8, bx, 0.4, bz), [0.5, 0.35, 0.25]));
+}
+function makeRemoteZone(THREE: T3, mk: Mk): Grp {
+  const g = new THREE.Group(), a = newAcc(), rnd = rngf(83);
+  const hfn: HFn = (x, z) => 0.5 * fbm(x * 0.02, z * 0.02, 3) - 0.1 + (Math.abs(x) > 100 || Math.abs(z) > 100 ? 1.5 * smooth(100, 150, Math.max(Math.abs(x), Math.abs(z))) : 0);
+  g.add(terrainMesh(THREE, mk, 230, 230, 70, hfn, { water: -5 }));
+  // rice paddies: bunded plots coloured green / gold
+  const px: BG[] = [];
+  for (let i = -3; i <= 3; i++) for (let j = -3; j <= 3; j++) {
+    const x = i * 22, z = j * 22 - 30; if (Math.abs(x) < 26 && Math.abs(z + 30) < 26) continue; if (z > 20 && Math.abs(x) < 14) continue;
+    const ripe = fbm(i * 0.9 + 7, j * 0.9, 2) > 0.5, hue = ripe ? 46 + 6 * rnd() : 98 + 14 * rnd();
+    px.push(gPaintFn(THREE, gBox(THREE, 19, 0.2, 19, x, 0.45, z), (qx, _y, qz) => hslRGB(THREE, hue, 0.6, 0.3 + 0.12 * fbm(qx * 1.5, qz * 1.5, 3))));
+    a.walk.push(gPaint(THREE, gBox(THREE, 21, 0.4, 21, x, 0.4, z), hslRGB(THREE, 30, 0.3, 0.28)));
+  }
+  addMerged(THREE, g, px, mk("#ffffff", 0.85, 0, { vertexColors: true }));
+  const rd = pathC(THREE, [[-112, 0.05, 60], [-60, 0.05, 52], [-10, 0.05, 66], [45, 0.05, 56], [112, 0.05, 70]]);
+  const rb = gSweep(THREE, rd, [[-3, 0], [3, 0], [3, 0.12], [-3, 0.12]], 80);
+  gPaintFn(THREE, rb, (x, _y, z) => hslRGB(THREE, 24, 0.45, 0.4 + 0.1 * fbm(x * 0.5, z * 0.5, 3)));
+  g.add(new THREE.Mesh(gMerge(THREE, [rb]), mk("#ffffff", 1, 0, { vertexColors: true })));
+  for (let i = 0; i < 9; i++) stiltHouse(THREE, a, -68 + i * 14 + 4 * rnd(), 78 + 10 * rnd() * (i % 2 ? 1 : -0.5), (rnd() - 0.5) * 0.6, rnd);
+  g.add(waterMesh(THREE, mk, 30, 20, -0.02, 62, 98, 170));
+  const tr: BG[] = [], lf: BG[] = [];
+  for (let i = 0; i < 90; i++) {
+    const x = (rnd() - 0.5) * 220, z = (rnd() - 0.5) * 220; if (Math.abs(z - 60) < 10) continue; if (z < 40 && Math.abs(x) < 80 && Math.abs(z + 30) < 70 && rnd() < 0.8) continue;
+    addTree(THREE, rnd() < 0.55 ? "palm" : rnd() < 0.5 ? "tall" : "broad", x, hfn(x, z), z, 0.9 + 0.7 * rnd(), rnd, tr, lf);
+  }
+  flushTrees(THREE, g, mk, tr, lf); flushAcc(THREE, g, mk, a);
   return g;
 }
 
