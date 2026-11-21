@@ -6,18 +6,21 @@ export const OceanWorldViewer = () => {
 
   useEffect(() => {
     if (canvasRef.current) {
-      // ហៅយក Function ដែលយើងបានសរសេរក្នុង WorldBuilder
-      initOceanWorld(canvasRef.current);
+      // ចាប់យក Cleanup Function ពី initOceanWorld
+      const cleanup = initOceanWorld(canvasRef.current);
+      
+      // ពេល Component ត្រូវបានបិទ (Unmount) វានឹងសម្អាតដោយស្វ័យប្រវត្តិ
+      return () => {
+        if (cleanup) cleanup();
+      };
     }
   }, []);
 
   return (
     <div style={{ width: '100%', height: '100vh', position: 'relative', overflow: 'hidden' }}>
       <canvas ref={canvasRef} style={{ display: 'block', width: '100%', height: '100%' }} />
-      
-      {/* បង្ហាញឈ្មោះម៉ាកយីហោរបស់បងនៅលើអេក្រង់ */}
       <div style={{
-        position: 'absolute', top: 20, left: 20, color: 'white', 
+        position: 'absolute', top: 20, left: 20, color: 'white',
         background: 'rgba(0,0,0,0.5)', padding: '10px 20px', borderRadius: '8px',
         fontFamily: 'sans-serif', pointerEvents: 'none'
       }}>
