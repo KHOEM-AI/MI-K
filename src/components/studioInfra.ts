@@ -966,6 +966,7 @@ function makeCorridor(THREE: T3, mk: Mk): Grp {
 }
 
 // ---------- dispatcher ----------
+export const INFRA_SCALE = 0.2;
 export function createInfraGeometry(THREE: T3, shape: InfraShape, _color?: string, _metalness?: number, _roughness?: number): Grp {
   const mk = makeKit(THREE);
   let g: Grp;
@@ -990,6 +991,11 @@ export function createInfraGeometry(THREE: T3, shape: InfraShape, _color?: strin
   }
   g.traverse((o) => { const m = o as import("three").Mesh; if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
   recenterXZ(THREE, g);
+  // 1 unit in the model = 1 metre; the Studio scene is much smaller, so scale everything by one common factor
+  const wrap = new THREE.Group();
+  while (g.children.length) wrap.add(g.children[0]);
+  wrap.scale.setScalar(INFRA_SCALE);
+  g.add(wrap);
   g.userData.infra = shape;
   return g;
 }
