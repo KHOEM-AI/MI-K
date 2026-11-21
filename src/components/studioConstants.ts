@@ -1,3 +1,4 @@
+import { INFRA_PRESETS } from "./studioInfra";
 import { Gem, Droplet, TreePine, Box } from "lucide-react";
 import type { Shape, Vector3 } from "./studioTypes";
 
@@ -219,6 +220,7 @@ export const presets: { name: string; shape: Shape }[] = [
   { name: "Karaoke VIP", shape: "karaoke_vip" },
   { name: "Karaoke Standard", shape: "karaoke_standard" },
   { name: "Karaoke Full", shape: "karaoke_full" },
+  ...INFRA_PRESETS,
 ];
 
 

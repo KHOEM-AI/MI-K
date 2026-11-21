@@ -4,6 +4,7 @@ import { saveAsset } from "../lib/storage.mjs";
 import { UI3DPreview } from "./UI3DPreview";
 import { presets, MATERIAL_PRESETS, PLANT_COLOR_PRESETS, SKY_COLOR_PRESETS, WATER_COLOR_PRESETS, zero, one, createId } from "./studioConstants";
 import { createGeometry, createCarGeometry, createFurnitureGeometry, createPlantGeometry, createPlantGeometry2, createPlantGeometry3, createPlantGeometry4, createEnvironmentGeometry, createEnvironmentGeometry2, createEnvironmentGeometry3, createSkyGeometry, createSpaceGeometry, createSpaceGeometry2, createStructureGeometry, createStructureGeometry2, createStructureGeometry3, createMonumentGeometry, createBuildingGeometry, createBuildingGeometry2, createBuildingGeometry3, createHospitalGeometry, createBankGeometry, createCivicGeometry, createCommercialGeometry, createReligiousGeometry, createEnergyGeometry, createTransportGeometry, createPersonalTransportGeometry, createFoodGeometry, createNatureGeometry, createFruitGeometry2, createPlantExtraGeometry, createParkGeometry, createStreetGeometry, createGardenGeometry, createMineralGeometry, createLuxuryCarGeometry, createAircraftGeometry, createBoatGeometry, createAnimalGeometry, createCharacterGeometry, createKhoemGeometry, createHighwayGeometry, createBridgeGeometry, createTrafficLightGeometry, createStreetLightGeometry, disposeMesh, createKaraokeGeometry } from "./studioGeometry";
+import { createInfraGeometry, isInfraShape } from "./studioInfra";
 import { CameraPresets } from "./CameraPresets";
 import { SceneLightingPanel } from "./SceneLightingPanel";
 import { MaterialPanel } from "./MaterialPanel";
@@ -847,7 +848,9 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
               obj = createCommercialGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
             } else if (item.shape === "temple2" || item.shape === "shrine" || item.shape === "pagoda" || item.shape === "mosque" || item.shape === "church" || item.shape === "cathedral" || item.shape === "synagogue" || item.shape === "monastery") {
               obj = createReligiousGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
-            } else if (item.shape === "khoem") {
+            } else if (isInfraShape(item.shape)) {
+        obj = createInfraGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+      } else if (item.shape === "khoem") {
               obj = createKhoemGeometry(THREE, item.color, item.metalness, item.roughness);
             } else if (item.shape === "highway") {
               obj = createHighwayGeometry(THREE, item.color, item.metalness, item.roughness);
@@ -1776,6 +1779,15 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             return;
           }
 
+          if (isInfraShape(item.shape)) {
+            const aircraftGroup = createInfraGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            aircraftGroup.position.set(item.position.x, item.position.y, item.position.z);
+            aircraftGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            aircraftGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            aircraftGroup.name = item.name;
+            exportScene.add(aircraftGroup);
+            return;
+          }
           if (item.shape === "airplane" || item.shape === "helicopter") {
             const aircraftGroup = createAircraftGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
             aircraftGroup.position.set(item.position.x, item.position.y, item.position.z);
@@ -2850,6 +2862,15 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             return;
           }
 
+          if (isInfraShape(item.shape)) {
+            const aircraftGroup = createInfraGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
+            aircraftGroup.position.set(item.position.x, item.position.y, item.position.z);
+            aircraftGroup.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
+            aircraftGroup.scale.set(item.scale.x, item.scale.y, item.scale.z);
+            aircraftGroup.name = item.name;
+            exportScene!.add(aircraftGroup);
+            return;
+          }
           if (item.shape === "airplane" || item.shape === "helicopter") {
             const aircraftGroup = createAircraftGeometry(THREE, item.shape, item.color, item.metalness, item.roughness);
             aircraftGroup.position.set(item.position.x, item.position.y, item.position.z);
