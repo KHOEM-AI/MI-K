@@ -13,12 +13,12 @@ type Mk = (hex: string, rough?: number, metal?: number, extra?: Record<string, u
 export type InfraShape =
   | "railway" | "railway_curve" | "locomotive" | "passenger" | "passenger_vip" | "caboose" | "trainset"
   | "bridge_rail" | "bridge_river" | "bridge_sea" | "bridge_mountain" | "bridge_creek" | "bridge_lake"
-  | "flyover" | "forest" | "corridor" | "zone_city" | "zone_town" | "zone_remote" | "police_officer" | "hotel_room";
+  | "flyover" | "forest" | "corridor" | "zone_city" | "zone_town" | "zone_remote" | "police_officer" | "hotel_room" | "hotel_v2" | "mall_v2" | "hospital_v2" | "police_v2";
 
 export const INFRA_SHAPES: InfraShape[] = [
   "railway", "railway_curve", "locomotive", "passenger", "passenger_vip", "caboose", "trainset",
   "bridge_rail", "bridge_river", "bridge_sea", "bridge_mountain", "bridge_creek", "bridge_lake",
-  "flyover", "forest", "corridor", "zone_city", "zone_town", "zone_remote", "police_officer", "hotel_room",
+  "flyover", "forest", "corridor", "zone_city", "zone_town", "zone_remote", "police_officer", "hotel_room", "hotel_v2", "mall_v2", "hospital_v2", "police_v2",
 ];
 export function isInfraShape(s: string): s is InfraShape { return (INFRA_SHAPES as string[]).includes(s); }
 export const INFRA_PRESETS: { name: string; shape: InfraShape }[] = [
@@ -43,6 +43,10 @@ export const INFRA_PRESETS: { name: string; shape: InfraShape }[] = [
   { name: "Remote Village (stilt houses, rice fields)", shape: "zone_remote" },
   { name: "Police Officer", shape: "police_officer" },
   { name: "Hotel Room (cutaway)", shape: "hotel_room" },
+  { name: "Hotel (Detailed)", shape: "hotel_v2" },
+  { name: "Shopping Mall (Detailed)", shape: "mall_v2" },
+  { name: "Hospital (Detailed)", shape: "hospital_v2" },
+  { name: "Police Station (Detailed)", shape: "police_v2" },
 ];
 
 // ---------- math ----------
@@ -306,12 +310,17 @@ function wheelGeo(THREE: T3, x: number, z: number): BG {
   return g;
 }
 function addBogie(THREE: T3, g: Grp, mk: Mk, x: number, spacing = 2.5): void {
-  const st: BG[] = [], fr: BG[] = [];
+  const fr: BG[] = [], cy = RAIL_TOP + 0.46;
   for (const dx of [-spacing / 2, spacing / 2]) {
-    for (const s of [-1, 1]) st.push(wheelGeo(THREE, x + dx, s * GAUGE / 2));
-    st.push(gCyl(THREE, 0.06, 0.06, 1.9, 8, x + dx, RAIL_TOP + 0.46, 0, Math.PI / 2));
-    st.push(gCyl(THREE, 0.3, 0.3, 0.05, 20, x + dx, RAIL_TOP + 0.46, 0.45, Math.PI / 2));
-    st.push(gCyl(THREE, 0.3, 0.3, 0.05, 20, x + dx, RAIL_TOP + 0.46, -0.45, Math.PI / 2));
+    // each wheelset is its own pivot so the Studio can spin it (userData.infraWheel); axis = local x of the inner group
+    const st: BG[] = [];
+    for (const s of [-1, 1]) st.push(wheelGeo(THREE, 0, s * GAUGE / 2).translate(0, -cy, 0));
+    st.push(gCyl(THREE, 0.06, 0.06, 1.9, 8, 0, 0, 0, Math.PI / 2));
+    st.push(gCyl(THREE, 0.3, 0.3, 0.05, 20, 0, 0, 0.45, Math.PI / 2));
+    st.push(gCyl(THREE, 0.3, 0.3, 0.05, 20, 0, 0, -0.45, Math.PI / 2));
+    const outer = new THREE.Group(), inner = new THREE.Group(), m = new THREE.Mesh(gMerge(THREE, st), mk("#3b3f44", 0.45, 0.85));
+    outer.position.set(x + dx, cy, 0); outer.rotation.y = Math.PI / 2; inner.userData.infraWheel = true; m.rotation.y = -Math.PI / 2;
+    inner.add(m); outer.add(inner); g.add(outer);
   }
   for (const s of [-1, 1]) {
     fr.push(gBox(THREE, spacing + 0.8, 0.22, 0.14, x, RAIL_TOP + 0.78, s * 0.98));
@@ -320,7 +329,6 @@ function addBogie(THREE: T3, g: Grp, mk: Mk, x: number, spacing = 2.5): void {
   fr.push(gBox(THREE, 0.34, 0.26, 1.9, x, RAIL_TOP + 0.84, 0));
   fr.push(gBox(THREE, 0.6, 0.38, 0.6, x - 0.7, RAIL_TOP + 0.62, 0.2));
   fr.push(gBox(THREE, 0.6, 0.38, 0.6, x + 0.7, RAIL_TOP + 0.62, -0.2));
-  addMerged(THREE, g, st, mk("#3b3f44", 0.45, 0.85));
   addMerged(THREE, g, fr, mk("#1d1f22", 0.6, 0.5));
 }
 function seatGeo(THREE: T3, x: number, y: number, z: number, w: number, c: RGB, vip: boolean): BG[] {
@@ -975,15 +983,17 @@ export const INFRA_SCALE = 0.2;
 export function createInfraGeometry(THREE: T3, shape: InfraShape, _color?: string, _metalness?: number, _roughness?: number): Grp {
   const mk = makeKit(THREE);
   let g: Grp;
+  // the Studio animation moves a 'trainRun' group back and forth by +-range metres and rolls every 'infraWheel' with it
+  const runner = (t: Grp, range: number): Grp => { const w = new THREE.Group(); w.userData.trainRun = range; w.add(t); return w; };
   const track = (len: number, cat = true) => { const t = new THREE.Group(); addTrack(THREE, t, mk, lineC(THREE, [-len / 2, 0, 0], [len / 2, 0, 0]), { cat }); return t; };
   switch (shape) {
     case "railway": g = track(120); break;
     case "railway_curve": g = new THREE.Group(); addTrack(THREE, g, mk, arcCurve(THREE, 120, Math.PI / 3), { cat: true }); break;
-    case "locomotive": g = track(60); g.add(makeLoco(THREE, mk)); break;
-    case "passenger": g = track(60); g.add(makeCoach(THREE, mk, false)); break;
-    case "passenger_vip": g = track(60); g.add(makeCoach(THREE, mk, true)); break;
-    case "caboose": g = track(50); g.add(makeCaboose(THREE, mk)); break;
-    case "trainset": g = track(170); g.add(makeTrainset(THREE, mk)); break;
+    case "locomotive": g = track(60); g.add(runner(makeLoco(THREE, mk), 15)); break;
+    case "passenger": g = track(60); g.add(runner(makeCoach(THREE, mk, false), 17)); break;
+    case "passenger_vip": g = track(60); g.add(runner(makeCoach(THREE, mk, true), 17)); break;
+    case "caboose": g = track(50); g.add(runner(makeCaboose(THREE, mk), 14)); break;
+    case "trainset": g = track(170); g.add(runner(makeTrainset(THREE, mk), 16)); break;
     case "bridge_rail": g = makeViaduct(THREE, mk); break;
     case "bridge_river": g = makeTruss(THREE, mk); break;
     case "bridge_sea": g = makeSea(THREE, mk); break;
@@ -997,6 +1007,10 @@ export function createInfraGeometry(THREE: T3, shape: InfraShape, _color?: strin
     case "zone_remote": g = makeRemoteZone(THREE, mk); break;
     case "police_officer": g = makePolice(THREE, mk); break;
     case "hotel_room": g = makeHotelRoom(THREE, mk); break;
+    case "hotel_v2": g = makeBuilding(THREE, mk, "hotel"); break;
+    case "mall_v2": g = makeBuilding(THREE, mk, "mall"); break;
+    case "hospital_v2": g = makeBuilding(THREE, mk, "hospital"); break;
+    case "police_v2": g = makeBuilding(THREE, mk, "police"); break;
     default: g = makeCorridor(THREE, mk);
   }
   g.traverse((o) => { const m = o as import("three").Mesh; if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
@@ -1011,14 +1025,15 @@ export function createInfraGeometry(THREE: T3, shape: InfraShape, _color?: strin
 }
 
 // ---------- zones (phase 2): city / town / remote ----------
-interface Acc { body: BG[]; glass: BG[]; roof: BG[]; trim: BG[]; road: BG[]; walk: BG[]; wood: BG[]; gold: BG[]; red: BG[] }
-const newAcc = (): Acc => ({ body: [], glass: [], roof: [], trim: [], road: [], walk: [], wood: [], gold: [], red: [] });
+interface Acc { body: BG[]; glass: BG[]; roof: BG[]; trim: BG[]; road: BG[]; walk: BG[]; wood: BG[]; gold: BG[]; red: BG[]; lit: BG[] }
+const newAcc = (): Acc => ({ body: [], glass: [], roof: [], trim: [], road: [], walk: [], wood: [], gold: [], red: [], lit: [] });
 function flushAcc(THREE: T3, g: Grp, mk: Mk, a: Acc): void {
   const vc = (r: number, m = 0) => mk("#ffffff", r, m, { vertexColors: true });
   addMerged(THREE, g, a.body, vc(0.85)); addMerged(THREE, g, a.glass, mk("#ffffff", 0.08, 0.75, { vertexColors: true }));
   addMerged(THREE, g, a.roof, vc(0.9)); addMerged(THREE, g, a.trim, vc(0.6)); addMerged(THREE, g, a.road, vc(0.95));
   addMerged(THREE, g, a.walk, vc(0.9)); addMerged(THREE, g, a.wood, vc(0.9)); addMerged(THREE, g, a.gold, mk("#ffffff", 0.3, 0.8, { vertexColors: true }));
   addMerged(THREE, g, a.red, vc(0.6));
+  addMerged(THREE, g, a.lit, mk("#ffffff", 0.4, 0, { vertexColors: true, emissive: "#ffffff", emissiveIntensity: 0.55 }));
 }
 function tower(THREE: T3, a: Acc, x: number, z: number, w: number, d: number, h: number, hue: number, rnd: () => number): void {
   const body = hslRGB(THREE, hue, 0.06 + 0.1 * rnd(), 0.5 + 0.25 * rnd()), gl = hslRGB(THREE, 200 + 25 * rnd(), 0.35, 0.16 + 0.1 * rnd());
@@ -1339,6 +1354,143 @@ function makeHotelRoom(THREE: T3, mk: Mk): Grp {
   addMerged(THREE, g, wall, mk("#ffffff", 0.95, 0, { vertexColors: true })); addMerged(THREE, g, dark, mk("#ffffff", 0.25, 0.3, { vertexColors: true }));
   addMerged(THREE, g, metal, mk("#ffffff", 0.3, 0.85, { vertexColors: true }));
   g.add(new THREE.Mesh(gMerge(THREE, lampS), mk("#ffffff", 0.8, 0, { vertexColors: true, emissive: "#ffcf80", emissiveIntensity: 0.9, side: THREE.DoubleSide })));
+  return g;
+}
+
+// ---------- detailed public buildings (v2): hotel, shopping mall, hospital, police station ----------
+function facade(THREE: T3, a: Acc, cx: number, cz: number, w: number, d: number, y0: number, floors: number, fh: number, bay: number, lit: number, bal: boolean, rnd: () => number): void {
+  const gl = hslRGB(THREE, 205, 0.42, 0.33), warm = hslRGB(THREE, 42, 0.85, 0.7), fin: RGB = [0.84, 0.82, 0.78];
+  for (let face = 0; face < 4; face++) {
+    const fz = face < 2, along = fz ? w : d, nb = Math.max(1, Math.round(along / bay)), bw = along / nb, sg = face % 2 ? -1 : 1;
+    for (let f = 0; f < floors; f++) for (let i = 0; i < nb; i++) {
+      const o = -along / 2 + (i + 0.5) * bw, on = rnd() < lit, px = fz ? cx + o : cx + sg * (w / 2), pz = fz ? cz + sg * (d / 2) : cz + o;
+      (on ? a.lit : a.glass).push(gPaint(THREE, gBox(THREE, fz ? bw - 0.6 : 0.14, fh * 0.56, fz ? 0.14 : bw - 0.6, px, y0 + f * fh + fh * 0.55, pz), on ? warm : gl));
+    }
+    for (let i = 0; i <= nb; i++) {
+      const o = -along / 2 + i * bw, px = fz ? cx + o : cx + sg * (w / 2), pz = fz ? cz + sg * (d / 2) : cz + o;
+      a.trim.push(gPaint(THREE, gBox(THREE, fz ? 0.4 : 0.6, floors * fh, fz ? 0.6 : 0.4, px, y0 + (floors * fh) / 2, pz), fin));
+    }
+    for (let f = 0; f <= floors; f++) a.trim.push(gPaint(THREE, gBox(THREE, fz ? w + 0.2 : 0.5, 0.2, fz ? 0.5 : d + 0.2, fz ? cx : cx + sg * (w / 2), y0 + f * fh, fz ? cz + sg * (d / 2) : cz), fin));
+    if (bal && face === 0) for (let f = 1; f < floors; f++) {
+      a.trim.push(gPaint(THREE, gBox(THREE, w, 0.2, 1.4, cx, y0 + f * fh, cz + d / 2 + 0.7), [0.8, 0.78, 0.74]));
+      a.glass.push(gPaint(THREE, gBox(THREE, w, 0.9, 0.05, cx, y0 + f * fh + 0.55, cz + d / 2 + 1.35), [0.35, 0.5, 0.58]));
+    }
+  }
+}
+function lampPost(THREE: T3, a: Acc, x: number, z: number, h = 7): void {
+  a.trim.push(gPaint(THREE, gCyl(THREE, 0.08, 0.12, h, 6, x, h / 2, z), [0.3, 0.32, 0.34]));
+  a.lit.push(gPaint(THREE, gBox(THREE, 0.9, 0.14, 0.4, x, h + 0.1, z), hslRGB(THREE, 45, 0.7, 0.8)));
+}
+function flagPole(THREE: T3, a: Acc, x: number, z: number, h: number, c: RGB): void {
+  a.trim.push(gPaint(THREE, gCyl(THREE, 0.06, 0.09, h, 6, x, h / 2, z), [0.75, 0.75, 0.77]));
+  a.red.push(gPaint(THREE, gBox(THREE, 1.9, 1.2, 0.05, x + 1.0, h - 0.8, z), c));
+}
+function pad(THREE: T3, a: Acc, w: number, d: number, lawn: boolean): void {
+  a.walk.push(gPaintFn(THREE, gBox(THREE, w, 0.12, d, 0, 0.0, 0), (px, _y, pz) => lawn ? hslRGB(THREE, 98 + 10 * fbm(px * 0.08, pz * 0.08), 0.42, 0.27 + 0.08 * fbm(px, pz, 2)) : hslRGB(THREE, 40, 0.04, 0.5)));
+}
+function parkRow(THREE: T3, a: Acc, x0: number, z: number, n: number, rnd: () => number, lines = true): void {
+  a.road.push(gPaint(THREE, gBox(THREE, n * 3.2 + 2, 0.14, 7, x0 + (n * 3.2) / 2, 0.07, z), hslRGB(THREE, 220, 0.04, 0.2)));
+  for (let i = 0; i < n; i++) {
+    if (lines) a.trim.push(gPaint(THREE, gBox(THREE, 0.12, 0.03, 4.6, x0 + i * 3.2 - 1.6 + 1.6 - 1.6, 0.16, z), [0.85, 0.84, 0.76]));
+    if (rnd() < 0.7) parkedCar(THREE, a, x0 + i * 3.2, z, Math.PI / 2, [0.1 + 0.8 * rnd(), 0.1 + 0.8 * rnd(), 0.1 + 0.8 * rnd()]);
+  }
+}
+function trees(THREE: T3, g: Grp, mk: Mk, rnd: () => number, pts: [number, number][], kind: TreeKind = "broad", s = 0.6): void {
+  const tr: BG[] = [], lf: BG[] = [];
+  for (const [x, z] of pts) addTree(THREE, kind, x, 0.05, z, s * (0.8 + 0.5 * rnd()), rnd, tr, lf);
+  flushTrees(THREE, g, mk, tr, lf);
+}
+function bHotel(THREE: T3, g: Grp, mk: Mk, a: Acc, rnd: () => number): void {
+  pad(THREE, a, 90, 80, true);
+  a.road.push(gPaint(THREE, gBox(THREE, 90, 0.14, 9, 0, 0.07, 30), hslRGB(THREE, 220, 0.04, 0.18)));
+  const ring = new THREE.TorusGeometry(10, 3.2, 3, 32); ring.rotateX(Math.PI / 2); ring.scale(1.3, 1, 1); ring.translate(0, 0.08, 12); a.road.push(gPaint(THREE, ring, hslRGB(THREE, 220, 0.04, 0.2)));
+  a.body.push(gPaintFn(THREE, gBox(THREE, 44, 9, 22, 0, 4.5, 6), (px, py, pz) => hslRGB(THREE, 36, 0.12, 0.7 + 0.05 * fbm(px * 0.2 + pz, py * 0.2, 2))));
+  a.glass.push(gPaint(THREE, gBox(THREE, 36, 5.2, 0.16, 0, 3.2, 17.05), [0.06, 0.1, 0.14]));
+  for (let i = -6; i <= 6; i++) a.trim.push(gPaint(THREE, gBox(THREE, 0.35, 5.4, 0.4, i * 3, 3.2, 17.1), [0.85, 0.82, 0.78]));
+  a.lit.push(gPaint(THREE, gBox(THREE, 36, 0.8, 0.2, 0, 7.4, 17.2), hslRGB(THREE, 42, 0.9, 0.55)));
+  a.roof.push(gPaint(THREE, gBox(THREE, 45, 0.6, 23, 0, 9.3, 6), [0.45, 0.45, 0.47]));
+  a.trim.push(gPaint(THREE, gBox(THREE, 16, 0.7, 9, 0, 6.6, 23), [0.88, 0.85, 0.78]));
+  for (const s of [-1, 1]) for (const dz of [19, 26.5]) a.trim.push(gPaint(THREE, gCyl(THREE, 0.45, 0.5, 6.3, 12, s * 7, 3.15, dz), [0.9, 0.88, 0.84]));
+  a.body.push(gPaintFn(THREE, gBox(THREE, 28, 56, 18, 0, 37, -6), (px, py, pz) => hslRGB(THREE, 34, 0.1, 0.78 + 0.05 * fbm(px * 0.1 + pz, py * 0.1, 2))));
+  facade(THREE, a, 0, -6, 28, 18, 9.5, 15, 3.2, 3.5, 0.22, true, rnd);
+  a.roof.push(gPaint(THREE, gBox(THREE, 29, 1.2, 19, 0, 65.6, -6), [0.3, 0.3, 0.32]), gPaint(THREE, gBox(THREE, 8, 3, 6, 6, 67.4, -8), [0.5, 0.5, 0.53]));
+  a.lit.push(gPaint(THREE, gBox(THREE, 20, 2.2, 0.3, 0, 63.5, 3.2), hslRGB(THREE, 42, 0.95, 0.6)));
+  a.trim.push(gPaint(THREE, gCyl(THREE, 0.15, 0.25, 12, 6, -10, 72, -8), [0.8, 0.2, 0.2]));
+  for (const [x, z] of [[-34, 28], [34, 28], [-34, 10], [34, 10]]) lampPost(THREE, a, x, z, 6);
+  for (const x of [-18, -15, 15, 18]) flagPole(THREE, a, x, 24, 11, hslRGB(THREE, 360 * rnd(), 0.6, 0.45));
+  parkedCar(THREE, a, -5, 29, 0, [0.9, 0.75, 0.1]); parkedCar(THREE, a, 6, 31, 0, [0.9, 0.9, 0.92]);
+  trees(THREE, g, mk, rnd, [[-36, 18], [-36, 24], [36, 18], [36, 24], [-28, -30], [28, -30], [-38, -12], [38, -12]], "palm", 0.9);
+  trees(THREE, g, mk, rnd, [[-24, 22], [24, 22], [-20, -28], [20, -28]], "broad", 0.7);
+}
+function bMall(THREE: T3, g: Grp, mk: Mk, a: Acc, rnd: () => number): void {
+  pad(THREE, a, 150, 120, false);
+  a.walk.push(gPaint(THREE, gBox(THREE, 150, 0.14, 120, 0, 0.0, 0), hslRGB(THREE, 40, 0.03, 0.34)));
+  a.body.push(gPaintFn(THREE, gBox(THREE, 70, 16, 36, 0, 8, -10), (px, py, pz) => hslRGB(THREE, 30, 0.14, 0.74 + 0.05 * fbm(px * 0.2 + pz, py * 0.3, 2))));
+  a.glass.push(gPaint(THREE, gBox(THREE, 64, 6.4, 0.18, 0, 3.6, 8.1), [0.06, 0.11, 0.16]));
+  for (let i = -10; i <= 10; i++) a.trim.push(gPaint(THREE, gBox(THREE, 0.3, 6.6, 0.4, i * 3.2, 3.6, 8.15), [0.82, 0.8, 0.76]));
+  a.glass.push(gPaint(THREE, gBox(THREE, 64, 3.2, 0.16, 0, 11.4, 8.1), [0.1, 0.18, 0.24]));
+  for (let i = -10; i <= 10; i++) a.trim.push(gPaint(THREE, gBox(THREE, 0.25, 3.4, 0.35, i * 3.2, 11.4, 8.12), [0.82, 0.8, 0.76]));
+  a.roof.push(gPaint(THREE, gBox(THREE, 71, 0.7, 37, 0, 16.3, -10), [0.3, 0.3, 0.32]));
+  const vault = new THREE.CylinderGeometry(9, 9, 22, 20, 1, true, -Math.PI / 2, Math.PI); vault.rotateX(Math.PI / 2); vault.scale(1, 0.62, 1); vault.translate(0, 16.4, 4); a.glass.push(gPaint(THREE, vault, [0.15, 0.28, 0.36]));
+  for (let k = -4; k <= 4; k++) { const rib = new THREE.TorusGeometry(9, 0.18, 4, 20, Math.PI); rib.scale(1, 0.62, 1); rib.translate(0, 16.4, 4 + k * 2.6); a.trim.push(gPaint(THREE, rib, [0.8, 0.8, 0.8])); }
+  a.trim.push(gPaint(THREE, gBox(THREE, 30, 0.6, 8, 0, 7.8, 12), [0.86, 0.84, 0.8]));
+  for (let i = -4; i <= 4; i++) a.trim.push(gPaint(THREE, gCyl(THREE, 0.4, 0.4, 7.6, 10, i * 3.6, 3.8, 15.5), [0.88, 0.86, 0.82]));
+  for (const [x, c] of [[-26, 355], [26, 215]] as [number, number][]) { a.lit.push(gPaint(THREE, gBox(THREE, 14, 3.4, 0.4, x, 14.2, 8.3), hslRGB(THREE, c, 0.75, 0.5))); a.red.push(gPaint(THREE, gBox(THREE, 14, 1.2, 1.2, x, 8.6, 8.8), hslRGB(THREE, c, 0.6, 0.36))); }
+  a.lit.push(gPaint(THREE, gBox(THREE, 16, 4.2, 0.5, 0, 18.4, 8.6), hslRGB(THREE, 40, 0.9, 0.55)));
+  for (let i = 0; i < 5; i++) a.roof.push(gPaint(THREE, gBox(THREE, 4, 1.8, 3, -26 + i * 12, 17.6, -18), [0.5, 0.5, 0.53]));
+  for (let r = 0; r < 3; r++) parkRow(THREE, a, -44, 30 + r * 10.5, 28, rnd);
+  for (let x = -60; x <= 60; x += 24) for (const z of [24, 56]) lampPost(THREE, a, x, z, 9);
+  trees(THREE, g, mk, rnd, [[-70, 10], [70, 10], [-70, -30], [70, -30], [-50, -40], [50, -40], [0, -42]], "broad", 0.8);
+  trees(THREE, g, mk, rnd, [[-70, 22], [70, 22], [-70, 0], [70, 0]], "palm", 0.9);
+}
+function bHospital(THREE: T3, g: Grp, mk: Mk, a: Acc, rnd: () => number): void {
+  pad(THREE, a, 110, 90, true);
+  a.road.push(gPaint(THREE, gBox(THREE, 110, 0.14, 8, 0, 0.07, 34), hslRGB(THREE, 220, 0.04, 0.18)));
+  const wh = hslRGB(THREE, 40, 0.05, 0.88);
+  a.body.push(gPaintFn(THREE, gBox(THREE, 44, 19, 18, 0, 9.5, -4), (px, py, pz) => wh.map((v) => v * (0.95 + 0.05 * fbm(px * 0.2 + pz, py * 0.2, 2))) as RGB));
+  a.body.push(gPaint(THREE, gBox(THREE, 16, 28, 16, -8, 14, 12), wh), gPaint(THREE, gBox(THREE, 14, 12, 14, 24, 6, 10), wh), gPaint(THREE, gBox(THREE, 14, 12, 14, -24, 6, 10), wh));
+  facade(THREE, a, 0, -4, 44, 18, 0.4, 5, 3.6, 3.2, 0.08, false, rnd);
+  facade(THREE, a, -8, 12, 16, 16, 0.4, 7, 3.9, 3.2, 0.1, false, rnd);
+  facade(THREE, a, 24, 10, 14, 14, 0.4, 3, 3.9, 3.2, 0.05, false, rnd);
+  facade(THREE, a, -24, 10, 14, 14, 0.4, 3, 3.9, 3.2, 0.05, false, rnd);
+  for (let f = 1; f < 7; f++) a.trim.push(gPaint(THREE, gBox(THREE, 16.6, 0.15, 1.2, -8, f * 3.9 + 0.2, 20.2), [0.7, 0.72, 0.74]));
+  a.glass.push(gPaint(THREE, gBox(THREE, 10, 4.2, 0.16, -8, 2.6, 20.1), [0.05, 0.1, 0.14]));
+  a.trim.push(gPaint(THREE, gBox(THREE, 14, 0.5, 8, -8, 5.2, 24), [0.9, 0.9, 0.9]), gPaint(THREE, gBox(THREE, 0.5, 5.2, 0.5, -14.5, 2.6, 27.5), [0.9, 0.9, 0.9]), gPaint(THREE, gBox(THREE, 0.5, 5.2, 0.5, -1.5, 2.6, 27.5), [0.9, 0.9, 0.9]));
+  a.red.push(gPaint(THREE, gBox(THREE, 1.4, 6, 0.4, -8, 22, 20.5), [0.85, 0.05, 0.05]), gPaint(THREE, gBox(THREE, 6, 1.4, 0.4, -8, 22, 20.5), [0.85, 0.05, 0.05]));
+  a.lit.push(gPaint(THREE, gBox(THREE, 7, 1.0, 0.3, 24, 9.5, 17.2), hslRGB(THREE, 0, 0.8, 0.5)));
+  a.roof.push(gPaint(THREE, gBox(THREE, 17, 0.6, 17, -8, 28.3, 12), [0.5, 0.5, 0.53]));
+  const hp = new THREE.CylinderGeometry(6.5, 6.5, 0.3, 28); hp.translate(-8, 28.8, 12); a.roof.push(gPaint(THREE, hp, [0.22, 0.24, 0.26]));
+  for (const [dx, dz, w, d] of [[-1.6, 0, 0.8, 5], [1.6, 0, 0.8, 5], [0, 0, 3.4, 0.8]]) a.trim.push(gPaint(THREE, gBox(THREE, w, 0.05, d, -8 + dx, 29.0, 12 + dz), [0.95, 0.95, 0.95]));
+  a.lit.push(gPaint(THREE, gBox(THREE, 0.3, 0.3, 0.3, -14, 29, 6), [1, 0.3, 0.2]), gPaint(THREE, gBox(THREE, 0.3, 0.3, 0.3, -2, 29, 18), [1, 0.3, 0.2]));
+  a.roof.push(gPaint(THREE, gBox(THREE, 45, 0.6, 19, 0, 19.3, -4), [0.5, 0.5, 0.53]));
+  for (const x of [20, 30, 40]) { a.red.push(gPaint(THREE, gBox(THREE, 6.4, 2.4, 2.6, x - 10, 1.9, 36), wh)); a.red.push(gPaint(THREE, gBox(THREE, 6.42, 0.4, 2.62, x - 10, 1.8, 36), [0.85, 0.08, 0.08])); a.lit.push(gPaint(THREE, gBox(THREE, 0.8, 0.2, 2.4, x - 10, 3.2, 36), [0.2, 0.4, 1])); a.trim.push(gPaint(THREE, gBox(THREE, 6.4, 0.5, 2.7, x - 10, 0.6, 36), [0.05, 0.05, 0.06])); }
+  for (let i = 0; i < 8; i++) parkedCar(THREE, a, 12 + i * 4, 28, 0, [0.1 + 0.8 * rnd(), 0.1 + 0.8 * rnd(), 0.1 + 0.8 * rnd()]);
+  for (const [x, z] of [[-30, 26], [30, 26], [-40, -20], [40, -20]]) lampPost(THREE, a, x, z, 6);
+  trees(THREE, g, mk, rnd, [[-42, 30], [-36, 36], [-46, 8], [46, 8], [-40, -30], [40, -30], [0, -34], [-20, 32]], "broad", 0.8);
+  trees(THREE, g, mk, rnd, [[-48, 20], [48, 20]], "palm", 0.9);
+}
+function bPolice(THREE: T3, g: Grp, mk: Mk, a: Acc, rnd: () => number): void {
+  pad(THREE, a, 70, 60, false);
+  a.walk.push(gPaint(THREE, gBox(THREE, 70, 0.14, 60, 0, 0.0, 0), hslRGB(THREE, 40, 0.03, 0.4)));
+  a.body.push(gPaintFn(THREE, gBox(THREE, 30, 11, 16, 0, 5.5, -4), (px, py, pz) => hslRGB(THREE, 215, 0.32, 0.4 + 0.05 * fbm(px * 0.3 + pz, py * 0.3, 2))));
+  a.body.push(gPaint(THREE, gBox(THREE, 8, 14, 12, -11, 7, 2), hslRGB(THREE, 215, 0.3, 0.34)));
+  facade(THREE, a, 0, -4, 30, 16, 0.6, 3, 3.5, 3.4, 0.1, false, rnd);
+  a.trim.push(gPaint(THREE, gBox(THREE, 31, 0.6, 17, 0, 11.3, -4), [0.88, 0.88, 0.9]), gPaint(THREE, gBox(THREE, 12, 0.5, 6, 4, 4.4, 8.5), [0.9, 0.9, 0.92]));
+  for (const x of [-1, 3, 7, 9]) a.trim.push(gPaint(THREE, gCyl(THREE, 0.35, 0.38, 4.2, 10, x + 0.0, 2.2, 11), [0.9, 0.9, 0.92]));
+  a.glass.push(gPaint(THREE, gBox(THREE, 10, 3.2, 0.14, 4, 2, 4.1), [0.05, 0.09, 0.13]));
+  a.lit.push(gPaint(THREE, gBox(THREE, 10, 1.1, 0.3, 4, 9.6, 4.3), hslRGB(THREE, 215, 0.9, 0.55)));
+  a.red.push(gPaint(THREE, gBox(THREE, 2.2, 2.2, 0.3, -11, 10, 8.3), [0.9, 0.9, 0.95]));
+  a.trim.push(gPaint(THREE, gCyl(THREE, 0.15, 0.25, 16, 6, -14, 8, -8), [0.75, 0.75, 0.78]), gPaint(THREE, gBox(THREE, 2, 0.3, 0.3, -14, 15.6, -8), [0.75, 0.75, 0.78]));
+  flagPole(THREE, a, 16, 12, 10, hslRGB(THREE, 0, 0.7, 0.45)); flagPole(THREE, a, 20, 12, 10, hslRGB(THREE, 215, 0.7, 0.4));
+  for (let i = 0; i < 4; i++) { const x = -22 + i * 4.8; parkedCar(THREE, a, x, 20, Math.PI / 2, [0.92, 0.93, 0.95]); a.lit.push(gPaint(THREE, gBox(THREE, 1.0, 0.2, 0.4, x, 1.95, 20), i % 2 ? [0.1, 0.2, 1] : [1, 0.1, 0.1])); a.red.push(gPaint(THREE, gBox(THREE, 4.22, 0.3, 1.82, x, 0.9, 20), [0.1, 0.2, 0.8])); }
+  for (let z = 14; z <= 30; z += 4) a.red.push(gPaint(THREE, gBox(THREE, 0.5, 1.0, 0.5, 30, 0.6, z), [0.95, 0.5, 0.1]));
+  for (const [x, z] of [[-28, 16], [28, 16], [-28, -20], [28, -20]]) lampPost(THREE, a, x, z, 6);
+  trees(THREE, g, mk, rnd, [[-30, -22], [30, -22], [-30, 4], [30, 4]], "broad", 0.7);
+}
+function makeBuilding(THREE: T3, mk: Mk, kind: "hotel" | "mall" | "hospital" | "police"): Grp {
+  const g = new THREE.Group(), a = newAcc(), rnd = rngf(kind === "hotel" ? 101 : kind === "mall" ? 103 : kind === "hospital" ? 107 : 109);
+  if (kind === "hotel") bHotel(THREE, g, mk, a, rnd); else if (kind === "mall") bMall(THREE, g, mk, a, rnd); else if (kind === "hospital") bHospital(THREE, g, mk, a, rnd); else bPolice(THREE, g, mk, a, rnd);
+  flushAcc(THREE, g, mk, a);
   return g;
 }
 

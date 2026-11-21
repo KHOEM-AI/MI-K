@@ -3746,6 +3746,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
     const helicopters = new Set(["helicopter2"]);
     const trains = new Set(["train"]);
     const buses = new Set(["bus"]);
+    const infraTrains = new Set(["locomotive", "passenger", "passenger_vip", "caboose", "trainset"]);
 
     let rafId: number;
     const animate = () => {
@@ -3766,6 +3767,15 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
           mesh.traverse((child) => {
             if (child.userData.helicopterBlades) {
               child.rotation.y = t * 15;
+            }
+          });
+        } else if (infraTrains.has(sceneObj.shape)) {
+          // Infra trains: the train slides back and forth on its track and every wheelset rolls with it (no slipping)
+          mesh.traverse((child) => {
+            if (child.userData.trainRun !== undefined) {
+              const x = Math.sin(t * 0.35) * child.userData.trainRun;
+              child.position.x = x;
+              child.traverse((w) => { if (w.userData.infraWheel) w.rotation.x = x / 0.46; });
             }
           });
         } else if (trains.has(sceneObj.shape) || buses.has(sceneObj.shape)) {
