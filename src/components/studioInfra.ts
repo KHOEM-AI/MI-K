@@ -13,12 +13,12 @@ type Mk = (hex: string, rough?: number, metal?: number, extra?: Record<string, u
 export type InfraShape =
   | "railway" | "railway_curve" | "locomotive" | "passenger" | "passenger_vip" | "caboose" | "trainset"
   | "bridge_rail" | "bridge_river" | "bridge_sea" | "bridge_mountain" | "bridge_creek" | "bridge_lake"
-  | "flyover" | "forest" | "corridor" | "zone_city" | "zone_town" | "zone_remote";
+  | "flyover" | "forest" | "corridor" | "zone_city" | "zone_town" | "zone_remote" | "police_officer" | "hotel_room";
 
 export const INFRA_SHAPES: InfraShape[] = [
   "railway", "railway_curve", "locomotive", "passenger", "passenger_vip", "caboose", "trainset",
   "bridge_rail", "bridge_river", "bridge_sea", "bridge_mountain", "bridge_creek", "bridge_lake",
-  "flyover", "forest", "corridor", "zone_city", "zone_town", "zone_remote",
+  "flyover", "forest", "corridor", "zone_city", "zone_town", "zone_remote", "police_officer", "hotel_room",
 ];
 export function isInfraShape(s: string): s is InfraShape { return (INFRA_SHAPES as string[]).includes(s); }
 export const INFRA_PRESETS: { name: string; shape: InfraShape }[] = [
@@ -41,6 +41,8 @@ export const INFRA_PRESETS: { name: string; shape: InfraShape }[] = [
   { name: "City Zone (hotel, mall, hospital, police)", shape: "zone_city" },
   { name: "Town Zone (shophouses, market, wat)", shape: "zone_town" },
   { name: "Remote Village (stilt houses, rice fields)", shape: "zone_remote" },
+  { name: "Police Officer", shape: "police_officer" },
+  { name: "Hotel Room (cutaway)", shape: "hotel_room" },
 ];
 
 // ---------- math ----------
@@ -993,6 +995,8 @@ export function createInfraGeometry(THREE: T3, shape: InfraShape, _color?: strin
     case "zone_city": g = makeCityZone(THREE, mk); break;
     case "zone_town": g = makeTownZone(THREE, mk); break;
     case "zone_remote": g = makeRemoteZone(THREE, mk); break;
+    case "police_officer": g = makePolice(THREE, mk); break;
+    case "hotel_room": g = makeHotelRoom(THREE, mk); break;
     default: g = makeCorridor(THREE, mk);
   }
   g.traverse((o) => { const m = o as import("three").Mesh; if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
@@ -1000,7 +1004,7 @@ export function createInfraGeometry(THREE: T3, shape: InfraShape, _color?: strin
   // 1 unit in the model = 1 metre; the Studio scene is much smaller, so scale everything by one common factor
   const wrap = new THREE.Group();
   while (g.children.length) wrap.add(g.children[0]);
-  wrap.scale.setScalar(INFRA_SCALE);
+  wrap.scale.setScalar(shape === "police_officer" ? 1 : shape === "hotel_room" ? 0.5 : INFRA_SCALE);
   g.add(wrap);
   g.userData.infra = shape;
   return g;
@@ -1192,6 +1196,149 @@ function makeRemoteZone(THREE: T3, mk: Mk): Grp {
     addTree(THREE, rnd() < 0.55 ? "palm" : rnd() < 0.5 ? "tall" : "broad", x, hfn(x, z), z, 0.9 + 0.7 * rnd(), rnd, tr, lf);
   }
   flushTrees(THREE, g, mk, tr, lf); flushAcc(THREE, g, mk, a);
+  return g;
+}
+
+// ---------- phase 3: police officer + hotel room ----------
+/** rounded box: smooth bevelled edges, used for cushions, mattresses, furniture */
+function gRBox(THREE: T3, w: number, h: number, d: number, r: number, x: number, y: number, z: number, ry = 0): BG {
+  const g = new THREE.BoxGeometry(w, h, d, 6, 6, 6), p = g.attributes.position, n = new Float32Array(p.count * 3);
+  const hx = w / 2 - r, hy = h / 2 - r, hz = d / 2 - r, v = new THREE.Vector3();
+  for (let i = 0; i < p.count; i++) {
+    v.set(p.getX(i), p.getY(i), p.getZ(i));
+    const ix = Math.max(-hx, Math.min(hx, v.x)), iy = Math.max(-hy, Math.min(hy, v.y)), iz = Math.max(-hz, Math.min(hz, v.z));
+    const dx = v.x - ix, dy = v.y - iy, dz = v.z - iz, l = Math.hypot(dx, dy, dz) || 1;
+    p.setXYZ(i, ix + (dx / l) * r, iy + (dy / l) * r, iz + (dz / l) * r); n[i * 3] = dx / l; n[i * 3 + 1] = dy / l; n[i * 3 + 2] = dz / l;
+  }
+  g.setAttribute("normal", new THREE.BufferAttribute(n, 3));
+  if (ry) g.rotateY(ry);
+  g.translate(x, y, z);
+  return g;
+}
+function gEll(THREE: T3, rx: number, ry: number, rz: number, x: number, y: number, z: number, seg = 14): BG {
+  const g = new THREE.SphereGeometry(1, seg, Math.max(6, seg - 4)); g.scale(rx, ry, rz); g.translate(x, y, z); return g;
+}
+/** smooth tube with varying elliptical radius along a path (limbs, torso, neck) */
+function gTube(THREE: T3, pts: P3[], rx: number[], rzK: number, seg = 14): BG {
+  const curve = pathC(THREE, pts), n = pts.length * 6, ref = new THREE.Vector3(0, 0, 1), pos: number[] = [], idx: number[] = [];
+  const rad = (t: number) => { const f = t * (rx.length - 1), i = Math.min(rx.length - 2, Math.floor(f)); return rx[i] + (rx[i + 1] - rx[i]) * (f - i); };
+  for (let i = 0; i <= n; i++) {
+    const t = i / n, P = curve.getPointAt(t), T = curve.getTangentAt(t), s = new THREE.Vector3().crossVectors(ref, T).normalize(), f = new THREE.Vector3().crossVectors(T, s), r = rad(t);
+    for (let k = 0; k < seg; k++) { const a = (2 * Math.PI * k) / seg; pos.push(P.x + s.x * r * Math.cos(a) + f.x * r * rzK * Math.sin(a), P.y + s.y * r * Math.cos(a) + f.y * r * rzK * Math.sin(a), P.z + s.z * r * Math.cos(a) + f.z * r * rzK * Math.sin(a)); }
+  }
+  for (let i = 0; i < n; i++) for (let k = 0; k < seg; k++) { const a = i * seg + k, b = i * seg + ((k + 1) % seg), c = a + seg, d = b + seg; idx.push(a, b, c, b, d, c); }
+  for (const e of [0, n]) { const ci = pos.length / 3, P = curve.getPointAt(e / n); pos.push(P.x, P.y, P.z); for (let k = 0; k < seg; k++) { const a = e * seg + k, b = e * seg + ((k + 1) % seg); if (e === 0) idx.push(ci, b, a); else idx.push(ci, a, b); } }
+  let vol = 0;
+  for (let i = 0; i < idx.length; i += 3) { const A = idx[i] * 3, B = idx[i + 1] * 3, C = idx[i + 2] * 3; vol += pos[A] * (pos[B + 1] * pos[C + 2] - pos[B + 2] * pos[C + 1]) - pos[A + 1] * (pos[B] * pos[C + 2] - pos[B + 2] * pos[C]) + pos[A + 2] * (pos[B] * pos[C + 1] - pos[B + 1] * pos[C]); }
+  if (vol < 0) for (let i = 0; i < idx.length; i += 3) { const t = idx[i + 1]; idx[i + 1] = idx[i + 2]; idx[i + 2] = t; }
+  const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
+  return g;
+}
+
+function makePolice(THREE: T3, mk: Mk): Grp {
+  const g = new THREE.Group(), cloth: BG[] = [], skin: BG[] = [], leather: BG[] = [], metal: BG[] = [], dark: BG[] = [], white: BG[] = [];
+  const shirt = hslRGB(THREE, 215, 0.38, 0.2), pants = hslRGB(THREE, 220, 0.3, 0.13), sk = hslRGB(THREE, 28, 0.42, 0.5), black: RGB = [0.012, 0.012, 0.014], gold = hslRGB(THREE, 44, 0.85, 0.5);
+  const C = (b: BG, c: RGB) => cloth.push(gPaint(THREE, b, c));
+  // legs (trousers) + boots
+  for (const s of [-1, 1]) {
+    C(gTube(THREE, [[s * 0.095, 0.9, 0], [s * 0.1, 0.49, 0.01], [s * 0.1, 0.12, 0]], [0.092, 0.07, 0.058], 1.0, 14), pants);
+    leather.push(gPaint(THREE, gTube(THREE, [[s * 0.1, 0.16, -0.01], [s * 0.1, 0.07, 0.07], [s * 0.1, 0.045, 0.19]], [0.056, 0.052, 0.04], 1.0, 12), black));
+    leather.push(gPaint(THREE, gBox(THREE, 0.1, 0.03, 0.1, s * 0.1, 0.015, -0.01), black));
+  }
+  C(gEll(THREE, 0.165, 0.12, 0.105, 0, 0.93, 0), pants);
+  // torso (shirt) + neck + collar
+  C(gTube(THREE, [[0, 0.9, 0], [0, 1.0, 0], [0, 1.2, 0], [0, 1.38, 0], [0, 1.47, 0]], [0.15, 0.142, 0.17, 0.2, 0.12], 0.6, 18), shirt);
+  skin.push(gPaint(THREE, gTube(THREE, [[0, 1.46, 0], [0, 1.52, 0.005], [0, 1.58, 0.012]], [0.052, 0.047, 0.045], 1.0, 12), sk));
+  C(gTube(THREE, [[0, 1.46, 0], [0, 1.5, 0], [0, 1.52, 0]], [0.075, 0.068, 0.062], 0.95, 12), shirt);
+  // arms: sleeves + cuffs + hands
+  const arm = (s: number, el: P3, wr: P3) => {
+    C(gTube(THREE, [[s * 0.205, 1.42, 0], el, wr], [0.056, 0.046, 0.036], 1.0, 12), shirt);
+    C(gEll(THREE, 0.06, 0.06, 0.06, s * 0.205, 1.41, 0), shirt);
+    skin.push(gPaint(THREE, gEll(THREE, 0.034, 0.06, 0.024, wr[0], wr[1] - 0.06, wr[2] + 0.01, 10), sk));
+    skin.push(gPaint(THREE, gEll(THREE, 0.014, 0.03, 0.012, wr[0] + s * 0.02, wr[1] - 0.06, wr[2] + 0.03, 8), sk));
+  };
+  arm(-1, [-0.25, 1.15, 0.0], [-0.26, 0.92, 0.04]);
+  arm(1, [0.3, 1.16, -0.02], [0.2, 1.0, 0.07]);
+  // head
+  skin.push(gPaint(THREE, gEll(THREE, 0.093, 0.117, 0.1, 0, 1.675, 0.004, 18), sk));
+  skin.push(gPaint(THREE, gEll(THREE, 0.082, 0.07, 0.085, 0, 1.62, 0.014, 14), sk));
+  skin.push(gPaint(THREE, gEll(THREE, 0.012, 0.026, 0.02, 0, 1.652, 0.098, 8), hslRGB(THREE, 26, 0.42, 0.46)));
+  for (const s of [-1, 1]) {
+    skin.push(gPaint(THREE, gEll(THREE, 0.012, 0.028, 0.02, s * 0.094, 1.67, -0.004, 8), hslRGB(THREE, 26, 0.42, 0.44)));
+    white.push(gPaint(THREE, gEll(THREE, 0.015, 0.0095, 0.006, s * 0.037, 1.69, 0.09, 8), [0.85, 0.84, 0.82]));
+    dark.push(gPaint(THREE, gEll(THREE, 0.0075, 0.0075, 0.005, s * 0.037, 1.69, 0.095, 8), [0.03, 0.02, 0.02]));
+    dark.push(gPaint(THREE, gBox(THREE, 0.034, 0.006, 0.006, s * 0.037, 1.713, 0.092), [0.03, 0.02, 0.02]));
+  }
+  dark.push(gPaint(THREE, gBox(THREE, 0.042, 0.0045, 0.006, 0, 1.613, 0.092), hslRGB(THREE, 8, 0.4, 0.28)));
+  const hair = new THREE.SphereGeometry(1, 16, 10, Math.PI / 2 + 0.75, Math.PI * 2 - 1.5, 0, Math.PI * 0.62); hair.scale(0.098, 0.12, 0.105); hair.translate(0, 1.68, 0);
+  dark.push(gPaint(THREE, hair, [0.01, 0.01, 0.012]));
+  // peaked cap
+  leather.push(gPaint(THREE, gCyl(THREE, 0.109, 0.109, 0.04, 22, 0, 1.742, 0.0), black));
+  C(gCyl(THREE, 0.126, 0.11, 0.05, 22, 0, 1.787, 0.0), shirt); C(gCyl(THREE, 0.126, 0.126, 0.006, 22, 0, 1.813, 0.0), shirt);
+  const vis = new THREE.CylinderGeometry(0.112, 0.112, 0.006, 20, 1, false, -Math.PI / 2, Math.PI); vis.scale(1, 1, 1.35); vis.rotateX(-0.12); vis.translate(0, 1.728, 0.02); leather.push(gPaint(THREE, vis, black));
+  metal.push(gPaint(THREE, gEll(THREE, 0.022, 0.026, 0.006, 0, 1.775, 0.116, 10), gold));
+  // belt, holster, radio, baton, badge, name tag, pockets
+  const belt = new THREE.TorusGeometry(0.153, 0.016, 8, 28); belt.rotateX(Math.PI / 2); belt.scale(1, 1, 0.64); belt.translate(0, 0.99, 0); leather.push(gPaint(THREE, belt, black));
+  metal.push(gPaint(THREE, gBox(THREE, 0.04, 0.04, 0.012, 0, 0.99, 0.1), gold));
+  leather.push(gPaint(THREE, gBox(THREE, 0.05, 0.16, 0.085, 0.165, 0.94, 0.01, 0, 0.08), black), gPaint(THREE, gBox(THREE, 0.03, 0.07, 0.05, 0.165, 1.04, 0.02), [0.05, 0.05, 0.06]));
+  leather.push(gPaint(THREE, gBox(THREE, 0.05, 0.09, 0.03, -0.1, 1.38, 0.115), black), gPaint(THREE, gCyl(THREE, 0.004, 0.004, 0.14, 5, -0.085, 1.49, 0.115), black));
+  leather.push(gPaint(THREE, gCyl(THREE, 0.013, 0.013, 0.34, 8, -0.16, 0.88, 0.04, 0, 0, 0.1), [0.03, 0.03, 0.035]));
+  metal.push(gPaint(THREE, gEll(THREE, 0.022, 0.028, 0.006, -0.07, 1.31, 0.098, 10), gold));
+  metal.push(gPaint(THREE, gBox(THREE, 0.05, 0.014, 0.004, 0.07, 1.31, 0.1), [0.8, 0.8, 0.78]));
+  for (const s of [-1, 1]) { cloth.push(gPaint(THREE, gBox(THREE, 0.052, 0.05, 0.012, s * 0.075, 1.2, 0.1), [shirt[0] * 1.2, shirt[1] * 1.2, shirt[2] * 1.2])); metal.push(gPaint(THREE, gBox(THREE, 0.05, 0.012, 0.03, s * 0.14, 1.475, 0.0), gold)); }
+  addMerged(THREE, g, cloth, mk("#ffffff", 0.9, 0, { vertexColors: true })); addMerged(THREE, g, skin, mk("#ffffff", 0.55, 0, { vertexColors: true }));
+  addMerged(THREE, g, leather, mk("#ffffff", 0.3, 0.15, { vertexColors: true })); addMerged(THREE, g, metal, mk("#ffffff", 0.28, 0.9, { vertexColors: true }));
+  addMerged(THREE, g, dark, mk("#ffffff", 0.7, 0, { vertexColors: true })); addMerged(THREE, g, white, mk("#ffffff", 0.3, 0, { vertexColors: true }));
+  return g;
+}
+
+function makeHotelRoom(THREE: T3, mk: Mk): Grp {
+  const g = new THREE.Group(), W = 5.4, D = 4.6, H = 2.8, wood: BG[] = [], soft: BG[] = [], wall: BG[] = [], dark: BG[] = [], metal: BG[] = [], lampS: BG[] = [], rnd = rngf(97);
+  const cream = hslRGB(THREE, 38, 0.25, 0.78), teal = hslRGB(THREE, 188, 0.38, 0.26), gold = hslRGB(THREE, 40, 0.55, 0.45), oak = hslRGB(THREE, 28, 0.45, 0.28);
+  for (let i = 0; i < Math.floor(D / 0.14); i++) for (const [x0, len] of [[-W / 2 + 1.7, 3.4], [W / 2 - 1.0, 2.0]]) {
+    const c = hslRGB(THREE, 27 + 4 * rnd(), 0.42, 0.3 + 0.08 * rnd());
+    wood.push(gPaint(THREE, gBox(THREE, len - 0.01, 0.05, 0.135, x0 - (x0 < 0 ? 0 : 0), 0.025, -D / 2 + 0.07 + i * 0.14), c));
+  }
+  wood.push(gPaint(THREE, gBox(THREE, 0.7, 0.05, D, -W / 2 + 0.35, 0.025, 0), hslRGB(THREE, 27, 0.42, 0.33)));
+  const wl = (b: BG) => wall.push(gPaintFn(THREE, b, (x, y, z) => cream.map((v) => v * (0.93 + 0.07 * fbm(x * 0.8 + z, y * 0.8, 3))) as RGB));
+  wl(gBox(THREE, W, H, 0.12, 0, H / 2, -D / 2 - 0.06)); wl(gBox(THREE, 0.12, H, D, -W / 2 - 0.06, H / 2, 0)); wl(gBox(THREE, 0.12, 1.0, D, W / 2 + 0.06, 0.5, 0));
+  for (const [w, h, d, x, z] of [[W, 0.12, 0.03, 0, -D / 2 + 0.015], [0.03, 0.12, D, -W / 2 + 0.015, 0], [0.03, 0.12, D, W / 2 - 0.015, 0]]) wood.push(gPaint(THREE, gBox(THREE, w, h, d, x, 0.11, z), oak));
+  // bed
+  const bx = 0, bz = -D / 2 + 1.15;
+  wood.push(gPaint(THREE, gRBox(THREE, 2.04, 0.3, 2.12, 0.04, bx, 0.2, bz), oak));
+  soft.push(gPaint(THREE, gRBox(THREE, 1.94, 0.26, 2.0, 0.1, bx, 0.48, bz + 0.02), [0.93, 0.92, 0.9]));
+  soft.push(gPaint(THREE, gRBox(THREE, 1.97, 0.1, 1.5, 0.05, bx, 0.64, bz + 0.3), hslRGB(THREE, 40, 0.15, 0.86)));
+  soft.push(gPaint(THREE, gRBox(THREE, 1.98, 0.12, 0.5, 0.05, bx, 0.66, bz + 0.72), gold));
+  for (const s of [-1, 1]) for (const k of [0, 1]) soft.push(gPaint(THREE, gRBox(THREE, 0.66, 0.17, 0.42, 0.07, bx + s * 0.5, 0.7 + 0.08 * k, bz - 0.76 + 0.13 * k, s * 0.04), k ? gold : [0.95, 0.95, 0.94]));
+  soft.push(gPaint(THREE, gRBox(THREE, 2.4, 1.15, 0.14, 0.05, bx, 0.8, -D / 2 + 0.07), teal));
+  for (let i = -3; i <= 3; i++) soft.push(gPaint(THREE, gRBox(THREE, 0.28, 0.9, 0.04, 0.02, bx + i * 0.32, 0.86, -D / 2 + 0.16), [teal[0] * 1.25, teal[1] * 1.25, teal[2] * 1.25]));
+  for (const s of [-1, 1]) {
+    const x = bx + s * 1.5; wood.push(gPaint(THREE, gRBox(THREE, 0.5, 0.5, 0.42, 0.03, x, 0.3, -D / 2 + 0.3), oak), gPaint(THREE, gBox(THREE, 0.42, 0.006, 0.34, x, 0.46, -D / 2 + 0.3), [0.1, 0.07, 0.05]));
+    metal.push(gPaint(THREE, gCyl(THREE, 0.06, 0.07, 0.03, 12, x, 0.57, -D / 2 + 0.3), gold), gPaint(THREE, gCyl(THREE, 0.012, 0.012, 0.22, 6, x, 0.68, -D / 2 + 0.3), gold));
+    const sh = new THREE.CylinderGeometry(0.12, 0.17, 0.2, 18, 1, true); sh.translate(x, 0.88, -D / 2 + 0.3); lampS.push(gPaint(THREE, sh, [1, 0.82, 0.5]));
+    metal.push(gPaint(THREE, gBox(THREE, 0.3, 0.2, 0.012, x, 1.55, -D / 2 + 0.01), gold));
+  }
+  // rug, desk, chair, tv, armchair, wardrobe
+  soft.push(gPaint(THREE, gRBox(THREE, 3.0, 0.02, 2.3, 0.01, bx, 0.06, bz + 1.5), hslRGB(THREE, 20, 0.3, 0.3)), gPaint(THREE, gRBox(THREE, 2.7, 0.025, 2.0, 0.01, bx, 0.07, bz + 1.5), hslRGB(THREE, 38, 0.3, 0.55)));
+  const dx = W / 2 - 0.35, dz = -0.2;
+  wood.push(gPaint(THREE, gRBox(THREE, 0.62, 0.05, 1.5, 0.02, dx, 0.76, dz), oak));
+  for (const [ox, oz] of [[-0.26, -0.68], [0.26, -0.68], [-0.26, 0.68], [0.26, 0.68]]) metal.push(gPaint(THREE, gCyl(THREE, 0.02, 0.02, 0.74, 6, dx + ox, 0.37, dz + oz), [0.12, 0.12, 0.13]));
+  dark.push(gPaint(THREE, gBox(THREE, 0.05, 0.56, 1.0, dx + 0.12, 1.07, dz), [0.015, 0.016, 0.02]), gPaint(THREE, gBox(THREE, 0.2, 0.03, 0.4, dx + 0.12, 0.81, dz), [0.1, 0.1, 0.11]));
+  soft.push(gPaint(THREE, gRBox(THREE, 0.5, 0.12, 0.5, 0.04, dx - 0.55, 0.46, dz), teal), gPaint(THREE, gRBox(THREE, 0.1, 0.5, 0.5, 0.04, dx - 0.77, 0.74, dz), teal));
+  soft.push(gPaint(THREE, gRBox(THREE, 0.8, 0.22, 0.8, 0.07, -W / 2 + 0.7, 0.34, D / 2 - 0.7, 0.5), teal), gPaint(THREE, gRBox(THREE, 0.8, 0.5, 0.18, 0.07, -W / 2 + 0.5, 0.66, D / 2 - 0.95, 0.5), teal));
+  wood.push(gPaint(THREE, gBox(THREE, 0.5, 1.9, 1.1, W / 2 - 0.3, 0.97, D / 2 - 0.75), oak), gPaint(THREE, gBox(THREE, 0.02, 1.8, 0.02, W / 2 - 0.045, 0.97, D / 2 - 0.75), [0.08, 0.05, 0.03]));
+  // window with city glow + curtains
+  const gl = new THREE.BoxGeometry(0.03, 1.35, 1.9); gl.translate(-W / 2 + 0.02, 1.5, -0.2);
+  gPaintFn(THREE, gl, (_x, y) => { const t = clamp01((y - 0.8) / 1.4); return hslRGB(THREE, 215 - 30 * (1 - t), 0.6 - 0.2 * t, 0.35 + 0.3 * (1 - t)); });
+  const wg = new THREE.Mesh(gl, new THREE.MeshBasicMaterial({ vertexColors: true })); g.add(wg);
+  dark.push(gPaint(THREE, gBox(THREE, 0.06, 0.06, 2.0, -W / 2 + 0.03, 2.2, -0.2), [0.06, 0.06, 0.07]), gPaint(THREE, gBox(THREE, 0.06, 0.06, 2.0, -W / 2 + 0.03, 0.82, -0.2), [0.06, 0.06, 0.07]), gPaint(THREE, gBox(THREE, 0.06, 1.4, 0.05, -W / 2 + 0.03, 1.5, -0.2), [0.06, 0.06, 0.07]));
+  for (const s of [-1, 1]) for (let f = 0; f < 5; f++) soft.push(gPaint(THREE, gRBox(THREE, 0.12, 2.4, 0.2, 0.05, -W / 2 + 0.14, 1.4, -0.2 + s * (0.95 + 0.0) - s * (0.06 + f * 0.2) * 1.0), hslRGB(THREE, 188, 0.3, 0.2 + 0.05 * (f % 2))));
+  const fl = new THREE.CylinderGeometry(0.01, 0.01, 1.5, 6); fl.translate(-W / 2 + 0.45, 0.78, -D / 2 + 0.5); metal.push(gPaint(THREE, fl, [0.1, 0.1, 0.1]));
+  const fs = new THREE.CylinderGeometry(0.16, 0.22, 0.3, 18, 1, true); fs.translate(-W / 2 + 0.45, 1.6, -D / 2 + 0.5); lampS.push(gPaint(THREE, fs, [1, 0.85, 0.55]));
+  addMerged(THREE, g, wood, mk("#ffffff", 0.55, 0.05, { vertexColors: true })); addMerged(THREE, g, soft, mk("#ffffff", 0.92, 0, { vertexColors: true }));
+  addMerged(THREE, g, wall, mk("#ffffff", 0.95, 0, { vertexColors: true })); addMerged(THREE, g, dark, mk("#ffffff", 0.25, 0.3, { vertexColors: true }));
+  addMerged(THREE, g, metal, mk("#ffffff", 0.3, 0.85, { vertexColors: true }));
+  g.add(new THREE.Mesh(gMerge(THREE, lampS), mk("#ffffff", 0.8, 0, { vertexColors: true, emissive: "#ffcf80", emissiveIntensity: 0.9, side: THREE.DoubleSide })));
   return g;
 }
 
