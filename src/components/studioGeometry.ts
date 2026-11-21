@@ -9164,7 +9164,7 @@ export function createKaraokeGeometry(
   const danceTileColors = ["#ff1493", "#00e5ff", "#ffd700", "#7c3aed", "#00ff88"];
   for (let dx = -3; dx <= 3; dx++) {
     for (let dz = -1; dz <= 1; dz++) {
-      const tileColor = danceTileColors[(dx + dz + 3) % danceTileColors.length];
+      const tileColor = danceTileColors[(((dx + dz + 3) % danceTileColors.length) + danceTileColors.length) % danceTileColors.length];
       const tile = new THREE.Mesh(
         new THREE.BoxGeometry(1.0, 0.08, 1.0),
         new THREE.MeshStandardMaterial({
