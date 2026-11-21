@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { createHumanFigure } from "./humanFigure";
 
 const mat = (color: string, opts: Partial<THREE.MeshStandardMaterialParameters> = {}) =>
   new THREE.MeshStandardMaterial({ color, roughness: 0.85, metalness: 0.05, ...opts });
@@ -188,43 +189,13 @@ export interface FestivalPerson {
 }
 
 export function createFestivalPerson(color: string): THREE.Group {
-  const g = new THREE.Group();
-
-  const body = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.25, 0.3, 0.9, 8),
-    mat(color)
-  );
-  body.position.y = 1.05;
-  body.castShadow = true;
-  g.add(body);
-
-  const head = new THREE.Mesh(
-    new THREE.SphereGeometry(0.22, 8, 8),
-    mat("#f5cba7")
-  );
-  head.position.y = 1.7;
-  g.add(head);
-
-  [-0.32, 0.32].forEach((x) => {
-    const arm = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.06, 0.06, 0.7, 6),
-      mat(color)
-    );
-    arm.position.set(x, 1.05, 0);
-    arm.name = "arm";
-    g.add(arm);
+  const n = color.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+  const skins = [0xc58e69, 0xc99672, 0xb98560, 0xd0a07c];
+  const female = n % 2 === 1;
+  return createHumanFigure({
+    height: 1.9 + (n % 4) * 0.05, shirt: color, pants: female ? 0x3b2f5e : 0x2c3e50, skin: skins[n % skins.length],
+    female, skirt: female, hairStyle: female ? "long" : "short", longSleeves: false,
   });
-
-  [-0.12, 0.12].forEach((x) => {
-    const leg = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.07, 0.07, 0.6, 6),
-      mat("#2c3e50")
-    );
-    leg.position.set(x, 0.3, 0);
-    g.add(leg);
-  });
-
-  return g;
 }
 
 export function createFestival(

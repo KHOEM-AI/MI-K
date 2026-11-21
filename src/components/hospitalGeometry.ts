@@ -228,24 +228,17 @@ export function createGarden() {
 // 8. អ្នកជំងឺដេកលើគ្រែ (Patient with Blanket)
 export function createPatient() {
   const patient = new THREE.Group();
-  
-  const skinMat = new THREE.MeshStandardMaterial({ color: 0xf5cba7 });
   const blanketMat = new THREE.MeshStandardMaterial({ color: 0x88ccff, roughness: 0.8 }); // ភួយពណ៌ខៀវ
-  const hairMat = new THREE.MeshStandardMaterial({ color: 0x2a1b10 });
 
-  // ក្បាល
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.3, 16, 16), skinMat);
-  head.position.set(0, 1.6, -1.2);
-  patient.add(head);
+  // រាងមនុស្សដេកផ្ងារ (មុខឡើងលើ ក្បាលនៅ -z)
+  const body = createHumanFigure({ height: 2.2, shirt: 0xdfeaf2, pants: 0xdfeaf2, skin: 0xc99672, hairStyle: "short", shoe: 0xdddddd, longSleeves: false });
+  body.rotation.x = -Math.PI / 2;
+  body.position.set(0, 1.55, 0.7);
+  patient.add(body);
 
-  // សក់
-  const hair = new THREE.Mesh(new THREE.SphereGeometry(0.31, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2), hairMat);
-  hair.position.set(0, 1.65, -1.2);
-  patient.add(hair);
-
-  // ភួយក្រណាត់ (គ្របពីកញ្ចឹងកដល់ជើង)
-  const blanket = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.2, 2.5), blanketMat);
-  blanket.position.set(0, 1.5, 0);
+  // ភួយគ្របពីទ្រូងចុះក្រោម (ក្បាល និងស្មានៅចំហ)
+  const blanket = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.24, 1.7), blanketMat);
+  blanket.position.set(0, 1.66, 0.4);
   patient.add(blanket);
 
   return patient;

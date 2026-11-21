@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { createQuadruped } from "./animalFigure";
 
 const mat = (color: string, opts: Partial<THREE.MeshStandardMaterialParameters> = {}) =>
   new THREE.MeshStandardMaterial({ color, roughness: 0.85, metalness: 0.05, ...opts });
@@ -7,112 +8,21 @@ const mat = (color: string, opts: Partial<THREE.MeshStandardMaterialParameters> 
    គោ (Cow)
    ============================================================ */
 export function createCow(color = "#f5f5dc"): THREE.Group {
-  const g = new THREE.Group();
-  const bodyMat = mat(color);
-  const spotMat = mat("#2c2c2c");
-
-  // តួ
-  const body = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.2, 1), bodyMat);
-  body.position.y = 1.3;
-  body.castShadow = true;
-  g.add(body);
-
-  // ស្នាមអុច ៗ
-  for (let i = 0; i < 3; i++) {
-    const spot = new THREE.Mesh(new THREE.SphereGeometry(0.2, 6, 6), spotMat);
-    spot.position.set(-0.6 + i * 0.6, 1.5, 0.5);
-    spot.scale.set(1, 0.5, 0.3);
-    g.add(spot);
-  }
-
-  // ក្បាល
-  const head = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.8, 0.7), bodyMat);
-  head.position.set(1.3, 1.5, 0);
-  head.castShadow = true;
-  g.add(head);
-
-  // ភ្នែក ២
-  [-0.2, 0.2].forEach((z) => {
-    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.08, 6, 6), mat("#000"));
-    eye.position.set(1.65, 1.6, z);
-    g.add(eye);
+  return createQuadruped({
+    length: 2.3, width: 1.0, bodyRy: 0.62, legLen: 0.75, legR: 0.13, color, dark: 0x2c2c2c,
+    headLen: 0.7, headR: 0.33, snout: "short", snoutColor: 0xe8b4a8, ear: "round", horns: "cow",
+    tail: "thin", spots: true, neck: 0.15,
   });
-
-  // ត្រចៀក ២
-  [-0.4, 0.4].forEach((z) => {
-    const ear = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.25, 0.4), bodyMat);
-    ear.position.set(1.2, 1.9, z);
-    g.add(ear);
-  });
-
-  // ជើង ៤
-  [[-0.8, 0.4], [-0.8, -0.4], [0.8, 0.4], [0.8, -0.4]].forEach(([x, z]) => {
-    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.7, 6), bodyMat);
-    leg.position.set(x, 0.35, z);
-    leg.castShadow = true;
-    leg.name = "leg";
-    g.add(leg);
-  });
-
-  // កន្ទុយ
-  const tail = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.8, 4), bodyMat);
-  tail.position.set(-1.2, 1.5, 0);
-  tail.rotation.z = Math.PI / 3;
-  g.add(tail);
-
-  return g;
 }
 
 /* ============================================================
    ជ្រូក (Pig)
    ============================================================ */
 export function createPig(color = "#f5b7b1"): THREE.Group {
-  const g = new THREE.Group();
-  const bodyMat = mat(color);
-
-  // តួ (មូល)
-  const body = new THREE.Mesh(new THREE.SphereGeometry(0.7, 12, 12), bodyMat);
-  body.position.y = 0.8;
-  body.scale.set(1.5, 1, 1);
-  body.castShadow = true;
-  g.add(body);
-
-  // ក្បាល
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.45, 10, 10), bodyMat);
-  head.position.set(1, 0.9, 0);
-  head.castShadow = true;
-  g.add(head);
-
-  // ច្រមុះ
-  const snout = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.2, 8), mat("#e74c3c"));
-  snout.rotation.z = Math.PI / 2;
-  snout.position.set(1.35, 0.85, 0);
-  g.add(snout);
-
-  // ភ្នែក ២
-  [-0.15, 0.15].forEach((z) => {
-    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 6), mat("#000"));
-    eye.position.set(1.25, 1.1, z);
-    g.add(eye);
+  return createQuadruped({
+    length: 1.4, width: 0.75, bodyRy: 0.42, legLen: 0.32, legR: 0.09, color, dark: 0x6b3b36,
+    headLen: 0.5, headR: 0.26, snout: "flat", snoutColor: 0xe08f8a, ear: "flop", tail: "curl", neck: 0.05,
   });
-
-  // ត្រចៀក ២
-  [-0.3, 0.3].forEach((z) => {
-    const ear = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.25, 4), bodyMat);
-    ear.position.set(0.85, 1.25, z);
-    ear.rotation.z = z > 0 ? -0.3 : 0.3;
-    g.add(ear);
-  });
-
-  // ជើង ៤ (ខ្លី)
-  [[-0.6, 0.3], [-0.6, -0.3], [0.6, 0.3], [0.6, -0.3]].forEach(([x, z]) => {
-    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.4, 6), bodyMat);
-    leg.position.set(x, 0.2, z);
-    leg.name = "leg";
-    g.add(leg);
-  });
-
-  return g;
 }
 
 /* ============================================================
@@ -268,7 +178,7 @@ export function updateAnimals(animals: AnimatedAnimal[], elapsed: number): void 
     // ជើងញាក់
     a.mesh.traverse((child) => {
       if (child.name === "leg") {
-        child.rotation.x = Math.sin(elapsed * 6 + a.legPhase) * 0.3;
+        child.rotation.x = (child.userData.side ?? 1) * Math.sin(elapsed * 6 + a.legPhase) * 0.3;
       }
     });
   });

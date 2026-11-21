@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { createHumanFigure } from "./humanFigure";
 
 const mat = (color: string, opts: Partial<THREE.MeshStandardMaterialParameters> = {}) =>
   new THREE.MeshStandardMaterial({ color, roughness: 0.85, metalness: 0.05, ...opts });
@@ -7,47 +8,13 @@ const mat = (color: string, opts: Partial<THREE.MeshStandardMaterialParameters> 
    អ្នកលក់ដូរ (Vendor) — ឈរនៅតុលក់
    ============================================================ */
 export function createVendor(shirtColor = "#3498db"): THREE.Group {
-  const g = new THREE.Group();
-
-  // តួ
-  const body = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.3, 0.35, 1.2, 8),
-    mat(shirtColor)
-  );
-  body.position.y = 1.2;
-  body.castShadow = true;
-  g.add(body);
-
-  // ក្បាល
-  const head = new THREE.Mesh(
-    new THREE.SphereGeometry(0.25, 10, 10),
-    mat("#f5cba7")
-  );
-  head.position.y = 2.05;
-  head.castShadow = true;
-  g.add(head);
-
-  // មួក (optional)
-  const hat = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.32, 0.32, 0.1, 12),
-    mat("#e67e22")
-  );
-  hat.position.y = 2.25;
-  g.add(hat);
-
-  // ដៃ ២
-  [-0.35, 0.35].forEach((x) => {
-    const arm = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.08, 0.08, 0.8, 6),
-      mat(shirtColor)
-    );
-    arm.position.set(x, 1.3, 0);
-    arm.rotation.z = x > 0 ? -0.3 : 0.3;
-    arm.name = "arm";
-    g.add(arm);
+  const n = shirtColor.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+  const skins = [0xc58e69, 0xc99672, 0xb98560, 0xd0a07c];
+  const female = n % 2 === 0;
+  return createHumanFigure({
+    height: 2.2, shirt: shirtColor, pants: 0x3b3b4f, skin: skins[n % skins.length], female,
+    hairStyle: female ? "bun" : "short", hat: female ? "none" : "cap", hatColor: 0xe67e22, longSleeves: false,
   });
-
-  return g;
 }
 
 /* ============================================================

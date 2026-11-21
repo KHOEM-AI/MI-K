@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { createHumanFigure } from "./humanFigure";
 
 const mat = (color: string, opts: Partial<THREE.MeshStandardMaterialParameters> = {}) =>
   new THREE.MeshStandardMaterial({ color, roughness: 0.85, metalness: 0.05, ...opts });
@@ -7,45 +8,55 @@ const mat = (color: string, opts: Partial<THREE.MeshStandardMaterialParameters> 
    បង្កើតម៉ូតូ (សម្រាប់ animation)
    ============================================================ */
 export function createAnimatedMotorbike(color = "#e74c3c"): THREE.Group {
+  // Faces +z. Two spoked wheels, frame, tank, seat, handlebar, headlight, exhaust and a seated rider with helmet.
   const g = new THREE.Group();
-  const bodyMat = mat(color, { metalness: 0.5, roughness: 0.3 });
+  const paint = new THREE.MeshStandardMaterial({ color, metalness: 0.4, roughness: 0.35 });
+  const dark = new THREE.MeshStandardMaterial({ color: 0x15171a, roughness: 0.6 });
+  const chrome = new THREE.MeshStandardMaterial({ color: 0xcfd3d8, metalness: 0.9, roughness: 0.2 });
 
-  // តួម៉ូតូ
-  const body = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.5, 0.4), bodyMat);
-  body.position.y = 0.7;
-  body.castShadow = true;
-  g.add(body);
-
-  // អ្នកបើក
-  const rider = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.25, 0.3, 0.8, 8),
-    mat("#2c3e50")
-  );
-  rider.position.set(-0.2, 1.2, 0);
-  rider.castShadow = true;
-  g.add(rider);
-
-  // ក្បាល
-  const head = new THREE.Mesh(
-    new THREE.SphereGeometry(0.25, 8, 8),
-    mat("#f5cba7")
-  );
-  head.position.set(-0.2, 1.75, 0);
-  g.add(head);
-
-  // កង់ ២
-  [-0.6, 0.6].forEach((x) => {
-    const wheel = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.3, 0.3, 0.15, 12),
-      mat("#111")
-    );
-    wheel.rotation.z = Math.PI / 2;
-    wheel.position.set(x, 0.3, 0);
-    wheel.castShadow = true;
+  for (const z of [0.72, -0.72]) {
+    const wheel = new THREE.Group();
     wheel.name = "wheel";
+    wheel.position.set(0, 0.34, z);
+    const tyre = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.07, 10, 24), new THREE.MeshStandardMaterial({ color: 0x101010, roughness: 0.9 }));
+    tyre.rotation.y = Math.PI / 2;
+    wheel.add(tyre);
+    const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.1, 10), chrome);
+    hub.rotation.z = Math.PI / 2;
+    wheel.add(hub);
+    for (let i = 0; i < 4; i++) {
+      const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.5, 0.02), chrome);
+      spoke.rotation.x = (i / 4) * Math.PI;
+      wheel.add(spoke);
+    }
+    wheel.traverse((c) => { (c as THREE.Mesh).castShadow = true; });
     g.add(wheel);
-  });
+  }
+  // fork and rear swing arm
+  const fork = add3(g, new THREE.CylinderGeometry(0.025, 0.025, 0.75, 8), chrome, 0, 0.7, 0.62);
+  fork.rotation.x = 0.3;
+  const arm = add3(g, new THREE.BoxGeometry(0.1, 0.06, 0.8), dark, 0, 0.36, -0.4);
+  arm.rotation.x = 0.05;
+  // engine, tank, seat, rear cover
+  add3(g, new THREE.BoxGeometry(0.28, 0.3, 0.45), dark, 0, 0.42, 0.05);
+  add3(g, new THREE.CapsuleGeometry(0.15, 0.3, 6, 12), paint, 0, 0.85, 0.3).rotation.x = Math.PI / 2;
+  add3(g, new THREE.BoxGeometry(0.26, 0.09, 0.62), dark, 0, 0.8, -0.28);
+  add3(g, new THREE.BoxGeometry(0.22, 0.16, 0.5), paint, 0, 0.74, -0.78);
+  const pipe = add3(g, new THREE.CylinderGeometry(0.04, 0.05, 0.6, 10), chrome, 0.17, 0.35, -0.5);
+  pipe.rotation.x = Math.PI / 2;
+  // handlebar, headlight, tail light, front mudguard
+  add3(g, new THREE.CylinderGeometry(0.02, 0.02, 0.62, 8), dark, 0, 1.05, 0.52).rotation.z = Math.PI / 2;
+  add3(g, new THREE.SphereGeometry(0.1, 14, 10), new THREE.MeshStandardMaterial({ color: 0xfff6d0, emissive: 0xfff2b0, emissiveIntensity: 0.6 }), 0, 0.98, 0.72).scale.set(1, 1, 0.7);
+  add3(g, new THREE.BoxGeometry(0.12, 0.06, 0.04), new THREE.MeshStandardMaterial({ color: 0xcc1111, emissive: 0x880000, emissiveIntensity: 0.5 }), 0, 0.78, -1.05);
+  add3(g, new THREE.BoxGeometry(0.14, 0.03, 0.4), paint, 0, 0.68, 0.78);
 
+  const rider = createHumanFigure({
+    height: 1.8, shirt: 0x2c3e50, pants: 0x34495e, skin: 0xc58e69, hat: "helmet", hatColor: 0xf1c40f,
+    sitting: true, seatHeight: 0.8, longSleeves: true, hairStyle: "short",
+  });
+  rider.position.set(0, 0, -0.22);
+  g.add(rider);
+  g.traverse((c) => { if ((c as THREE.Mesh).isMesh) c.castShadow = true; });
   return g;
 }
 
@@ -53,84 +64,101 @@ export function createAnimatedMotorbike(color = "#e74c3c"): THREE.Group {
    បង្កើតឡាន (សម្រាប់ animation)
    ============================================================ */
 export function createAnimatedCar(color = "#c0392b"): THREE.Group {
+  // Faces +z (drives forward along the road). Body = extruded side profile with bevel, so it has a
+  // real car silhouette (hood, windscreen, roof, boot) instead of two boxes.
   const g = new THREE.Group();
+  const paint = new THREE.MeshStandardMaterial({ color, metalness: 0.35, roughness: 0.32 });
+  const glass = new THREE.MeshStandardMaterial({ color: 0x16202b, metalness: 0.6, roughness: 0.08 });
+  const dark = new THREE.MeshStandardMaterial({ color: 0x15171a, roughness: 0.7 });
+  const chrome = new THREE.MeshStandardMaterial({ color: 0xcfd3d8, metalness: 0.9, roughness: 0.2 });
 
-  // តួឡាន
-  const body = new THREE.Mesh(
-    new THREE.BoxGeometry(3.5, 0.8, 1.6),
-    mat(color, { metalness: 0.6, roughness: 0.3 })
-  );
-  body.position.y = 0.9;
+  const prof = new THREE.Shape();
+  prof.moveTo(-2.0, 0.38);
+  prof.lineTo(-2.1, 0.6);
+  prof.lineTo(-2.05, 0.98);
+  prof.lineTo(-1.3, 1.02);
+  prof.lineTo(-0.8, 1.52);
+  prof.lineTo(0.5, 1.52);
+  prof.lineTo(1.1, 1.02);
+  prof.lineTo(2.0, 0.92);
+  prof.lineTo(2.1, 0.66);
+  prof.lineTo(2.0, 0.38);
+  prof.lineTo(-2.0, 0.38);
+  const bodyGeo = new THREE.ExtrudeGeometry(prof, { depth: 1.5, bevelEnabled: true, bevelThickness: 0.1, bevelSize: 0.08, bevelSegments: 4, curveSegments: 6 });
+  bodyGeo.translate(0, 0, -0.75);
+  const body = new THREE.Mesh(bodyGeo, paint);
+  body.rotation.y = -Math.PI / 2;
   body.castShadow = true;
   g.add(body);
 
-  // កាប៊ីន
-  const cabin = new THREE.Mesh(
-    new THREE.BoxGeometry(1.8, 0.8, 1.4),
-    mat("#1a1a1a", { metalness: 0.5 })
-  );
-  cabin.position.set(-0.2, 1.7, 0);
-  cabin.castShadow = true;
-  g.add(cabin);
+  // side windows
+  const win = new THREE.Shape();
+  win.moveTo(-0.72, 1.06); win.lineTo(-0.58, 1.47); win.lineTo(0.42, 1.47); win.lineTo(0.92, 1.06); win.lineTo(-0.72, 1.06);
+  const winGeo = new THREE.ExtrudeGeometry(win, { depth: 1.78, bevelEnabled: false });
+  winGeo.translate(0, 0, -0.89);
+  const windows = new THREE.Mesh(winGeo, glass);
+  windows.rotation.y = -Math.PI / 2;
+  g.add(windows);
+  // windscreen and rear window
+  const ws = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.8, 0.02), glass);
+  ws.position.set(0, 1.296, 0.81);
+  ws.rotation.x = -0.85;
+  g.add(ws);
+  const rw = new THREE.Mesh(new THREE.BoxGeometry(1.45, 0.74, 0.02), glass);
+  rw.position.set(0, 1.285, -1.06);
+  rw.rotation.x = 0.74;
+  g.add(rw);
 
-  // កង់ ៤
-  [
-    [-1.2, 0.7],
-    [-1.2, -0.7],
-    [1.2, 0.7],
-    [1.2, -0.7],
-  ].forEach(([x, z]) => {
-    const wheel = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.35, 0.35, 0.2, 16),
-      mat("#111")
-    );
-    wheel.rotation.z = Math.PI / 2;
-    wheel.position.set(x, 0.35, z);
+  // bumpers, grille, lights, mirrors
+  add3(g, new THREE.BoxGeometry(1.72, 0.14, 0.14), dark, 0, 0.45, 2.17);
+  add3(g, new THREE.BoxGeometry(1.72, 0.14, 0.14), dark, 0, 0.45, -2.17);
+  add3(g, new THREE.BoxGeometry(0.7, 0.16, 0.04), chrome, 0, 0.68, 2.2);
+  for (const s of [-1, 1]) {
+    add3(g, new THREE.SphereGeometry(0.11, 12, 8), new THREE.MeshStandardMaterial({ color: 0xfff6d0, emissive: 0xfff2b0, emissiveIntensity: 0.6 }), s * 0.62, 0.78, 2.12).scale.set(1, 0.7, 0.6);
+    add3(g, new THREE.BoxGeometry(0.28, 0.1, 0.05), new THREE.MeshStandardMaterial({ color: 0xcc1111, emissive: 0x880000, emissiveIntensity: 0.5 }), s * 0.62, 0.82, -2.2);
+    add3(g, new THREE.BoxGeometry(0.1, 0.07, 0.14), paint, s * 0.98, 1.06, 0.78);
+  }
+
+  // wheels: tyre + rim; the "wheel" group spins about its x axle
+  for (const [x, z] of [[-0.86, 1.3], [0.86, 1.3], [-0.86, -1.3], [0.86, -1.3]] as [number, number][]) {
+    const wheel = new THREE.Group();
     wheel.name = "wheel";
+    wheel.position.set(x, 0.37, z);
+    const tyre = new THREE.Mesh(new THREE.CylinderGeometry(0.37, 0.37, 0.26, 22), new THREE.MeshStandardMaterial({ color: 0x101010, roughness: 0.9 }));
+    tyre.rotation.z = Math.PI / 2;
+    wheel.add(tyre);
+    const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.23, 0.23, 0.28, 18), chrome);
+    rim.rotation.z = Math.PI / 2;
+    wheel.add(rim);
+    for (let i = 0; i < 5; i++) {
+      const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.29, 0.05, 0.4), dark);
+      spoke.rotation.x = (i / 5) * Math.PI;
+      wheel.add(spoke);
+    }
+    wheel.traverse((c) => { (c as THREE.Mesh).castShadow = true; });
     g.add(wheel);
-  });
-
+  }
   return g;
+}
+
+function add3(parent: THREE.Object3D, geo: THREE.BufferGeometry, m: THREE.Material, x: number, y: number, z: number): THREE.Mesh {
+  const mesh = new THREE.Mesh(geo, m);
+  mesh.position.set(x, y, z);
+  parent.add(mesh);
+  return mesh;
 }
 
 /* ============================================================
    បង្កើតអ្នកថ្មើរជើង (Walk)
    ============================================================ */
 export function createWalker(shirtColor = "#3498db"): THREE.Group {
-  const g = new THREE.Group();
-
-  // តួ
-  const body = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.25, 0.3, 0.9, 8),
-    mat(shirtColor)
-  );
-  body.position.y = 1.1;
-  body.castShadow = true;
-  g.add(body);
-
-  // ក្បាល
-  const head = new THREE.Mesh(
-    new THREE.SphereGeometry(0.22, 8, 8),
-    mat("#f5cba7")
-  );
-  head.position.y = 1.8;
-  g.add(head);
-
-  // ជើង ២
-  const legs: THREE.Mesh[] = [];
-  [-0.15, 0.15].forEach((x) => {
-    const leg = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.08, 0.08, 0.7, 6),
-      mat("#2c3e50")
-    );
-    leg.position.set(x, 0.35, 0);
-    leg.castShadow = true;
-    leg.name = "leg";
-    legs.push(leg);
-    g.add(leg);
+  const n = shirtColor.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+  const skins = [0xc58e69, 0xc99672, 0xb98560, 0xd0a07c];
+  const female = n % 3 === 1;
+  return createHumanFigure({
+    height: 1.95 + (n % 4) * 0.04, shirt: shirtColor, pants: female ? 0x3b2f5e : 0x2c3e50, skin: skins[n % skins.length],
+    female, skirt: female, hairStyle: female ? "long" : "short", longSleeves: false,
   });
-
-  return g;
 }
 
 /* ============================================================
@@ -266,7 +294,7 @@ export function updateTraffic(
       if (child.name === "leg") {
         // ជើងញាក់
         const legMesh = child as THREE.Mesh;
-        legMesh.rotation.x = Math.sin(elapsed * 8 + v.offset * 10) * 0.4;
+        legMesh.rotation.x = (legMesh.userData.side ?? 1) * Math.sin(elapsed * 8 + v.offset * 10) * 0.4;
       }
     });
   });
