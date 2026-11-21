@@ -1110,3 +1110,11 @@ button:active .k-icon { transform: scale(.92); }
 .person-text small { display: block; line-height: 1.35; opacity: .85; }
 :root[data-theme="day"] .person-card { background: #edf3f9; border-color: #cbd9e8; color: #243b53; }
 :root[data-theme="day"] .person-portrait-bg { fill: #dbe8f5; }
+
+/* ===== KHOEM-AI UI POLISH v2 (appended block, safe to remove) ===== */
+.studio-launch { flex-wrap: wrap; }
+@media (max-width: 640px) {
+  .studio-launch > div:first-child { flex: 1 1 100%; }
+  .studio-launch > .upload-button { flex: 1 1 calc(50% - 8px); min-height: 44px; }
+}
+/* ===== END KHOEM-AI UI POLISH v2 ===== */
