@@ -90,6 +90,7 @@ export default function KaraokeViewer({ onClose }: { onClose: () => void }) {
       scene.add(fillFront);
 
       // Karaoke building
+      const buildStart = performance.now();
       const karaoke = createKaraokeGeometry(
         THREE,
         tier,
@@ -98,6 +99,13 @@ export default function KaraokeViewer({ onClose }: { onClose: () => void }) {
         0.35
       );
       scene.add(karaoke);
+      // Only named objects are ever animated: collect them once instead of walking every mesh, every frame.
+      const animated: any[] = [];
+      karaoke.traverse((o: any) => { if (o.name) animated.push(o); });
+      const forEachAnimated = (fn: (o: any) => void) => {
+        for (let i = 0; i < animated.length; i++) fn(animated[i]);
+      };
+      const buildMs = Math.round(performance.now() - buildStart);
 
       // Ground grid
       const grid = new THREE.GridHelper(90, 45, 0x2a2050, 0x1a1030);
@@ -217,6 +225,18 @@ export default function KaraokeViewer({ onClose }: { onClose: () => void }) {
       const confettiParticles = new THREE.Points(confettiGeo, confettiMat);
       scene.add(confettiParticles);
 
+      // Debug stats overlay: open the page with ?stats in the address
+      let statsEl: HTMLDivElement | null = null;
+      let statFrames = 0;
+      let statLast = performance.now();
+      if (new URLSearchParams(window.location.search).has("stats")) {
+        statsEl = document.createElement("div");
+        statsEl.style.cssText = "position:absolute;left:8px;bottom:36px;z-index:20;padding:6px 8px;border-radius:6px;background:rgba(0,0,0,.7);color:#9f9;font:11px/1.4 monospace;pointer-events:none";
+        mount.appendChild(statsEl);
+      }
+      let lightCount = 0;
+      scene.traverse((o: any) => { if (o.isLight) lightCount++; });
+
       // Animation loop
       let raf = 0;
       const clock = new THREE.Clock();
@@ -229,7 +249,7 @@ export default function KaraokeViewer({ onClose }: { onClose: () => void }) {
         cyan.intensity = 2.5 + Math.sin(t * 1.5 + 2) * 0.8;
         gold.intensity = 1.8 + Math.sin(t * 2.0 + 1) * 0.5;
 
-        karaoke.traverse((obj: any) => {
+        forEachAnimated((obj: any) => {
           if (obj.name === "discoBall") {
             obj.rotation.y += 0.02;
             obj.rotation.x = Math.sin(t * 0.5) * 0.2;
@@ -290,7 +310,7 @@ export default function KaraokeViewer({ onClose }: { onClose: () => void }) {
         }
 
         // Tier neon signs pulse
-        karaoke.traverse((obj: any) => {
+        forEachAnimated((obj: any) => {
           if (obj.name === "tierNeonSign") {
             const base = obj.userData.neonColor;
             if (obj.material) {
@@ -300,7 +320,7 @@ export default function KaraokeViewer({ onClose }: { onClose: () => void }) {
         });
 
         // Water wall drops flow down
-        karaoke.traverse((obj: any) => {
+        forEachAnimated((obj: any) => {
           if (obj.name === "waterDrop") {
             const offset = obj.userData.waterOffset || 0;
             obj.position.y = 2.0 + Math.sin(t * 3 + offset) * 0.5;
@@ -316,7 +336,7 @@ export default function KaraokeViewer({ onClose }: { onClose: () => void }) {
         });
 
         // Laser beams rotate + pulse
-        karaoke.traverse((obj: any) => {
+        forEachAnimated((obj: any) => {
           if (obj.name === "laserBeam") {
             const baseAng = obj.userData.laserAngle || 0;
             obj.rotation.z = Math.cos(baseAng) * 0.6 + Math.sin(t * 1.2) * 0.4;
@@ -348,7 +368,7 @@ export default function KaraokeViewer({ onClose }: { onClose: () => void }) {
         });
 
         // Fountain jets pulse
-        karaoke.traverse((obj: any) => {
+        forEachAnimated((obj: any) => {
           if (obj.name === "fountainJet") {
             const ang = obj.userData.jetAngle || 0;
             obj.position.y = 1.6 + Math.sin(t * 3 + ang) * 0.15;
@@ -406,7 +426,7 @@ export default function KaraokeViewer({ onClose }: { onClose: () => void }) {
         }
 
         // Fireplace flicker animation
-        karaoke.traverse((obj: any) => {
+        forEachAnimated((obj: any) => {
           if (obj.name === "fireGlow") {
             if (obj.material) {
               const flicker = 2.5 + Math.sin(t * 15) * 0.6 + Math.sin(t * 23) * 0.4;
@@ -420,7 +440,7 @@ export default function KaraokeViewer({ onClose }: { onClose: () => void }) {
         });
 
         // Round 10 animations
-        karaoke.traverse((obj: any) => {
+        forEachAnimated((obj: any) => {
           if (obj.name === "ceilingRibbon") {
             const delay = obj.userData.ribbonDelay || 0;
             const baseY = obj.userData.ribbonBaseY || 6.8;
@@ -454,6 +474,23 @@ export default function KaraokeViewer({ onClose }: { onClose: () => void }) {
 
         controls.update();
         renderer.render(scene, camera);
+        if (statsEl) {
+          statFrames++;
+          const nowMs = performance.now();
+          if (nowMs - statLast >= 1000) {
+            const info = renderer.info;
+            statsEl.textContent = [
+              tier,
+              "FPS " + Math.round((statFrames * 1000) / (nowMs - statLast)),
+              "calls " + info.render.calls,
+              "tris " + info.render.triangles,
+              "lights " + lightCount,
+              "build " + buildMs + " ms",
+            ].join(" | ");
+            statFrames = 0;
+            statLast = nowMs;
+          }
+        }
         raf = requestAnimationFrame(animate);
       };
       animate();
@@ -478,9 +515,13 @@ export default function KaraokeViewer({ onClose }: { onClose: () => void }) {
         smokeMachineGeo.dispose();
         smokeMachineMat.dispose();
         confettiMat.dispose();
+        if (statsEl && statsEl.parentNode === mount) mount.removeChild(statsEl);
+        envRT.dispose();
+        pmremGen.dispose();
         disposeMesh(karaoke);
         controls.dispose();
         renderer.dispose();
+        renderer.forceContextLoss();
         if (renderer.domElement.parentNode === mount) {
           mount.removeChild(renderer.domElement);
         }
