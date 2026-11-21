@@ -3,7 +3,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { createOcean, createSkyAndLights } from './oceanEnvironment';
 import { buildPrisonIsland } from './PrisonIsland3D';
 import type { PrisonIslandConfig, TransportConfig } from './prisonTypes';
-import { createTransportPlane, createTransportShip } from './prisonGeometry'; // នាំចូលដើម្បីបង្កើតចលនា
+import { createTransportPlane, createTransportShip } from './prisonGeometry';
 
 export function initOceanWorld(canvas: HTMLCanvasElement) {
   const scene = new THREE.Scene();
@@ -27,13 +27,20 @@ export function initOceanWorld(canvas: HTMLCanvasElement) {
     { id: 'nature', name: 'Nature Island', type: 'nature-island', position: [250, 0, 300] }
   ];
 
-  // បង្កើតកោះ (មិនដាក់ transport ក្នុងនេះទេ ដើម្បីងាយស្រួលធ្វើចលនា)
   const worldGroup = buildPrisonIsland(configs, []);
   scene.add(worldGroup);
 
-  // ----------------------------------------------------
-  // បន្ថែមចលនាកប៉ាល់ និងយន្តហោះ
-  // ----------------------------------------------------
+  // ចាប់យកតួអង្គដែលត្រូវធ្វើចលនា
+  const walkers: THREE.Group[] = [];
+  const patrollers: THREE.Group[] = [];
+  let fountainWater: THREE.Mesh | null = null;
+
+  worldGroup.traverse((obj) => {
+    if (obj.name === 'walking-prisoner') walkers.push(obj as THREE.Group);
+    if (obj.name === 'patrol-guard') patrollers.push(obj as THREE.Group);
+    if (obj.name === 'fountain-water') fountainWater = obj as THREE.Mesh;
+  });
+
   const ship = createTransportShip();
   ship.position.set(-150, -2, 75);
   scene.add(ship);
@@ -42,7 +49,6 @@ export function initOceanWorld(canvas: HTMLCanvasElement) {
   plane.position.set(150, 30, -100);
   scene.add(plane);
 
-  // បង្កើតកាមេរ៉ា និងការគ្រប់គ្រង
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.dampingFactor = 0.05;
@@ -51,25 +57,61 @@ export function initOceanWorld(canvas: HTMLCanvasElement) {
   controls.maxDistance = 1000;
 
   let animationFrameId: number;
-  let clock = new THREE.Clock();
+  const clock = new THREE.Clock();
 
   function animate() {
     animationFrameId = requestAnimationFrame(animate);
-    
-    const delta = clock.getDelta();
     const time = clock.getElapsedTime();
 
-    // ធ្វើឱ្យកប៉ាល់រំកិលទៅមុខ-ថយក្រោយ
+    // ចលនាកប៉ាល់ និងយន្តហោះ
     ship.position.x = -150 + Math.sin(time * 0.5) * 100;
     ship.rotation.y = Math.cos(time * 0.5) > 0 ? 0 : Math.PI;
 
-    // ធ្វើឱ្យយន្តហោះហោះជុំវិញកោះ (គន្លងរង្វង់)
     plane.position.x = Math.cos(time * 0.3) * 400;
     plane.position.z = Math.sin(time * 0.3) * 400;
-    plane.position.y = 50 + Math.sin(time * 2) * 5; // លោតឡើងចុះបន្តិច
-    
-    // បង្វិលយន្តហោះឱ្យត្រូវនឹងទិសដៅហោះ
+    plane.position.y = 50 + Math.sin(time * 2) * 5;
     plane.rotation.y = -time * 0.3 + Math.PI / 2;
+
+    // ចលនាអ្នកទោសដើរ (ដើរជារង្វង់ និងកម្រើកដៃជើង)
+    walkers.forEach((w, idx) => {
+      const speed = time * 0.5 + idx * Math.PI;
+      w.position.x = Math.cos(speed) * 15;
+      w.position.z = Math.sin(speed) * 15;
+      w.rotation.y = -speed + Math.PI / 2;
+
+      const lArm = w.getObjectByName('left-arm');
+      const rArm = w.getObjectByName('right-arm');
+      const lLeg = w.getObjectByName('left-leg');
+      const rLeg = w.getObjectByName('right-leg');
+      if (lArm && rArm && lLeg && rLeg) {
+        lArm.rotation.x = Math.sin(time * 6) * 0.5;
+        rArm.rotation.x = -Math.sin(time * 6) * 0.5;
+        lLeg.rotation.x = -Math.sin(time * 6) * 0.5;
+        rLeg.rotation.x = Math.sin(time * 6) * 0.5;
+      }
+    });
+
+    // ចលនាអ្នកយាមល្បាតលើជញ្ជាំង (រង្វង់ធំ)
+    patrollers.forEach((p, idx) => {
+      const speed = time * 0.2 + idx;
+      p.position.x = Math.cos(speed) * 40;
+      p.position.z = Math.sin(speed) * 40;
+      p.rotation.y = -speed;
+
+      const lLeg = p.getObjectByName('left-leg');
+      const rLeg = p.getObjectByName('right-leg');
+      if (lLeg && rLeg) {
+        lLeg.rotation.x = -Math.sin(time * 4) * 0.4;
+        rLeg.rotation.x = Math.sin(time * 4) * 0.4;
+      }
+    });
+
+    // ចលនាទឹកផុស
+    if (fountainWater) {
+      fountainWater.position.y = 2.9 + Math.sin(time * 3) * 0.2;
+      fountainWater.scale.x = 1 + Math.sin(time * 2) * 0.1;
+      fountainWater.scale.z = 1 + Math.sin(time * 2) * 0.1;
+    }
 
     controls.update();
     renderer.render(scene, camera);

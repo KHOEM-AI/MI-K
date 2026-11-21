@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-// មុខងារបង្កើតមនុស្សរលូនៗ
+// បង្កើតមនុស្សរលូនៗ (ដាក់ឈ្មោះឱ្យដៃជើងដើម្បីងាយស្រួលធ្វើចលនា)
 export function createSmoothHuman(color: string | number, role: 'prisoner' | 'guard' | 'chef' | 'cleaner'): THREE.Group {
   const g = new THREE.Group();
   const skin = new THREE.MeshStandardMaterial({ color: 0xe8b88a, roughness: 0.6 });
@@ -14,16 +14,24 @@ export function createSmoothHuman(color: string | number, role: 'prisoner' | 'gu
   body.position.y = 0.9; body.castShadow = true; g.add(body);
 
   const armL = new THREE.Mesh(new THREE.CapsuleGeometry(0.1, 0.5, 8, 16), suit);
-  armL.position.set(-0.4, 1.0, 0); armL.rotation.z = 0.2; armL.castShadow = true; g.add(armL);
+  armL.position.set(-0.4, 1.0, 0); armL.rotation.z = 0.2; armL.castShadow = true; 
+  armL.name = 'left-arm'; // ដាក់ឈ្មោះសម្រាប់ដៃឆ្វេង
+  g.add(armL);
 
   const armR = new THREE.Mesh(new THREE.CapsuleGeometry(0.1, 0.5, 8, 16), suit);
-  armR.position.set(0.4, 1.0, 0); armR.rotation.z = -0.2; armR.castShadow = true; g.add(armR);
+  armR.position.set(0.4, 1.0, 0); armR.rotation.z = -0.2; armR.castShadow = true; 
+  armR.name = 'right-arm'; // ដាក់ឈ្មោះសម្រាប់ដៃស្តាំ
+  g.add(armR);
 
   const legL = new THREE.Mesh(new THREE.CapsuleGeometry(0.12, 0.6, 8, 16), dark);
-  legL.position.set(-0.15, 0.3, 0); legL.castShadow = true; g.add(legL);
+  legL.position.set(-0.15, 0.3, 0); legL.castShadow = true; 
+  legL.name = 'left-leg'; // ដាក់ឈ្មោះសម្រាប់ជើងឆ្វេង
+  g.add(legL);
 
   const legR = new THREE.Mesh(new THREE.CapsuleGeometry(0.12, 0.6, 8, 16), dark);
-  legR.position.set(0.15, 0.3, 0); legR.castShadow = true; g.add(legR);
+  legR.position.set(0.15, 0.3, 0); legR.castShadow = true; 
+  legR.name = 'right-leg'; // ដាក់ឈ្មោះសម្រាប់ជើងស្តាំ
+  g.add(legR);
 
   if (role === 'guard') {
     const hat = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.1, 16), dark);
@@ -35,7 +43,6 @@ export function createSmoothHuman(color: string | number, role: 'prisoner' | 'gu
   return g;
 }
 
-// បង្កើតរបងខាងក្រៅ និងប៉មកាមេរ៉ា
 export function createOuterFenceAndSecurity(radius: number = 55): THREE.Group {
   const g = new THREE.Group();
   const fenceMat = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.9 });
@@ -66,7 +73,6 @@ export function createOuterFenceAndSecurity(radius: number = 55): THREE.Group {
   return g;
 }
 
-// បង្កើតតំបន់ស៊ីបាយ, បន្ទប់ទឹក, តំបន់ហាត់កីឡា, និងកន្លែងរៀន
 export function createPrisonFacilitiesDetails(): THREE.Group {
   const g = new THREE.Group();
   const woodMat = new THREE.MeshStandardMaterial({ color: 0x8b5a2b, roughness: 0.9 });
@@ -87,7 +93,7 @@ export function createPrisonFacilitiesDetails(): THREE.Group {
     for (let j = 0; j < 3; j++) {
       const prisoner = createSmoothHuman(0xffa500, 'prisoner');
       prisoner.position.set(-2 + j * 2, 0.6, 1.5);
-      prisoner.rotation.x = -Math.PI / 2;
+      prisoner.rotation.x = -Math.PI / 2; // អង្គុយ
       tableGroup.add(prisoner);
     }
     tableGroup.position.set(-15 + i * 10, 2.5, 15);
@@ -119,17 +125,30 @@ export function createPrisonFacilitiesDetails(): THREE.Group {
       plant.position.set(15 + i * 4, 2.9, 22 + j * 2); plant.castShadow = true; g.add(plant);
     }
   }
-  
-  // ៥. អ្នកយាម និងអ្នកអនាម័យ
-  const guard1 = createSmoothHuman(0x2c3e50, 'guard'); guard1.position.set(25, 2.5, -5); g.add(guard1);
-  const guard2 = createSmoothHuman(0x2c3e50, 'guard'); guard2.position.set(-25, 2.5, -20); g.add(guard2);
+
+  // ៥. អ្នកទោសដើរ និងអ្នកយាមល្បាត
+  const walker = createSmoothHuman(0xffa500, 'prisoner');
+  walker.name = 'walking-prisoner'; // ដាក់ឈ្មោះឱ្យអ្នកទោសដើរ
+  walker.position.set(0, 2.5, 0); 
+  g.add(walker);
+
+  const walker2 = createSmoothHuman(0xffa500, 'prisoner');
+  walker2.name = 'walking-prisoner';
+  walker2.position.set(5, 2.5, 0); 
+  g.add(walker2);
+
+  const patroller = createSmoothHuman(0x2c3e50, 'guard');
+  patroller.name = 'patrol-guard'; // ដាក់ឈ្មោះឱ្យអ្នកយាមល្បាត
+  patroller.position.set(40, 17, 0); // ដើរលើជញ្ជាំង
+  g.add(patroller);
+
+  // ៦. អ្នកអនាម័យ និងចុងភៅ
   const cleaner = createSmoothHuman(0x3498db, 'cleaner'); cleaner.position.set(5, 2.5, 25); g.add(cleaner);
   const chef = createSmoothHuman(0xffffff, 'chef'); chef.position.set(-15, 2.5, 10); g.add(chef);
 
   return g;
 }
 
-// បង្កើតអគារខ្ពស់ និងកន្លែងរៀន
 export function createEducationAndAdmin(): THREE.Group {
   const g = new THREE.Group();
   const concrete = new THREE.MeshStandardMaterial({ color: 0x95a5a6, roughness: 0.9 });
@@ -158,7 +177,6 @@ export function createEducationAndAdmin(): THREE.Group {
   return g;
 }
 
-// បង្កើតសួនផ្កាចម្រុះ និងផ្លូវដើរ
 export function createFlowerGardenAndPaths(): THREE.Group {
   const g = new THREE.Group();
   const pathMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, roughness: 0.9 });
@@ -166,13 +184,11 @@ export function createFlowerGardenAndPaths(): THREE.Group {
   const leafMat = new THREE.MeshStandardMaterial({ color: 0x2e8b57, roughness: 0.8 });
   const flowerColors = [0xff0000, 0xff69b4, 0xffff00, 0x800080, 0xffffff];
 
-  // ១. ផ្លូវដើរ (ជាទម្រង់ឈើឆ្កាង)
   const path1 = new THREE.Mesh(new THREE.BoxGeometry(6, 0.1, 80), pathMat);
   path1.position.y = 2.55; path1.receiveShadow = true; g.add(path1);
   const path2 = new THREE.Mesh(new THREE.BoxGeometry(80, 0.1, 6), pathMat);
   path2.position.y = 2.55; path2.receiveShadow = true; g.add(path2);
 
-  // ២. សួនផ្កាចម្រុះ
   const gardenCenter = new THREE.Vector3(20, 2.5, 10);
   const gardenRadius = 8;
   
@@ -190,7 +206,6 @@ export function createFlowerGardenAndPaths(): THREE.Group {
     flower.position.set(x, 3.3, z); g.add(flower);
   }
 
-  // ៣. ដើមឈើជុំវិញសួន
   for (let i = 0; i < 8; i++) {
     const angle = (i / 8) * Math.PI * 2;
     const x = gardenCenter.x + Math.cos(angle) * (gardenRadius + 2);
@@ -203,7 +218,6 @@ export function createFlowerGardenAndPaths(): THREE.Group {
     leaves.position.set(x, 6, z); leaves.castShadow = true; g.add(leaves);
   }
 
-  // ៤. កៅអីអង្គុយ
   for (let i = 0; i < 4; i++) {
     const bGroup = new THREE.Group();
     const wood = new THREE.MeshStandardMaterial({ color: 0x8b5a2b });
@@ -222,12 +236,13 @@ export function createFlowerGardenAndPaths(): THREE.Group {
     g.add(bGroup);
   }
 
-  // ៥. ទឹកផុស (Fountain)
   const fountainBase = new THREE.Mesh(new THREE.CylinderGeometry(3, 3.5, 0.5, 32), pathMat);
   fountainBase.position.set(0, 2.75, 0); fountainBase.receiveShadow = true; g.add(fountainBase);
   
   const water = new THREE.Mesh(new THREE.CylinderGeometry(2.8, 2.8, 0.3, 32), new THREE.MeshStandardMaterial({ color: 0x006994, transparent: true, opacity: 0.8, roughness: 0.1 }));
-  water.position.set(0, 2.9, 0); g.add(water);
+  water.position.set(0, 2.9, 0); 
+  water.name = 'fountain-water'; // ដាក់ឈ្មោះឱ្យទឹកផុស
+  g.add(water);
   
   const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.7, 2, 16), pathMat);
   pillar.position.set(0, 3.5, 0); pillar.castShadow = true; g.add(pillar);
