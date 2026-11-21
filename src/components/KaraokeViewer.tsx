@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { createKaraokeGeometry } from "./studioGeometry";
+import { createKaraokeGeometry, disposeMesh } from "./studioGeometry";
 
 type KaraokeTier =
   | "karaoke_full"
@@ -478,6 +478,7 @@ export default function KaraokeViewer({ onClose }: { onClose: () => void }) {
         smokeMachineGeo.dispose();
         smokeMachineMat.dispose();
         confettiMat.dispose();
+        disposeMesh(karaoke);
         controls.dispose();
         renderer.dispose();
         if (renderer.domElement.parentNode === mount) {
