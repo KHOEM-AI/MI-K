@@ -6,6 +6,7 @@ import { presets, MATERIAL_PRESETS, PLANT_COLOR_PRESETS, SKY_COLOR_PRESETS, WATE
 import { createGeometry, createCarGeometry, createFurnitureGeometry, createPlantGeometry, createPlantGeometry2, createPlantGeometry3, createPlantGeometry4, createEnvironmentGeometry, createEnvironmentGeometry2, createEnvironmentGeometry3, createSkyGeometry, createSpaceGeometry, createSpaceGeometry2, createStructureGeometry, createStructureGeometry2, createStructureGeometry3, createMonumentGeometry, createBuildingGeometry, createBuildingGeometry2, createBuildingGeometry3, createHospitalGeometry, createBankGeometry, createCivicGeometry, createCommercialGeometry, createReligiousGeometry, createEnergyGeometry, createTransportGeometry, createPersonalTransportGeometry, createFoodGeometry, createNatureGeometry, createFruitGeometry2, createPlantExtraGeometry, createParkGeometry, createStreetGeometry, createGardenGeometry, createMineralGeometry, createLuxuryCarGeometry, createAircraftGeometry, createBoatGeometry, createAnimalGeometry, createCharacterGeometry, createKhoemGeometry, createHighwayGeometry, createBridgeGeometry, createTrafficLightGeometry, createStreetLightGeometry, disposeMesh, createKaraokeGeometry } from "./studioGeometry";
 import { createInfraGeometry, isInfraShape } from "./studioInfra";
 import { CameraPresets } from "./CameraPresets";
+import { cameraForPreset } from "./cameraMath";
 import { SceneLightingPanel } from "./SceneLightingPanel";
 import { MaterialPanel } from "./MaterialPanel";
 import { TransformPanel } from "./TransformPanel";
@@ -2621,15 +2622,9 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
     const controls = controlsRef.current;
     if (!camera || !controls) return;
 
-    if (preset === "front") {
-      camera.position.set(0, 0, 10);
-    } else if (preset === "top") {
-      camera.position.set(0, 10, 0.01); // slight offset to avoid gimbal lock
-    } else {
-      camera.position.set(4, 3, 7); // default iso
-    }
-
-    controls.target.set(0, 0, 0);
+    const view = cameraForPreset(preset);
+    camera.position.set(...view.position);
+    controls.target.set(...view.target);
     controls.update();
     setMessage(`បានប្តូរមុំមើលទៅ ${preset.toUpperCase()}។`);
   }
