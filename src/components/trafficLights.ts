@@ -1,120 +1,63 @@
-import * as THREE from "three";
+import * as THREE from 'three';
 
-const mat = (color: string, opts: Partial<THREE.MeshStandardMaterialParameters> = {}) =>
-  new THREE.MeshStandardMaterial({ color, roughness: 0.85, metalness: 0.05, ...opts });
-
-/* ============================================================
-   ភ្លើងស្តុបមួយ (Traffic Light)
-   ============================================================ */
 export interface TrafficLight {
   group: THREE.Group;
-  red: THREE.MeshStandardMaterial;
-  yellow: THREE.MeshStandardMaterial;
-  green: THREE.MeshStandardMaterial;
-  phase: number; // 0 = ក្រហម, 1 = លឿង, 2 = បៃតង
-  timer: number;
+  red: THREE.Mesh;
+  yellow: THREE.Mesh;
+  green: THREE.Mesh;
+  phase: number; // ត្រូវការសម្រាប់ Village3D
+  update: (time: number) => void;
 }
 
-export function createTrafficLight(): TrafficLight {
-  const g = new THREE.Group();
+export function createTrafficLight(x: number, z: number): TrafficLight {
+  const group = new THREE.Group();
+  group.position.set(x, 2.5, z);
 
-  // បង្គោល
-  const pole = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.15, 0.2, 5, 8),
-    mat("#2c3e50", { metalness: 0.7 })
-  );
-  pole.position.y = 2.5;
-  pole.castShadow = true;
-  g.add(pole);
+  const poleMat = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8, roughness: 0.4 });
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 6, 8), poleMat);
+  pole.position.y = 3; pole.castShadow = true; group.add(pole);
 
-  // ប្រអប់ភ្លើង
-  const box = new THREE.Mesh(
-    new THREE.BoxGeometry(0.6, 1.8, 0.4),
-    mat("#1a1a1a")
-  );
-  box.position.y = 5.5;
-  box.castShadow = true;
-  g.add(box);
+  const boxMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+  const box = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1.8, 0.6), boxMat);
+  box.position.y = 6; group.add(box);
 
-  // ភ្លើងក្រហម
-  const red = new THREE.MeshStandardMaterial({ color: "#e74c3c", emissive: "#e74c3c", emissiveIntensity: 0 });
-  const redLight = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 12), red);
-  redLight.position.set(0, 6, 0.25);
-  g.add(redLight);
+  const offMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
+  const redMat = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xff0000, emissiveIntensity: 2 });
+  const yellowMat = new THREE.MeshStandardMaterial({ color: 0xffcc00, emissive: 0xffcc00, emissiveIntensity: 2 });
+  const greenMat = new THREE.MeshStandardMaterial({ color: 0x00ff00, emissive: 0x00ff00, emissiveIntensity: 2 });
 
-  // ភ្លើងលឿង
-  const yellow = new THREE.MeshStandardMaterial({ color: "#f39c12", emissive: "#f39c12", emissiveIntensity: 0 });
-  const yellowLight = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 12), yellow);
-  yellowLight.position.set(0, 5.5, 0.25);
-  g.add(yellowLight);
+  const red = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 12), offMat);
+  red.position.set(0, 6.5, 0.3); group.add(red);
+  const yellow = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 12), offMat);
+  yellow.position.set(0, 6, 0.3); group.add(yellow);
+  const green = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 12), offMat);
+  green.position.set(0, 5.5, 0.3); group.add(green);
 
-  // ភ្លើងបៃតង
-  const green = new THREE.MeshStandardMaterial({ color: "#27ae60", emissive: "#27ae60", emissiveIntensity: 0 });
-  const greenLight = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 12), green);
-  greenLight.position.set(0, 5, 0.25);
-  g.add(greenLight);
+  const tl: TrafficLight = {
+    group, red, yellow, green, phase: 0,
+    update: (time: number) => {
+      const cycle = time % 15;
+      tl.phase = cycle;
+      red.material = cycle < 7 ? redMat : offMat;
+      yellow.material = (cycle >= 7 && cycle < 8) ? yellowMat : offMat;
+      green.material = cycle >= 8 ? greenMat : offMat;
+    }
+  };
+  return tl;
+}
 
+// បន្ថែម API ចាស់សម្រាប់ Village3D
+export function createTrafficLights(..._args: any[]): any {
+  const group = new THREE.Group();
+  const lights = [createTrafficLight(0, 0)];
+  lights.forEach((l) => group.add(l.group));
   return {
-    group: g,
-    red,
-    yellow,
-    green,
-    phase: 2,
-    timer: 0,
+    group,
+    lights,
+    update: (time: number) => { lights.forEach((l) => l.update(time)); }
   };
 }
 
-/* ============================================================
-   បង្កើតភ្លើងស្តុប ៤ (តាមផ្លូវបំបែក)
-   ============================================================ */
-export function createTrafficLights(): {
-  group: THREE.Group;
-  lights: TrafficLight[];
-} {
-  const group = new THREE.Group();
-  const lights: TrafficLight[] = [];
-
-  // ទីតាំងតាមផ្លូវបំបែក (៤ ជ្រុង)
-  const positions = [
-    { x: -20, z: -20, rotY: 0 },
-    { x: 20, z: -20, rotY: Math.PI / 2 },
-    { x: 20, z: 20, rotY: Math.PI },
-    { x: -20, z: 20, rotY: -Math.PI / 2 },
-  ];
-
-  positions.forEach(({ x, z, rotY }) => {
-    const tl = createTrafficLight();
-    tl.group.position.set(x, 0, z);
-    tl.group.rotation.y = rotY;
-    group.add(tl.group);
-    lights.push(tl);
-  });
-
-  return { group, lights };
-}
-
-/* ============================================================
-   Update traffic lights (ក្រហម → បៃតង → លឿង → ក្រហម)
-   ============================================================ */
-export function updateTrafficLights(lights: TrafficLight[], delta: number): void {
-  lights.forEach((tl) => {
-    tl.timer += delta;
-
-    // វដ្ត: បៃតង ៥ វិ → លឿង ២ វិ → ក្រហម ៥ វិ
-    if (tl.phase === 2 && tl.timer > 5) {
-      tl.phase = 1;
-      tl.timer = 0;
-    } else if (tl.phase === 1 && tl.timer > 2) {
-      tl.phase = 0;
-      tl.timer = 0;
-    } else if (tl.phase === 0 && tl.timer > 5) {
-      tl.phase = 2;
-      tl.timer = 0;
-    }
-
-    // Update emissive
-    tl.red.emissiveIntensity = tl.phase === 0 ? 2.5 : 0;
-    tl.yellow.emissiveIntensity = tl.phase === 1 ? 2.5 : 0;
-    tl.green.emissiveIntensity = tl.phase === 2 ? 2.5 : 0;
-  });
+export function updateTrafficLights(system: any, time: number): void {
+  if (system && typeof system.update === 'function') system.update(time);
 }

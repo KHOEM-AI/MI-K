@@ -65,6 +65,7 @@ export const OceanWorldViewer = () => {
         <button onClick={() => call(() => api?.toggleRain())} style={btnStyle}>🌧️ Rain</button>
         <button onClick={() => call(() => api?.toggleAlarm())} style={{...btnStyle, color: '#ff4444'}}>🚨 Alarm</button>
         <button onClick={() => call(() => api?.exportGLB())} style={btnStyle}>📦 Export</button>
+        <button onClick={() => call(() => api?.triggerFirework())} style={{...btnStyle, color: '#ffdd00'}}>🎆 Firework</button>
         <button onClick={() => call(() => api?.toggleBuildMode())} style={btnStyle}>🏗️ Build</button>
         <button onClick={() => call(() => api?.takeScreenshot())} style={btnStyle}>📸 Photo</button>
       </div>

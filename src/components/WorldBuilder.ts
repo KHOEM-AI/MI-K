@@ -12,6 +12,8 @@ import { createNightLights } from './nightLights';
 import { createGuardDogs } from './guardDogs';
 import { exportSceneToGLB } from './exportScene';
 import { GameMode } from './gameMode';
+import { createTrafficLight } from './trafficLights';
+import { FireworksSystem } from './fireworks';
 import { createHelicopter } from './helicopter';
 import { createMantaRay, createShark, createDolphin, createSeaTurtle, createFishSchool } from './marineLife';
 import { OceanSoundManager } from './soundManager';
@@ -118,6 +120,14 @@ export function initOceanWorld(canvas: HTMLCanvasElement) {
   });
 
     const worldGroup = buildPrisonIsland(configs, []);
+  const fireworks = new FireworksSystem(scene);
+  const trafficLights = [
+    createTrafficLight(-10, 0),
+    createTrafficLight(10, 0),
+    createTrafficLight(0, 10),
+    createTrafficLight(0, -10)
+  ];
+  trafficLights.forEach(tl => scene.add(tl.group));
   const weather = new WeatherSystem();
   scene.add(weather.rain);
   scene.add(weather.clouds);
@@ -343,13 +353,22 @@ export function initOceanWorld(canvas: HTMLCanvasElement) {
     if (waterMat) waterMat.uniforms.uTime.value = time;
 
     // ចលនាកប៉ាល់ និងយន្តហោះ
-    ship.position.x = -150 + Math.sin(time * 0.5) * 100;
-    ship.rotation.y = Math.cos(time * 0.5) > 0 ? 0 : Math.PI;
+    // ចលនាកប៉ាល់ (ធ្វើដំណើររវាងកោះ)
+    const shipPath = (time * 0.05) % 1;
+    const shipAngle = shipPath * Math.PI * 2;
+    ship.position.x = Math.cos(shipAngle) * 200;
+    ship.position.z = Math.sin(shipAngle) * 200;
+    ship.position.y = -2 + Math.sin(time * 2) * 0.5; // រលកបោក
+    ship.rotation.y = -shipAngle + Math.PI / 2;
 
-    plane.position.x = Math.cos(time * 0.3) * 400;
-    plane.position.z = Math.sin(time * 0.3) * 400;
-    plane.position.y = 50 + Math.sin(time * 2) * 5;
-    plane.rotation.y = -time * 0.3 + Math.PI / 2;
+    // ចលនាយន្តហោះ (ហោះឡើងចុះ)
+    const planePath = time * 0.1;
+    plane.position.x = Math.cos(planePath) * 350;
+    plane.position.z = Math.sin(planePath) * 350;
+    // បង្កើតចលនាឡើងចុះដូចយន្តហោះពិត
+    plane.position.y = 40 + Math.sin(planePath * 2) * 20;
+    plane.rotation.y = -planePath + Math.PI / 2;
+    plane.rotation.z = Math.cos(planePath * 2) * 0.2; // ផ្អៀងពេលបត់
 
     // ចលនាអ្នកទោសដើរ (ដើរជារង្វង់ និងកម្រើកដៃជើង)
     walkers.forEach((w, idx) => {
@@ -422,6 +441,7 @@ export function initOceanWorld(canvas: HTMLCanvasElement) {
     },
     getSpawnCount: () => gameMode.getSpawnedCount(),
     clearSpawned: () => gameMode.clear(),
+    triggerFirework: () => fireworks.launch(),
     toggleAlarm: () => {
       isAlarmOn = !isAlarmOn;
       return isAlarmOn;
