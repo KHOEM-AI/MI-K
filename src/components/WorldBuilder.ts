@@ -8,6 +8,10 @@ import { createTransportPlane, createTransportShip } from './prisonGeometry';
 import { applyTimePreset, createStars, TIME_PRESETS, type TimeOfDay } from './timeOfDay';
 import { CinematicCamera } from './cinematicCamera';
 import { WeatherSystem } from './weatherSystem';
+import { createNightLights } from './nightLights';
+import { createGuardDogs } from './guardDogs';
+import { exportSceneToGLB } from './exportScene';
+import { GameMode } from './gameMode';
 import { createHelicopter } from './helicopter';
 import { createMantaRay, createShark, createDolphin, createSeaTurtle, createFishSchool } from './marineLife';
 import { OceanSoundManager } from './soundManager';
@@ -27,6 +31,15 @@ export function initOceanWorld(canvas: HTMLCanvasElement) {
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
   createSkyAndLights(scene);
+  const nightLights = createNightLights();
+  scene.add(nightLights.group);
+  const gameMode = new GameMode(scene);
+  const dogs = createGuardDogs(4);
+  dogs.forEach((d, i) => {
+    const angle = (i / 4) * Math.PI * 2;
+    d.position.set(Math.cos(angle) * 42, 2.5, Math.sin(angle) * 42);
+    scene.add(d);
+  });
   const hemiLight = scene.children.find((c) => c instanceof THREE.HemisphereLight) as THREE.HemisphereLight | undefined;
   const dirLight = scene.children.find((c) => c instanceof THREE.DirectionalLight) as THREE.DirectionalLight | undefined;
   const stars = createStars(500);
@@ -395,6 +408,20 @@ export function initOceanWorld(canvas: HTMLCanvasElement) {
   (window as any).__oceanAPI = {
     toggleSound: () => sound.toggle(),
     toggleRain: () => weather.toggleRain(),
+    toggleNightLights: (on: boolean) => {
+      nightLights.setVisible(on);
+    },
+    exportGLB: () => exportSceneToGLB(scene),
+    spawnPrisoner: () => {
+      const pos = new THREE.Vector3((Math.random() - 0.5) * 40, 0, (Math.random() - 0.5) * 40);
+      return gameMode.spawnAt('prisoner', pos);
+    },
+    spawnGuard: () => {
+      const pos = new THREE.Vector3((Math.random() - 0.5) * 40, 0, (Math.random() - 0.5) * 40);
+      return gameMode.spawnAt('guard', pos);
+    },
+    getSpawnCount: () => gameMode.getSpawnedCount(),
+    clearSpawned: () => gameMode.clear(),
     toggleAlarm: () => {
       isAlarmOn = !isAlarmOn;
       return isAlarmOn;
@@ -415,6 +442,8 @@ export function initOceanWorld(canvas: HTMLCanvasElement) {
       currentTime = t;
       applyTimePreset(scene, TIME_PRESETS[t], hemiLight ?? null, dirLight ?? null);
       stars.visible = t === 'night';
+      // បើកភ្លើងពេលយប់
+      nightLights.setVisible(t === 'night' || t === 'sunset');
     },
     toggleCinematic: () => cinematic.toggle(),
     flyTo: (x: number, z: number) => {

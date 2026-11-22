@@ -64,6 +64,7 @@ export const OceanWorldViewer = () => {
         <button onClick={() => call(() => api?.toggleSound())} style={btnStyle}>🔊 Sound</button>
         <button onClick={() => call(() => api?.toggleRain())} style={btnStyle}>🌧️ Rain</button>
         <button onClick={() => call(() => api?.toggleAlarm())} style={{...btnStyle, color: '#ff4444'}}>🚨 Alarm</button>
+        <button onClick={() => call(() => api?.exportGLB())} style={btnStyle}>📦 Export</button>
         <button onClick={() => call(() => api?.toggleBuildMode())} style={btnStyle}>🏗️ Build</button>
         <button onClick={() => call(() => api?.takeScreenshot())} style={btnStyle}>📸 Photo</button>
       </div>
@@ -76,6 +77,13 @@ export const OceanWorldViewer = () => {
           </button>
         ))}
         <button onClick={() => call(() => api?.toggleCinematic())} style={{ ...btnStyle, background: 'rgba(255, 215, 0, 0.2)' }}>🎬 Cinematic</button>
+      </div>
+
+      {/* Game Mode */}
+      <div style={{ position: 'absolute', top: 90, left: 20, zIndex: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <button onClick={() => call(() => { const n = api?.spawnPrisoner(); })} style={{...btnStyle, background: 'rgba(255,136,0,0.3)'}}>👤 Spawn Prisoner</button>
+        <button onClick={() => call(() => { const n = api?.spawnGuard(); })} style={{...btnStyle, background: 'rgba(34,51,170,0.3)'}}>💂 Spawn Guard</button>
+        <button onClick={() => call(() => { api?.clearSpawned(); })} style={{...btnStyle, background: 'rgba(200,50,50,0.3)'}}>🗑️ Clear All</button>
       </div>
 
       {/* Interior Views (D) */}
