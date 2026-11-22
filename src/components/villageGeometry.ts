@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { houseSlots, mulberry32, pickWealth, type Wealth } from "./villageLayout";
 
 const mat = (color: string, opts: Partial<THREE.MeshStandardMaterialParameters> = {}) =>
   new THREE.MeshStandardMaterial({ color, roughness: 0.85, metalness: 0.05, ...opts });
@@ -6,14 +7,7 @@ const mat = (color: string, opts: Partial<THREE.MeshStandardMaterialParameters> 
 /* ============================================================
    ឋានៈសង្គម: 0=ក្រ, 1=កណ្តាល, 2=មាន
    ============================================================ */
-export type Wealth = 0 | 1 | 2;
-
-export function pickWealth(rng: () => number): Wealth {
-  const r = rng();
-  if (r < 0.4) return 0;      // 40% ក្រ
-  if (r < 0.8) return 1;      // 40% កណ្តាល
-  return 2;                    // 20% មាន
-}
+export { pickWealth, type Wealth } from "./villageLayout";
 
 /* ============================================================
    ផ្ទះតាមឋានៈ — ធំ, មានលម្អិត
@@ -555,82 +549,6 @@ export function createBikeShop(): THREE.Group {
 /* ============================================================
    ភូមិ ៣០០ គ្រួសារ — ចែកឋានៈតាមតំបន់
    ============================================================ */
-export function createVillageHouses(count = 300, seed = 42): THREE.Group {
-  const g = new THREE.Group();
-  const rng = mulberry32(seed);
-
-  const cols = 20;
-  const rows = Math.ceil(count / cols);
-  const spacingX = 9;
-  const spacingZ = 10;
-  const startX = -((cols - 1) * spacingX) / 2;
-  const startZ = -((rows - 1) * spacingZ) / 2;
-
-  const poorRoofs = ["#8b4513", "#6b3410", "#a0522d"];
-  const middleRoofs = ["#8d6e63", "#a0522d", "#5d4037"];
-  const richRoofs = ["#2c3e50", "#34495e", "#1a1a2e"];
-
-  let built = 0;
-  for (let r = 0; r < rows && built < count; r++) {
-    for (let c = 0; c < cols && built < count; c++) {
-      // ទុកផ្លូវកណ្តាល (ជួរទី ១០)
-      if (c === 10) continue;
-
-      const wealth = pickWealth(rng);
-      let house: THREE.Group;
-      let roof: string;
-
-      if (wealth === 0) {
-        roof = poorRoofs[Math.floor(rng() * poorRoofs.length)];
-        house = createPoorHouse(roof);
-      } else if (wealth === 1) {
-        roof = middleRoofs[Math.floor(rng() * middleRoofs.length)];
-        house = createMiddleHouse("#e8dcc4", roof);
-      } else {
-        roof = richRoofs[Math.floor(rng() * richRoofs.length)];
-        house = createRichHouse("#fdfefe", roof);
-      }
-
-      const x = startX + c * spacingX;
-      const z = startZ + r * spacingZ;
-      house.position.set(x, 0, z);
-      // បង្វិលទៅរកផ្លូវកណ្តាល
-      house.rotation.y = c < 10 ? Math.PI / 2 : -Math.PI / 2;
-      g.add(house);
-
-      // បន្ថែមយានជំនិះតាមឋានៈ
-      if (wealth === 2) {
-        // ឡាន ១-២
-        const carCount = rng() < 0.5 ? 2 : 1;
-        for (let k = 0; k < carCount; k++) {
-          const car = createCar(rng() < 0.5 ? "#c0392b" : "#2c3e50");
-          car.position.set(x + 2 + k * 2.5, 0, z + 4);
-          car.rotation.y = Math.PI / 2;
-          g.add(car);
-        }
-      } else if (wealth === 1) {
-        // ម៉ូតូ ១
-        const bike = createMotorbike(rng() < 0.5 ? "#e74c3c" : "#34495e");
-        bike.position.set(x + 2, 0, z + 4);
-        bike.rotation.y = Math.PI / 2;
-        g.add(bike);
-      } else {
-        // កង់ ១ (មិនមែនគ្រប់គ្នា)
-        if (rng() < 0.6) {
-          const bike = createBicycle();
-          bike.position.set(x + 2, 0, z + 3.5);
-          bike.rotation.y = Math.PI / 2;
-          g.add(bike);
-        }
-      }
-
-      built++;
-    }
-  }
-
-  return g;
-}
-
 /* ============================================================
    ផ្លូវ + ដី
    ============================================================ */
@@ -657,19 +575,6 @@ export function createVillageGround(): THREE.Mesh {
   ground.position.y = -0.01;
   ground.receiveShadow = true;
   return ground;
-}
-
-/* ============================================================
-   Deterministic random (seed)
-   ============================================================ */
-function mulberry32(a: number) {
-  return function () {
-    a |= 0;
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
 }
 
 /* ============================================================
@@ -799,29 +704,8 @@ export interface InstancedVillageResult {
 
 export function createVillageHousesInstanced(count = 300, seed = 42): InstancedVillageResult {
   const group = new THREE.Group();
-  const rng = mulberry32(seed);
-
-  const cols = 20;
-  const rows = Math.ceil(count / cols);
-  const spacingX = 9;
-  const spacingZ = 10;
-  const startX = -((cols - 1) * spacingX) / 2;
-  const startZ = -((rows - 1) * spacingZ) / 2;
-
-  // គណនាចំនួនផ្ទះពិត (ដកជួរផ្លូវកណ្តាល)
-  const positions: { x: number; z: number; rotY: number; wealth: Wealth }[] = [];
-  for (let r = 0; r < rows && positions.length < count; r++) {
-    for (let c = 0; c < cols && positions.length < count; c++) {
-      if (c === 10) continue; // ទុកផ្លូវ
-      const wealth = pickWealth(rng);
-      positions.push({
-        x: startX + c * spacingX,
-        z: startZ + r * spacingZ,
-        rotY: c < 10 ? Math.PI / 2 : -Math.PI / 2,
-        wealth,
-      });
-    }
-  }
+  // Same slots as villagers, doors and lights use (villageLayout.ts).
+  const positions = houseSlots(count, seed);
 
   // --- Base mesh (body នៃផ្ទះ) ---
   // ប្រើ BoxGeometry ដូចគ្នាសម្រាប់គ្រប់ផ្ទះ (geometry shared = 1 draw call)

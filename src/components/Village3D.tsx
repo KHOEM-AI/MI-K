@@ -843,7 +843,7 @@ export default function Village3D() {
       // Update A: ជីវិតប្រជាជន
       if (villagersRef.current.length > 0 && timeControllerRef.current) {
         const h = timeControllerRef.current.getHour();
-        updateVillagers(villagersRef.current, h, elapsedSec);
+        updateVillagers(villagersRef.current, h, elapsedSec, { clockSpeed: timeControllerRef.current.getSpeed() });
       }
 
       // Update B: ភ្លើងផ្ទះ

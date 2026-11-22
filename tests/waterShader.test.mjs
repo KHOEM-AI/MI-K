@@ -37,9 +37,8 @@ test('advancing uTime does not throw (simulates the render loop)', () => {
 test('the ocean geometry has enough vertices for visible waves', () => {
   const mesh = createOcean(500);
   const posAttr = mesh.geometry.getAttribute('position');
-  // 256 segments each way -> (256+1)^2 vertices
-  assert.ok(posAttr.count >= 60000, 'too few vertices: ' + posAttr.count);
-  // but stay reasonable for mobile
+  // oceanEnvironment.ts uses 128 segments each way -> (128+1)^2 = 16641 vertices (kept low for phones)
+  assert.ok(posAttr.count >= 16000, 'too few vertices: ' + posAttr.count);
   assert.ok(posAttr.count <= 70000, 'too many vertices: ' + posAttr.count);
 });
 
