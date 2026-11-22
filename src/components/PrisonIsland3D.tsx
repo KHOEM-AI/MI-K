@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import type { PrisonIslandConfig, TransportConfig } from './prisonTypes';
+import { createThemedIsland } from './islandThemes';
 import { 
   createIslandGeometry, 
   createPrisonWall, 
@@ -34,6 +35,7 @@ export const PrisonIsland3D: React.FC<PrisonIsland3DProps> = ({ configs, transpo
       islandGroup.position.set(...cfg.position);
       
       islandGroup.add(createIslandGeometry());
+      { const theme = createThemedIsland(cfg.type); if (theme) islandGroup.add(theme); }
 
       if (cfg.type === 'main-island') {
         islandGroup.add(createPrisonWall());
@@ -100,6 +102,7 @@ export function buildPrisonIsland(configs: PrisonIslandConfig[], transports: Tra
     islandGroup.position.set(...cfg.position);
     
     islandGroup.add(createIslandGeometry());
+      { const theme = createThemedIsland(cfg.type); if (theme) islandGroup.add(theme); }
 
     if (cfg.type === 'main-island') {
       islandGroup.add(createPrisonWall());
