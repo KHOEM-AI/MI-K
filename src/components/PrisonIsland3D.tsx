@@ -12,8 +12,7 @@ import {
   createOuterFenceAndSecurity, 
   createPrisonFacilitiesDetails,
   createEducationAndAdmin,
-  createFlowerGardenAndPaths
-} from './prisonDetails';
+  createFlowerGardenAndPaths, createDockAndVehicles } from './prisonDetails';
 
 interface PrisonIsland3DProps {
   configs: PrisonIslandConfig[];
@@ -43,6 +42,7 @@ export const PrisonIsland3D: React.FC<PrisonIsland3DProps> = ({ configs, transpo
         islandGroup.add(createPrisonFacilitiesDetails());
         islandGroup.add(createEducationAndAdmin());
         islandGroup.add(createFlowerGardenAndPaths());
+      islandGroup.add(createDockAndVehicles());
       } else if (cfg.type === 'airport-island') {
         const plane = createTransportPlane();
         plane.position.set(0, 15, 0);
@@ -103,6 +103,7 @@ export function buildPrisonIsland(configs: PrisonIslandConfig[], transports: Tra
       islandGroup.add(createPrisonFacilitiesDetails());
       islandGroup.add(createEducationAndAdmin());
       islandGroup.add(createFlowerGardenAndPaths());
+      islandGroup.add(createDockAndVehicles());
     } else if (cfg.type === 'airport-island') {
       const plane = createTransportPlane();
       plane.position.set(0, 15, 0);

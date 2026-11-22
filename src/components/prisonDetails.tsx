@@ -249,3 +249,95 @@ export function createFlowerGardenAndPaths(): THREE.Group {
 
   return g;
 }
+
+// បង្កើតកំពង់ផែឈើ និងយានយន្ត
+export function createDockAndVehicles(): THREE.Group {
+  const g = new THREE.Group();
+  const woodMat = new THREE.MeshStandardMaterial({ color: 0x8b5a2b, roughness: 0.9 });
+  const darkWoodMat = new THREE.MeshStandardMaterial({ color: 0x4a3219, roughness: 0.9 });
+
+  // ១. កំពង់ផែឈើ (Dock)
+  const deck = new THREE.Mesh(new THREE.BoxGeometry(12, 0.5, 35), woodMat);
+  deck.position.set(0, 1, -55); 
+  deck.castShadow = true; deck.receiveShadow = true; g.add(deck);
+
+  // បង្គោលឈើទ្រកំពង់ផែ
+  for (let i = -4; i <= 4; i+=4) {
+    for (let j = -40; j >= -70; j-=6) {
+      const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 8, 8), darkWoodMat);
+      pillar.position.set(i, -2, j);
+      pillar.castShadow = true;
+      g.add(pillar);
+    }
+  }
+
+  // ២. រថយន្តប៉ូលីស (Police Cars)
+  const createPoliceCar = (x: number, z: number) => {
+    const car = new THREE.Group();
+    const bodyMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4, metalness: 0.6 });
+    const glassMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.1, metalness: 0.9 });
+    const blackMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.5 });
+
+    const chassis = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.8, 4.5), bodyMat);
+    chassis.position.y = 0.8; chassis.castShadow = true; car.add(chassis);
+
+    const cabin = new THREE.Mesh(new THREE.BoxGeometry(2, 0.7, 2.5), glassMat);
+    cabin.position.set(0, 1.5, -0.2); cabin.castShadow = true; car.add(cabin);
+
+    const lightBar = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.2, 0.5), new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xff0000, emissiveIntensity: 2 }));
+    lightBar.position.set(0, 1.95, -0.2); car.add(lightBar);
+
+    const wheelGeo = new THREE.CylinderGeometry(0.4, 0.4, 0.3, 16);
+    for (let wx of [-1.1, 1.1]) {
+      for (let wz of [-1.5, 1.5]) {
+        const wheel = new THREE.Mesh(wheelGeo, blackMat);
+        wheel.rotation.z = Math.PI / 2;
+        wheel.position.set(wx, 0.4, wz);
+        car.add(wheel);
+      }
+    }
+    car.position.set(x, 2.5, z);
+    car.rotation.y = Math.PI / 2;
+    return car;
+  };
+
+  g.add(createPoliceCar(-6, -35));
+  g.add(createPoliceCar(-6, -30));
+
+  // ៣. ឡានយោធា (Military Trucks)
+  const createMilitaryTruck = (x: number, z: number) => {
+    const truck = new THREE.Group();
+    const bodyMat = new THREE.MeshStandardMaterial({ color: 0x4a5d23, roughness: 0.9 });
+    const canvasMat = new THREE.MeshStandardMaterial({ color: 0x3b4a1a, roughness: 1.0 });
+    const blackMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+
+    const cab = new THREE.Mesh(new THREE.BoxGeometry(2.5, 2, 2.5), bodyMat);
+    cab.position.set(0, 1.5, 2); cab.castShadow = true; truck.add(cab);
+
+    const bed = new THREE.Mesh(new THREE.BoxGeometry(2.5, 1.5, 4.5), bodyMat);
+    bed.position.set(0, 1.25, -1.5); bed.castShadow = true; truck.add(bed);
+
+    const cover = new THREE.Mesh(new THREE.CylinderGeometry(1.25, 1.25, 4.5, 16, 1, false, 0, Math.PI), canvasMat);
+    cover.rotation.x = Math.PI / 2;
+    cover.rotation.z = Math.PI / 2;
+    cover.position.set(0, 2, -1.5); truck.add(cover);
+
+    const wheelGeo = new THREE.CylinderGeometry(0.5, 0.5, 0.4, 16);
+    for (let wx of [-1.3, 1.3]) {
+      for (let wz of [-2.5, 1]) {
+        const wheel = new THREE.Mesh(wheelGeo, blackMat);
+        wheel.rotation.z = Math.PI / 2;
+        wheel.position.set(wx, 0.5, wz);
+        truck.add(wheel);
+      }
+    }
+    truck.position.set(x, 2.5, z);
+    truck.rotation.y = Math.PI / 2;
+    return truck;
+  };
+
+  g.add(createMilitaryTruck(6, -35));
+  g.add(createMilitaryTruck(6, -30));
+
+  return g;
+}
