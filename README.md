@@ -39,6 +39,21 @@ A browser-based 3D asset library and modeling studio built with React, TypeScrip
 - Rename and delete scenes.
 - Import and export all scenes.
 
+### 3D Pages (one button group)
+Every 3D page opens from the same button group on the home screen. One page is open at a time; press the button again to close it.
+
+| Button | Page |
+|---|---|
+| 3D Studio | 3D Creation Studio |
+| KHOEM-AI 3D | Vehicles and People |
+| Karaoke 3D | Karaoke / Pub |
+| Hospital 3D | Hospital |
+| School 3D | School |
+| Village 3D | Village |
+| Ocean World 3D | Ocean World and Prison Island |
+
+To add or remove a 3D page, edit the `MODULES` list in `src/App.tsx` and its viewer block (`isOpen("id")`). Nothing else needs to change.
+
 ### Import and Export
 - Import GLB models and text files.
 - Export GLB models and PNG screenshots.

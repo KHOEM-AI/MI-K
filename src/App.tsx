@@ -22,6 +22,19 @@ const prefetchStudio3D = () => {
   import("./components/Studio3D");
 };
 
+// One list = one button style. Add or remove a 3D page here only.
+type ModuleId = "studio" | "vehicles" | "karaoke" | "hospital" | "school" | "village" | "ocean";
+
+const MODULES: { id: ModuleId; label: string; title: string; icons: KIconName[] }[] = [
+  { id: "studio", label: "3D Studio", title: "3D Creation Studio", icons: ["cube"] },
+  { id: "vehicles", label: "KHOEM-AI 3D", title: "Vehicles and People 3D", icons: ["car", "people"] },
+  { id: "karaoke", label: "Karaoke 3D", title: "Karaoke / Pub 3D", icons: ["karaoke"] },
+  { id: "hospital", label: "Hospital 3D", title: "Hospital 3D", icons: ["cube"] },
+  { id: "school", label: "School 3D", title: "School 3D", icons: ["cube"] },
+  { id: "village", label: "Village 3D", title: "Village 3D", icons: ["cube"] },
+  { id: "ocean", label: "Ocean World 3D", title: "Ocean World and Prison Island 3D", icons: ["cube"] },
+];
+
 
 
 
@@ -119,13 +132,10 @@ function ImageViewer({ file }: { file: File }) {
 export default function App() {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [storageReady, setStorageReady] = useState(false);
-  const [studioOpen, setStudioOpen] = useState(false);
-  const [vehiclesOpen, setVehiclesOpen] = useState(false);
-  const [karaokeOpen, setKaraokeOpen] = useState(false);
-  const [hospitalOpen, setHospitalOpen] = useState(false);
-  const [schoolOpen, setSchoolOpen] = useState(false);
-  const [villageOpen, setVillageOpen] = useState(false);
-  const [oceanOpen, setOceanOpen] = useState(false);
+  const [openModule, setOpenModule] = useState<ModuleId | null>(null);
+  const isOpen = (id: ModuleId) => openModule === id;
+  const toggleModule = (id: ModuleId) =>
+    setOpenModule((current) => (current === id ? null : id));
   const [theme, setTheme] = useState<"day" | "night">(() => {
     try {
       return localStorage.getItem("khoem-ai-theme") === "day"
@@ -400,47 +410,28 @@ export default function App() {
             <span title="3D Object"><KIcon name="cube" /></span>
           </div>
         </div>
-        <button
-          type="button"
-          className="upload-button"
-          onClick={() => setStudioOpen((open) => !open)}
-          onMouseEnter={prefetchStudio3D}
-          onFocus={prefetchStudio3D}
-        >
-          {studioOpen ? "Close Studio" : "Open 3D Studio"}
-        </button>
-        <button
-          type="button"
-          className="upload-button"
-          onClick={() => setHospitalOpen((open) => !open)}
-        >
-          {hospitalOpen ? "Close Hospital" : "Open Hospital 3D"}
-        </button>
-        <button
-          type="button"
-          className="upload-button"
-          onClick={() => setSchoolOpen((open) => !open)}
-        >
-          {schoolOpen ? "Close School" : "Open School 3D"}
-        </button>
-        <button
-          type="button"
-          className="upload-button"
-          onClick={() => setVillageOpen((open) => !open)}
-        >
-          {villageOpen ? "Close Village" : "Open Village 3D"}
-        </button>
-
-        <button
-          type="button"
-          className="upload-button"
-          onClick={() => setOceanOpen((open) => !open)}
-        >
-          {oceanOpen ? "Close Ocean World" : "Open Ocean World 3D"}
-        </button>
+        <div className="module-buttons" role="group" aria-label="3D modules">
+          {MODULES.map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              title={m.title}
+              className={isOpen(m.id) ? "filter active" : "filter"}
+              aria-pressed={isOpen(m.id)}
+              onClick={() => toggleModule(m.id)}
+              onMouseEnter={m.id === "studio" ? prefetchStudio3D : undefined}
+              onFocus={m.id === "studio" ? prefetchStudio3D : undefined}
+            >
+              {m.icons.map((icon) => (
+                <KIcon key={icon} name={icon} />
+              ))}
+              {isOpen(m.id) ? `Close ${m.label}` : m.label}
+            </button>
+          ))}
+        </div>
       </section>
 
-      {studioOpen && (
+      {isOpen("studio") && (
         <Suspense fallback={<div className="studio-panel">Loading 3D Studio...</div>}>
           <Studio3D
             onAssetSaved={(asset) => {
@@ -453,59 +444,37 @@ export default function App() {
         </Suspense>
       )}
 
-      <section className="studio-panel">
-        <button
-          type="button"
-          title="Vehicles and People 3D"
-          className={vehiclesOpen ? "filter active" : "filter"}
-          onClick={() => setVehiclesOpen((o) => !o)}
-        >
-          <KIcon name="car" />
-          <KIcon name="people" />
-          KHOEM-AI 3D
-        </button>
-
-        <button
-          type="button"
-          title="Karaoke / Pub 3D"
-          className={karaokeOpen ? "filter active" : "filter"}
-          onClick={() => setKaraokeOpen((o) => !o)}
-        >
-          <KIcon name="karaoke" />
-          Karaoke 3D
-        </button>
-      </section>
-      {vehiclesOpen && (
+      {isOpen("vehicles") && (
         <Suspense fallback={<div className="studio-panel">Loading 3D...</div>}>
-          <Vehicles3D onClose={() => setVehiclesOpen(false)} />
+          <Vehicles3D onClose={() => setOpenModule(null)} />
         </Suspense>
       )}
 
-      {karaokeOpen && (
+      {isOpen("karaoke") && (
         <Suspense fallback={<div className="studio-panel">Loading Karaoke 3D...</div>}>
-          <KaraokeViewer onClose={() => setKaraokeOpen(false)} />
+          <KaraokeViewer onClose={() => setOpenModule(null)} />
         </Suspense>
       )}
 
-      {schoolOpen && (
+      {isOpen("school") && (
         <Suspense fallback={<div className="studio-panel">Loading School...</div>}>
           <School3D />
         </Suspense>
       )}
 
-      {villageOpen && (
+      {isOpen("village") && (
         <Suspense fallback={<div className="studio-panel">Loading Village...</div>}>
           <Village3D />
         </Suspense>
       )}
 
-      {oceanOpen && (
+      {isOpen("ocean") && (
         <Suspense fallback={<div className="studio-panel">Loading Ocean World...</div>}>
           <OceanWorldViewer />
         </Suspense>
       )}
 
-      {hospitalOpen && (
+      {isOpen("hospital") && (
         <Suspense fallback={<div className="studio-panel">Loading Hospital...</div>}>
           <Hospital3D />
         </Suspense>

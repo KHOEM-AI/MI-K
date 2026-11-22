@@ -1118,3 +1118,11 @@ button:active .k-icon { transform: scale(.92); }
   .studio-launch > .upload-button { flex: 1 1 calc(50% - 8px); min-height: 44px; }
 }
 /* ===== END KHOEM-AI UI POLISH v2 ===== */
+
+/* ===== KHOEM-AI single 3D launcher (one button style for every 3D page) ===== */
+.module-buttons { display: flex; flex-wrap: wrap; gap: 8px; flex: 1 1 100%; }
+.module-buttons > .filter { display: inline-flex; align-items: center; gap: 8px; padding: 10px 14px; font-size: 14px; }
+@media (max-width: 640px) {
+  .module-buttons > .filter { flex: 1 1 calc(50% - 8px); min-height: 44px; justify-content: center; }
+}
+/* ===== END single 3D launcher ===== */
