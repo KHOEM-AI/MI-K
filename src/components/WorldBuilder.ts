@@ -4,6 +4,9 @@ import { createOcean, createSkyAndLights } from './oceanEnvironment';
 import { buildPrisonIsland } from './PrisonIsland3D';
 import type { PrisonIslandConfig, TransportConfig } from './prisonTypes';
 import { createTransportPlane, createTransportShip } from './prisonGeometry';
+import { applyTimePreset, createStars, TIME_PRESETS, type TimeOfDay } from './timeOfDay';
+import { CinematicCamera } from './cinematicCamera';
+import { INTERIOR_VIEWS, flyToInterior } from './interiorViews';
 
 export function initOceanWorld(canvas: HTMLCanvasElement) {
   const scene = new THREE.Scene();
@@ -18,6 +21,11 @@ export function initOceanWorld(canvas: HTMLCanvasElement) {
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
   createSkyAndLights(scene);
+  const hemiLight = scene.children.find((c) => c instanceof THREE.HemisphereLight) as THREE.HemisphereLight | undefined;
+  const dirLight = scene.children.find((c) => c instanceof THREE.DirectionalLight) as THREE.DirectionalLight | undefined;
+  const stars = createStars(500);
+  scene.add(stars);
+  let currentTime: TimeOfDay = 'day';
   const ocean = createOcean(3000);
   scene.add(ocean);
 
@@ -50,6 +58,7 @@ export function initOceanWorld(canvas: HTMLCanvasElement) {
   plane.position.set(150, 30, -100);
   scene.add(plane);
 
+  const cinematic = new CinematicCamera();
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.dampingFactor = 0.05;
@@ -62,7 +71,11 @@ export function initOceanWorld(canvas: HTMLCanvasElement) {
 
   function animate() {
     animationFrameId = requestAnimationFrame(animate);
+    const dt = Math.min(clock.getDelta(), 0.1);
     const time = clock.getElapsedTime();
+
+    // Cinematic camera
+    cinematic.update(camera, controls, Math.min(dt, 0.1));
 
     // Advance water shader
     const waterMat = ocean.userData.waterMaterial as THREE.ShaderMaterial | undefined;
@@ -130,7 +143,27 @@ export function initOceanWorld(canvas: HTMLCanvasElement) {
   }
   window.addEventListener('resize', onWindowResize);
 
+  // Expose debug API for OceanWorldViewer UI
+  (window as any).__oceanAPI = {
+    setTime: (t: TimeOfDay) => {
+      currentTime = t;
+      applyTimePreset(scene, TIME_PRESETS[t], hemiLight ?? null, dirLight ?? null);
+      stars.visible = t === 'night';
+    },
+    toggleCinematic: () => cinematic.toggle(),
+    flyTo: (x: number, z: number) => {
+      controls.target.set(x, 0, z);
+      camera.position.set(x + 200, 150, z + 200);
+      controls.update();
+    },
+    flyToInterior: (id: string) => {
+      const view = INTERIOR_VIEWS.find((v) => v.id === id);
+      if (view) flyToInterior(camera, controls, view);
+    },
+  };
+
   return () => {
+    delete (window as any).__oceanAPI;
     cancelAnimationFrame(animationFrameId);
     window.removeEventListener('resize', onWindowResize);
     controls.dispose();
