@@ -4,6 +4,8 @@ import type { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { isGlb } from "./modelTools.mjs";
 import { TabIcon, PersonPortrait } from "./icons";
+import ExportPanel from "./ExportPanel";
+import type { ExportContext } from "./modelExporter";
 
 // 3D people for the studio. Turn them 360° (auto-turn or drag), and make them idle / walk / wave.
 // If /characters/<id>.glb exists it is used (and its own animation clips are listed). Otherwise a built-in
@@ -225,7 +227,7 @@ const cls = (on: boolean): string => (on ? "filter active" : "filter");
 const MODE_LABELS: Record<Mode, string> = { idle: "ឈរ · Idle", walk: "ដើរ · Walk", wave: "ដាក់ដៃ · Wave" };
 const msg = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
-type Api = { show: (p: Person) => Promise<{ real: boolean; clips: string[] } | null>; togglePlay: (clip: string) => boolean; resetView: () => void };
+type Api = { show: (p: Person) => Promise<{ real: boolean; clips: string[] } | null>; togglePlay: (clip: string) => boolean; resetView: () => void; getExportContext: () => ExportContext };
 
 export default function HumanViewer() {
   const hostRef = useRef<HTMLDivElement>(null);
@@ -366,6 +368,14 @@ export default function HumanViewer() {
             return true;
           },
           resetView,
+          getExportContext: () => ({
+            root: current,
+            renderer: gl,
+            scene,
+            camera,
+            pivot,
+            animations: Array.from(new Set(Array.from(actions.values()).map((a) => a.getClip()))),
+          }),
         };
         apiRef.current = api;
 
@@ -469,6 +479,14 @@ export default function HumanViewer() {
         </div>
         {real && clips.length === 0 && <div style={{ opacity: 0.75, fontSize: 13 }}>ម៉ូដែលនេះគ្មាន Animation · This model has no animation clips.</div>}
       </div>
+
+      <ExportPanel
+        getContext={() => (apiRef.current ? apiRef.current.getExportContext() : null)}
+        label={person.id}
+        isReal={real}
+        onRecordStart={() => { autoRef.current = false; }}
+        onRecordEnd={() => { autoRef.current = auto; }}
+      />
     </div>
   );
 }
