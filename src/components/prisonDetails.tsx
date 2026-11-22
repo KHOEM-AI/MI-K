@@ -341,3 +341,45 @@ export function createDockAndVehicles(): THREE.Group {
 
   return g;
 }
+
+
+// បង្កើតឡានដឹកអ្នកទោស
+export function createPrisonBus(): THREE.Group {
+  const bus = new THREE.Group();
+  const bodyMat = new THREE.MeshStandardMaterial({ color: 0x223344, roughness: 0.5, metalness: 0.3 });
+  const glassMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.1, metalness: 0.9 });
+  const stripeMat = new THREE.MeshStandardMaterial({ color: 0xffcc00, roughness: 0.4 });
+  const blackMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+
+  // តួឡាន
+  const body = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 8), bodyMat);
+  body.position.y = 2.5; body.castShadow = true; bus.add(body);
+
+  // ឆ្នូតពណ៌លឿង
+  const stripe = new THREE.Mesh(new THREE.BoxGeometry(3.1, 0.4, 8.1), stripeMat);
+  stripe.position.y = 2.5; bus.add(stripe);
+
+  // កញ្ចក់ខាងមុខ និងចំហៀង
+  const windshield = new THREE.Mesh(new THREE.BoxGeometry(2.8, 1.2, 0.1), glassMat);
+  windshield.position.set(0, 3.2, 4.05); bus.add(windshield);
+  
+  for (let i = 0; i < 3; i++) {
+    const winL = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1, 1.5), glassMat);
+    winL.position.set(-1.51, 3.2, -2 + i * 2); bus.add(winL);
+    const winR = winL.clone(); winR.position.x = 1.51; bus.add(winR);
+  }
+
+  // កង់
+  const wheelGeo = new THREE.CylinderGeometry(0.6, 0.6, 0.4, 16);
+  for (let x of [-1.5, 1.5]) {
+    for (let z of [-2.5, 2.5]) {
+      const wheel = new THREE.Mesh(wheelGeo, blackMat);
+      wheel.rotation.z = Math.PI / 2;
+      wheel.position.set(x, 1, z);
+      wheel.castShadow = true; bus.add(wheel);
+    }
+  }
+
+  bus.name = 'prison-bus';
+  return bus;
+}

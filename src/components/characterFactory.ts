@@ -52,7 +52,7 @@ export function createRealisticCharacter(type: CharacterType, scale: number = 1)
 
   // ក្បាល
   const head = new THREE.Mesh(new THREE.SphereGeometry(0.22, 24, 24), skinMat);
-  head.position.y = 1.6; head.castShadow = true; g.add(head);
+  head.position.y = 1.6; head.name = 'head'; head.castShadow = true; g.add(head);
 
   // មុខ (ច្រមុះ និងភ្នែក)
   const nose = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.1, 8), skinMat);
@@ -75,7 +75,7 @@ export function createRealisticCharacter(type: CharacterType, scale: number = 1)
 
   // ដងខ្លួន
   const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.25, 0.6, 8, 24), topMat);
-  body.position.y = 1.0; body.castShadow = true; g.add(body);
+  body.position.y = 1.0; body.name = 'body'; body.castShadow = true; g.add(body);
 
   // ដៃ
   const armL = new THREE.Mesh(new THREE.CapsuleGeometry(0.08, 0.5, 8, 16), isSoldier ? topMat : skinMat);

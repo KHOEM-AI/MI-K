@@ -6,6 +6,7 @@ import type { PrisonIslandConfig, TransportConfig } from './prisonTypes';
 import { createTransportPlane, createTransportShip } from './prisonGeometry';
 import { applyTimePreset, createStars, TIME_PRESETS, type TimeOfDay } from './timeOfDay';
 import { CinematicCamera } from './cinematicCamera';
+import { OceanSoundManager } from './soundManager';
 import { INTERIOR_VIEWS, flyToInterior } from './interiorViews';
 
 export function initOceanWorld(canvas: HTMLCanvasElement) {
@@ -50,7 +51,21 @@ export function initOceanWorld(canvas: HTMLCanvasElement) {
     if (obj.name === 'fountain-water') fountainWater = obj as THREE.Mesh;
   });
 
-  const ship = createTransportShip();
+  // ចាប់យកតួអង្គទាំងអស់ និងឡានដឹកអ្នកទោស
+  const allCharacters: THREE.Group[] = [];
+  let prisonBus: THREE.Object3D | null = null;
+  
+  scene.traverse((obj) => {
+    if (obj.name === 'head' || (obj.parent && obj.parent.parent && obj.parent.parent.name === 'theme-airport')) {
+       // តួអង្គគឺជា Group ដែលមានកូនឈ្មោះ head
+       if (obj.name === 'head' && obj.parent instanceof THREE.Group) {
+         if (!allCharacters.includes(obj.parent)) allCharacters.push(obj.parent);
+       }
+    }
+    if (obj.name === 'prison-bus') prisonBus = obj;
+  });
+
+    const ship = createTransportShip();
   ship.position.set(-150, -2, 75);
   scene.add(ship);
 
@@ -59,6 +74,34 @@ export function initOceanWorld(canvas: HTMLCanvasElement) {
   scene.add(plane);
 
   const cinematic = new CinematicCamera();
+  const sound = new OceanSoundManager();
+  let isBuildMode = false;
+  const raycaster = new THREE.Raycaster();
+  const mouse = new THREE.Vector2();
+  const buildGroup = new THREE.Group();
+  scene.add(buildGroup);
+
+  canvas.addEventListener('pointerdown', (e) => {
+    if (!isBuildMode) return;
+    const rect = canvas.getBoundingClientRect();
+    mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, camera);
+    const hits = raycaster.intersectObjects(worldGroup.children, true);
+    if (hits.length > 0) {
+      const pt = hits[0].point;
+      const box = new THREE.Mesh(
+        new THREE.BoxGeometry(6, 8, 6),
+        new THREE.MeshStandardMaterial({ color: 0x8b5a2b, roughness: 0.8 })
+      );
+      box.position.copy(pt);
+      box.position.y += 4;
+      box.castShadow = true;
+      box.receiveShadow = true;
+      buildGroup.add(box);
+    }
+  });
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.dampingFactor = 0.05;
@@ -76,6 +119,29 @@ export function initOceanWorld(canvas: HTMLCanvasElement) {
 
     // Cinematic camera
     cinematic.update(camera, controls, Math.min(dt, 0.1));
+
+    // ចលនាតួអង្គ (ដកដង្ហើម និងកម្រើកក្បាល)
+    allCharacters.forEach((char, idx) => {
+      const offset = idx * 0.5;
+      const head = char.getObjectByName('head');
+      const body = char.getObjectByName('body');
+      if (head) {
+        head.rotation.y = Math.sin(time * 0.8 + offset) * 0.2;
+        head.rotation.x = Math.sin(time * 1.2 + offset) * 0.05;
+      }
+      if (body) {
+        // ដកដង្ហើមបន្តិចៗ
+        body.scale.y = 1 + Math.sin(time * 2 + offset) * 0.03;
+      }
+    });
+
+    // ចលនាឡានដឹកអ្នកទោស (រង្វង់ជុំវិញកោះ)
+    if (prisonBus) {
+      const busSpeed = time * 0.15;
+      prisonBus.position.x = Math.cos(busSpeed) * 25;
+      prisonBus.position.z = Math.sin(busSpeed) * 25;
+      prisonBus.rotation.y = -busSpeed;
+    }
 
     // Advance water shader
     const waterMat = ocean.userData.waterMaterial as THREE.ShaderMaterial | undefined;
@@ -145,6 +211,19 @@ export function initOceanWorld(canvas: HTMLCanvasElement) {
 
   // Expose debug API for OceanWorldViewer UI
   (window as any).__oceanAPI = {
+    toggleSound: () => sound.toggle(),
+    toggleBuildMode: () => {
+      isBuildMode = !isBuildMode;
+      return isBuildMode;
+    },
+    takeScreenshot: () => {
+      renderer.render(scene, camera);
+      const url = renderer.domElement.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'MI-K-VISION-3D-' + Date.now() + '.png';
+      a.click();
+    },
     setTime: (t: TimeOfDay) => {
       currentTime = t;
       applyTimePreset(scene, TIME_PRESETS[t], hemiLight ?? null, dirLight ?? null);
