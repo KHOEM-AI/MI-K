@@ -63,6 +63,19 @@ export function createNatureIsland(): THREE.Group {
   }
   g.add(instanced(new THREE.CylinderGeometry(0.25, 0.35, 2.4, 6), std(0x6b4423, 0.9), trunks));
   g.add(instanced(new THREE.ConeGeometry(1.9, 4.6, 7), std(0x2d6a2d, 0.85), crowns));
+
+  // បន្ថែមទឹកធ្លាក់ធំ
+  const waterFallMat = new THREE.MeshStandardMaterial({ color: 0x9fd8ff, transparent: true, opacity: 0.8, roughness: 0.1 });
+  const waterfall = new THREE.Mesh(new THREE.CylinderGeometry(1, 2, 35, 8, 1, true), waterFallMat);
+  waterfall.position.set(peakX, GROUND + 16, peakZ + 16);
+  waterfall.rotation.x = 0.2;
+  g.add(waterfall);
+
+  // ស្រះទឹកខាងក្រោម
+  const pool = new THREE.Mesh(new THREE.CylinderGeometry(6, 6, 0.5, 16), waterFallMat);
+  pool.position.set(peakX, GROUND + 0.2, peakZ + 20);
+  g.add(pool);
+
   return g;
 }
 

@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { createOcean, createSkyAndLights } from './oceanEnvironment';
 import { buildPrisonIsland } from './PrisonIsland3D';
+import { createPoliceCar, createMilitaryTruck } from './prisonDetails';
 import type { PrisonIslandConfig, TransportConfig } from './prisonTypes';
 import { createTransportPlane, createTransportShip } from './prisonGeometry';
 import { applyTimePreset, createStars, TIME_PRESETS, type TimeOfDay } from './timeOfDay';
@@ -21,6 +22,7 @@ export function initOceanWorld(canvas: HTMLCanvasElement) {
 
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); // Optimize សម្រាប់ទូរស័ព្ទ
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
@@ -147,6 +149,25 @@ export function initOceanWorld(canvas: HTMLCanvasElement) {
     }
   });
   scene.add(worldGroup);
+
+  // --- ប្រព័ន្ធសន្តិសុខ (Security System) ---
+  const alarmLight = new THREE.PointLight(0xff0000, 0, 200);
+  alarmLight.position.set(0, 30, 0);
+  scene.add(alarmLight);
+  let isAlarmOn = false;
+
+  // --- ឡានល្បាត (Patrol Vehicles) ---
+  const patrolCars: THREE.Group[] = [
+    createPoliceCar(0, 0),
+    createPoliceCar(0, 0),
+    createMilitaryTruck(0, 0),
+    createMilitaryTruck(0, 0)
+  ];
+  patrolCars.forEach((car, i) => {
+    car.scale.setScalar(1.5);
+    scene.add(car);
+  });
+
 
   // ចាប់យកតួអង្គដែលត្រូវធ្វើចលនា
   const walkers: THREE.Group[] = [];
@@ -374,6 +395,10 @@ export function initOceanWorld(canvas: HTMLCanvasElement) {
   (window as any).__oceanAPI = {
     toggleSound: () => sound.toggle(),
     toggleRain: () => weather.toggleRain(),
+    toggleAlarm: () => {
+      isAlarmOn = !isAlarmOn;
+      return isAlarmOn;
+    },
     toggleBuildMode: () => {
       isBuildMode = !isBuildMode;
       return isBuildMode;
