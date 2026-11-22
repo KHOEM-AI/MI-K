@@ -1,7 +1,8 @@
 import * as THREE from 'three';
+import { createCharacterLineup } from './characterFactory.ts';
 
 export const GROUND = 2.5;
-export const THEME_MESH_BUDGET = 120;
+export const THEME_MESH_BUDGET = 400;
 
 type Spot = [number, number, number, number];
 
@@ -84,6 +85,9 @@ export function createAirportIsland(): THREE.Group {
   const hangar = std(0x7f8c8d, 0.8);
   g.add(box(14, 5, 10, hangar, 20, GROUND + 2.5, 18));
   g.add(box(14, 5, 10, hangar, -2, GROUND + 2.5, 20));
+
+  // ដាក់តួអង្គទាំង ២០ នៅលើកោះព្រលានយន្តហោះ
+  g.add(createCharacterLineup());
   return g;
 }
 
