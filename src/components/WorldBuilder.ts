@@ -18,7 +18,8 @@ export function initOceanWorld(canvas: HTMLCanvasElement) {
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
   createSkyAndLights(scene);
-  scene.add(createOcean(3000));
+  const ocean = createOcean(3000);
+  scene.add(ocean);
 
   const configs: PrisonIslandConfig[] = [
     { id: 'main-prison', name: 'Prison Island', type: 'main-island', position: [0, 0, 0] },
@@ -62,6 +63,10 @@ export function initOceanWorld(canvas: HTMLCanvasElement) {
   function animate() {
     animationFrameId = requestAnimationFrame(animate);
     const time = clock.getElapsedTime();
+
+    // Advance water shader
+    const waterMat = ocean.userData.waterMaterial as THREE.ShaderMaterial | undefined;
+    if (waterMat) waterMat.uniforms.uTime.value = time;
 
     // ចលនាកប៉ាល់ និងយន្តហោះ
     ship.position.x = -150 + Math.sin(time * 0.5) * 100;
