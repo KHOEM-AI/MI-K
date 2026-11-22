@@ -37,10 +37,10 @@ test('advancing uTime does not throw (simulates the render loop)', () => {
 test('the ocean geometry has enough vertices for visible waves', () => {
   const mesh = createOcean(500);
   const posAttr = mesh.geometry.getAttribute('position');
-  // 128 segments each way -> (128+1)^2 vertices
-  assert.ok(posAttr.count >= 10000, 'too few vertices: ' + posAttr.count);
+  // 256 segments each way -> (256+1)^2 vertices
+  assert.ok(posAttr.count >= 60000, 'too few vertices: ' + posAttr.count);
   // but stay reasonable for mobile
-  assert.ok(posAttr.count <= 20000, 'too many vertices: ' + posAttr.count);
+  assert.ok(posAttr.count <= 70000, 'too many vertices: ' + posAttr.count);
 });
 
 test('disposeMesh frees the ocean shader material and geometry', async () => {
