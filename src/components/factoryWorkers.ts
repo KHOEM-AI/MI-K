@@ -11,7 +11,7 @@ export function createWorker(
   shirtColor = "#f39c12",
   hatColor = "#e74c3c"
 ): THREE.Group {
-  return createHumanFigure({ height: 2.3, shirt: shirtColor, pants: 0x2c3e50, hat: "helmet", hatColor, skin: 0xc58e69, shoe: 0x2b2118 });
+  return createHumanFigure({ lite: true, height: 2.3, shirt: shirtColor, pants: 0x2c3e50, hat: "helmet", hatColor, skin: 0xc58e69, shoe: 0x2b2118 });
 }
 
 /* ============================================================

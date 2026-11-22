@@ -50,7 +50,7 @@ export function createFlagPole() {
 }
 
 export function createStudent(shirtColor: number) {
-  return createHumanFigure({ height: 2.1, shirt: shirtColor, pants: 0x1e3a8a, skin: 0xd1a27d, longSleeves: false, shoe: 0xf0f0f0 });
+  return createHumanFigure({ lite: true, height: 2.1, shirt: shirtColor, pants: 0x1e3a8a, skin: 0xd1a27d, longSleeves: false, shoe: 0xf0f0f0 });
 }
 
 export function createTeacher() {

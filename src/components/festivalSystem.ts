@@ -192,7 +192,7 @@ export function createFestivalPerson(color: string): THREE.Group {
   const n = color.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
   const skins = [0xc58e69, 0xc99672, 0xb98560, 0xd0a07c];
   const female = n % 2 === 1;
-  return createHumanFigure({
+  return createHumanFigure({ lite: true,
     height: 1.9 + (n % 4) * 0.05, shirt: color, pants: female ? 0x3b2f5e : 0x2c3e50, skin: skins[n % skins.length],
     female, skirt: female, hairStyle: female ? "long" : "short", longSleeves: false,
   });

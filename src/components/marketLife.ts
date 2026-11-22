@@ -11,7 +11,7 @@ export function createVendor(shirtColor = "#3498db"): THREE.Group {
   const n = shirtColor.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
   const skins = [0xc58e69, 0xc99672, 0xb98560, 0xd0a07c];
   const female = n % 2 === 0;
-  return createHumanFigure({
+  return createHumanFigure({ lite: true,
     height: 2.2, shirt: shirtColor, pants: 0x3b3b4f, skin: skins[n % skins.length], female,
     hairStyle: female ? "bun" : "short", hat: female ? "none" : "cap", hatColor: 0xe67e22, longSleeves: false,
   });

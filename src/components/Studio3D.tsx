@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { Eye, EyeOff, Lock, Unlock, Pencil, HelpCircle, X, Camera, Trash2, Copy, RotateCcw, Save as KSave, Wind as KWind, Sprout as KSprout, Cloud as KCloud, RefreshCw as KRefresh } from "lucide-react";
 import { saveAsset } from "../lib/storage.mjs";
 import { UI3DPreview } from "./UI3DPreview";
@@ -163,6 +163,8 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       body: "Export PNG (Screenshot) ឬ Export GLB ដើម្បីចែករំលែក Scene ទៅកាន់អ្នកដទៃ។ សូមរីករាយនឹងការបង្កើត!",
     },
   ];
+
+  const objectsById = useMemo(() => new Map(objects.map((o) => [o.id, o] as const)), [objects]);
 
   useEffect(() => {
     const hasSeenTour = localStorage.getItem("khoem-ai-tour-seen");
@@ -335,7 +337,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       cameraRef.current = camera;
 
       renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
       rendererRef.current = renderer;
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -460,7 +462,6 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
         controls?.update();
 
         // Animate car wheels around their axle
-        wheelAngle += 0.05;
         wheelAngle += 0.05;
         meshesRef.current.forEach((obj) => {
           if (obj.userData.wheels && Array.isArray(obj.userData.wheels)) {
@@ -3304,7 +3305,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       const t = windTimeRef.current;
 
       meshesRef.current.forEach((mesh) => {
-        const sceneObj = objects.find(o => o.id === mesh.userData.objectId);
+        const sceneObj = objectsById.get(mesh.userData.objectId);
         if (!sceneObj) return;
         if (sceneObj.locked) return;
 
@@ -3349,7 +3350,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       const t = windTimeRef.current;
 
       meshesRef.current.forEach((mesh) => {
-        const sceneObj = objects.find(o => o.id === mesh.userData.objectId);
+        const sceneObj = objectsById.get(mesh.userData.objectId);
         if (!sceneObj) return;
         if (sceneObj.locked) return;
 
@@ -3399,7 +3400,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       const t = windTimeRef.current;
 
       meshesRef.current.forEach((mesh) => {
-        const sceneObj = objects.find(o => o.id === mesh.userData.objectId);
+        const sceneObj = objectsById.get(mesh.userData.objectId);
         if (!sceneObj) return;
         if (sceneObj.locked) return;
 
@@ -3443,7 +3444,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       const t = windTimeRef.current;
 
       meshesRef.current.forEach((mesh) => {
-        const sceneObj = objects.find(o => o.id === mesh.userData.objectId);
+        const sceneObj = objectsById.get(mesh.userData.objectId);
         if (!sceneObj) return;
         if (sceneObj.locked) return;
 
@@ -3487,7 +3488,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       const t = windTimeRef.current;
 
       meshesRef.current.forEach((mesh) => {
-        const sceneObj = objects.find(o => o.id === mesh.userData.objectId);
+        const sceneObj = objectsById.get(mesh.userData.objectId);
         if (!sceneObj) return;
         if (sceneObj.locked) return;
 
@@ -3525,7 +3526,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       const t = windTimeRef.current;
 
       meshesRef.current.forEach((mesh) => {
-        const sceneObj = objects.find(o => o.id === mesh.userData.objectId);
+        const sceneObj = objectsById.get(mesh.userData.objectId);
         if (!sceneObj) return;
         if (sceneObj.locked) return;
 
@@ -3563,7 +3564,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       const t = windTimeRef.current;
 
       meshesRef.current.forEach((mesh) => {
-        const sceneObj = objects.find(o => o.id === mesh.userData.objectId);
+        const sceneObj = objectsById.get(mesh.userData.objectId);
         if (!sceneObj) return;
         if (sceneObj.locked) return;
 
@@ -3602,7 +3603,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       const t = windTimeRef.current;
 
       meshesRef.current.forEach((mesh) => {
-        const sceneObj = objects.find(o => o.id === mesh.userData.objectId);
+        const sceneObj = objectsById.get(mesh.userData.objectId);
         if (!sceneObj) return;
         if (sceneObj.locked) return;
 
@@ -3639,7 +3640,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       const t = windTimeRef.current;
 
       meshesRef.current.forEach((mesh) => {
-        const sceneObj = objects.find(o => o.id === mesh.userData.objectId);
+        const sceneObj = objectsById.get(mesh.userData.objectId);
         if (!sceneObj) return;
         if (sceneObj.locked) return;
 
@@ -3678,7 +3679,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       const t = windTimeRef.current;
 
       meshesRef.current.forEach((mesh) => {
-        const sceneObj = objects.find(o => o.id === mesh.userData.objectId);
+        const sceneObj = objectsById.get(mesh.userData.objectId);
         if (!sceneObj) return;
         if (sceneObj.locked) return;
 
@@ -3713,7 +3714,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       const t = windTimeRef.current;
 
       meshesRef.current.forEach((mesh) => {
-        const sceneObj = objects.find(o => o.id === mesh.userData.objectId);
+        const sceneObj = objectsById.get(mesh.userData.objectId);
         if (!sceneObj) return;
         if (sceneObj.locked) return;
 
@@ -3754,7 +3755,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       const t = windTimeRef.current;
 
       meshesRef.current.forEach((mesh) => {
-        const sceneObj = objects.find(o => o.id === mesh.userData.objectId);
+        const sceneObj = objectsById.get(mesh.userData.objectId);
         if (!sceneObj) return;
         if (sceneObj.locked) return;
 
@@ -3809,7 +3810,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       const t = windTimeRef.current;
 
       meshesRef.current.forEach((mesh) => {
-        const sceneObj = objects.find(o => o.id === mesh.userData.objectId);
+        const sceneObj = objectsById.get(mesh.userData.objectId);
         if (!sceneObj) return;
         if (sceneObj.locked) return;
 
@@ -3855,7 +3856,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       const t = windTimeRef.current;
 
       meshesRef.current.forEach((mesh) => {
-        const sceneObj = objects.find(o => o.id === mesh.userData.objectId);
+        const sceneObj = objectsById.get(mesh.userData.objectId);
         if (!sceneObj) return;
         if (sceneObj.locked) return;
 
@@ -3912,7 +3913,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       const t = windTimeRef.current;
 
       meshesRef.current.forEach((mesh) => {
-        const sceneObj = objects.find(o => o.id === mesh.userData.objectId);
+        const sceneObj = objectsById.get(mesh.userData.objectId);
         if (!sceneObj) return;
         if (sceneObj.locked) return;
 
@@ -3961,7 +3962,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       const t = windTimeRef.current;
 
       meshesRef.current.forEach((mesh) => {
-        const sceneObj = objects.find(o => o.id === mesh.userData.objectId);
+        const sceneObj = objectsById.get(mesh.userData.objectId);
         if (!sceneObj) return;
         if (sceneObj.locked) return;
 
@@ -4006,7 +4007,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       const t = windTimeRef.current;
 
       meshesRef.current.forEach((mesh) => {
-        const sceneObj = objects.find(o => o.id === mesh.userData.objectId);
+        const sceneObj = objectsById.get(mesh.userData.objectId);
         if (!sceneObj || !spaceShapes.has(sceneObj.shape)) return;
         if (sceneObj.locked) return;
 
@@ -4045,7 +4046,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       const t = windTimeRef.current;
 
       meshesRef.current.forEach((mesh) => {
-        const sceneObj = objects.find(o => o.id === mesh.userData.objectId);
+        const sceneObj = objectsById.get(mesh.userData.objectId);
         if (!sceneObj || !carShapes.has(sceneObj.shape)) return;
         if (sceneObj.locked) return;
 

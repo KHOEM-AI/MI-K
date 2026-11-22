@@ -51,7 +51,7 @@ export function createAnimatedMotorbike(color = "#e74c3c"): THREE.Group {
   add3(g, new THREE.BoxGeometry(0.14, 0.03, 0.4), paint, 0, 0.68, 0.78);
 
   const rider = createHumanFigure({
-    height: 1.8, shirt: 0x2c3e50, pants: 0x34495e, skin: 0xc58e69, hat: "helmet", hatColor: 0xf1c40f,
+    lite: true, height: 1.8, shirt: 0x2c3e50, pants: 0x34495e, skin: 0xc58e69, hat: "helmet", hatColor: 0xf1c40f,
     sitting: true, seatHeight: 0.8, longSleeves: true, hairStyle: "short",
   });
   rider.position.set(0, 0, -0.22);
@@ -63,6 +63,9 @@ export function createAnimatedMotorbike(color = "#e74c3c"): THREE.Group {
 /* ============================================================
    បង្កើតឡាន (សម្រាប់ animation)
    ============================================================ */
+let carBodyGeo: THREE.ExtrudeGeometry | undefined;
+let carWinGeo: THREE.ExtrudeGeometry | undefined;
+
 export function createAnimatedCar(color = "#c0392b"): THREE.Group {
   // Faces +z (drives forward along the road). Body = extruded side profile with bevel, so it has a
   // real car silhouette (hood, windscreen, roof, boot) instead of two boxes.
@@ -84,8 +87,11 @@ export function createAnimatedCar(color = "#c0392b"): THREE.Group {
   prof.lineTo(2.1, 0.66);
   prof.lineTo(2.0, 0.38);
   prof.lineTo(-2.0, 0.38);
-  const bodyGeo = new THREE.ExtrudeGeometry(prof, { depth: 1.5, bevelEnabled: true, bevelThickness: 0.1, bevelSize: 0.08, bevelSegments: 4, curveSegments: 6 });
-  bodyGeo.translate(0, 0, -0.75);
+  if (!carBodyGeo) {
+    carBodyGeo = new THREE.ExtrudeGeometry(prof, { depth: 1.5, bevelEnabled: true, bevelThickness: 0.1, bevelSize: 0.08, bevelSegments: 4, curveSegments: 6 });
+    carBodyGeo.translate(0, 0, -0.75);
+  }
+  const bodyGeo = carBodyGeo;
   const body = new THREE.Mesh(bodyGeo, paint);
   body.rotation.y = -Math.PI / 2;
   body.castShadow = true;
@@ -94,8 +100,11 @@ export function createAnimatedCar(color = "#c0392b"): THREE.Group {
   // side windows
   const win = new THREE.Shape();
   win.moveTo(-0.72, 1.06); win.lineTo(-0.58, 1.47); win.lineTo(0.42, 1.47); win.lineTo(0.92, 1.06); win.lineTo(-0.72, 1.06);
-  const winGeo = new THREE.ExtrudeGeometry(win, { depth: 1.78, bevelEnabled: false });
-  winGeo.translate(0, 0, -0.89);
+  if (!carWinGeo) {
+    carWinGeo = new THREE.ExtrudeGeometry(win, { depth: 1.78, bevelEnabled: false });
+    carWinGeo.translate(0, 0, -0.89);
+  }
+  const winGeo = carWinGeo;
   const windows = new THREE.Mesh(winGeo, glass);
   windows.rotation.y = -Math.PI / 2;
   g.add(windows);
@@ -155,7 +164,7 @@ export function createWalker(shirtColor = "#3498db"): THREE.Group {
   const n = shirtColor.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
   const skins = [0xc58e69, 0xc99672, 0xb98560, 0xd0a07c];
   const female = n % 3 === 1;
-  return createHumanFigure({
+  return createHumanFigure({ lite: true,
     height: 1.95 + (n % 4) * 0.04, shirt: shirtColor, pants: female ? 0x3b2f5e : 0x2c3e50, skin: skins[n % skins.length],
     female, skirt: female, hairStyle: female ? "long" : "short", longSleeves: false,
   });
