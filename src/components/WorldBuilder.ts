@@ -6,6 +6,8 @@ import type { PrisonIslandConfig, TransportConfig } from './prisonTypes';
 import { createTransportPlane, createTransportShip } from './prisonGeometry';
 import { applyTimePreset, createStars, TIME_PRESETS, type TimeOfDay } from './timeOfDay';
 import { CinematicCamera } from './cinematicCamera';
+import { WeatherSystem } from './weatherSystem';
+import { createHelicopter } from './helicopter';
 import { createMantaRay, createShark, createDolphin, createSeaTurtle, createFishSchool } from './marineLife';
 import { OceanSoundManager } from './soundManager';
 import { INTERIOR_VIEWS, flyToInterior } from './interiorViews';
@@ -101,6 +103,49 @@ export function initOceanWorld(canvas: HTMLCanvasElement) {
   });
 
     const worldGroup = buildPrisonIsland(configs, []);
+  const weather = new WeatherSystem();
+  scene.add(weather.rain);
+  scene.add(weather.clouds);
+  
+  const heli = createHelicopter();
+  heli.position.set(-30, 40, -35); // លើអគាររដ្ឋបាល
+  scene.add(heli);
+  
+  // ចុចមើលព័ត៌មាន
+  canvas.addEventListener('pointerdown', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    raycaster.setFromCamera(mouse, camera);
+    
+    const intersects = raycaster.intersectObjects(scene.children, true);
+    if (intersects.length > 0) {
+      let obj: any = intersects[0].object;
+      let info = null;
+      
+      // រកមើលឈ្មោះវត្ថុ
+      while (obj) {
+        if (obj.name === 'manta-ray') info = { title: 'Manta Ray', desc: 'ត្រីបង្កដ៏ធំ' };
+        else if (obj.name === 'shark') info = { title: 'Shark', desc: 'ត្រីឆ្លាម' };
+        else if (obj.name === 'dolphin') info = { title: 'Dolphin', desc: 'ដុលហ្វីន' };
+        else if (obj.name === 'turtle') info = { title: 'Sea Turtle', desc: 'អណ្តើកសមុទ្រ' };
+        else if (obj.name === 'fish-school') info = { title: 'Fish School', desc: 'ហ្វូងត្រីតូចៗ' };
+        else if (obj.name === 'prison-bus') info = { title: 'Prison Bus', desc: 'ឡានដឹកអ្នកទោស' };
+        else if (obj.name === 'helicopter') info = { title: 'Helicopter', desc: 'ឧទ្ធម្ភាគចក្រ' };
+        else if (obj.name === 'theme-airport') info = { title: 'Airport Island', desc: 'កោះព្រលានយន្តហោះ' };
+        else if (obj.name === 'theme-port') info = { title: 'Port Island', desc: 'កោះកំពង់ផែ' };
+        else if (obj.name === 'theme-nature') info = { title: 'Nature Island', desc: 'កោះធម្មជាតិ' };
+        else if (obj.name === 'main-island') info = { title: 'Prison Island', desc: 'កោះពន្ធនាគារ' };
+        
+        if (info) break;
+        obj = obj.parent;
+      }
+      
+      if (info) {
+        window.dispatchEvent(new CustomEvent('ocean-click', { detail: info }));
+      }
+    }
+  });
   scene.add(worldGroup);
 
   // ចាប់យកតួអង្គដែលត្រូវធ្វើចលនា
@@ -226,7 +271,17 @@ export function initOceanWorld(canvas: HTMLCanvasElement) {
       school.rotation.y = -angle;
     });
 
-        // ចលនាតួអង្គ (ដកដង្ហើម និងកម្រើកក្បាល)
+        weather.update(time, dt);
+    
+    // ចលនាឧទ្ធម្ភាគចក្រ (ហោះឡើងចុះ)
+    heli.position.y = 40 + Math.sin(time * 0.8) * 3;
+    heli.rotation.y = Math.sin(time * 0.2) * 0.2;
+    const mainRotor = heli.getObjectByName('main-rotor');
+    const tailRotor = heli.getObjectByName('tail-rotor');
+    if (mainRotor) mainRotor.rotation.y = time * 20;
+    if (tailRotor) tailRotor.rotation.x = time * 30;
+
+    // ចលនាតួអង្គ (ដកដង្ហើម និងកម្រើកក្បាល)
     allCharacters.forEach((char, idx) => {
       const offset = idx * 0.5;
       const head = char.getObjectByName('head');
@@ -318,6 +373,7 @@ export function initOceanWorld(canvas: HTMLCanvasElement) {
   // Expose debug API for OceanWorldViewer UI
   (window as any).__oceanAPI = {
     toggleSound: () => sound.toggle(),
+    toggleRain: () => weather.toggleRain(),
     toggleBuildMode: () => {
       isBuildMode = !isBuildMode;
       return isBuildMode;
