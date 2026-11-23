@@ -152,15 +152,29 @@ export default function Hospital3D() {
     scene.background = new THREE.Color(0x87ceeb);
     scene.fog = new THREE.Fog(0x87ceeb, 100, 300); // បង្កើនចម្ងាយ Fog ដើម្បីមើលឃើញបរិវេណធំ
 
-    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderWidth = mountRef.current.clientWidth || window.innerWidth;
+    const renderHeight = mountRef.current.clientHeight || window.innerHeight;
+    const camera = new THREE.PerspectiveCamera(45, renderWidth / renderHeight, 0.1, 1000);
     camera.position.set(40, 30, 70); camera.lookAt(0, 10, 0);
     cameraRef.current = camera;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: profile.antialias, preserveDrawingBuffer: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    applyRendererQuality(renderer, profile); // phones render at 2.5-3.5x by default: capped now
+    const renderer = new THREE.WebGLRenderer({
+      antialias: profile.antialias,
+      preserveDrawingBuffer: true,
+    });
+    applyRendererQuality(renderer, profile);
+    renderer.setSize(renderWidth, renderHeight);
     mountRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
+
+    const handleResize = () => {
+      const width = mountRef.current?.clientWidth || window.innerWidth;
+      const height = mountRef.current?.clientHeight || window.innerHeight;
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+      renderer.setSize(width, height);
+    };
+    window.addEventListener("resize", handleResize);
 
     const sunLight = new THREE.DirectionalLight(0xffffff, 2.5);
     sunLight.position.set(50, 80, 50); sunLight.castShadow = true; 
@@ -307,6 +321,7 @@ export default function Hospital3D() {
     const neonLight = sign.userData.neonLight;
     const rainPositions = (rain.geometry as THREE.BufferGeometry).attributes.position.array as Float32Array;
     
+    let frameCount = 0;
     let animationId: number;
     const clock = new THREE.Clock();
     
@@ -314,9 +329,13 @@ export default function Hospital3D() {
     const unlit = capLights(scene, profile.maxLights);
     if (unlit > 0) console.log(`[perf] hospital: ${unlit} extra lights switched off (${profile.quality})`);
 
+    const dayBg = new THREE.Color(0x87ceeb);
+    const nightBg = new THREE.Color(0x0a1128);
+    const followOffset = new THREE.Vector3(15, 10, 15);
+    const targetCamPos = new THREE.Vector3();
     const animate = () => {
       animationId = requestAnimationFrame(animate);
-      const elapsed = clock.getElapsedTime();
+      const elapsed = clock.getElapsedTime(); frameCount++;
       const isNightMode = nightRef.current;
       const isFlyingMode = flyingRef.current;
       const isFollowMode = followRef.current;
@@ -343,8 +362,7 @@ export default function Hospital3D() {
       // Follow Helicopter
       if (isFollowMode) {
         controls.target.lerp(helicopter.position, 0.1);
-        const offset = new THREE.Vector3(15, 10, 15);
-        const targetCamPos = helicopter.position.clone().add(offset);
+        targetCamPos.copy(helicopter.position).add(followOffset);
         camera.position.lerp(targetCamPos, 0.05);
       }
 
@@ -378,7 +396,7 @@ export default function Hospital3D() {
       wc.position.x = -4 + Math.sin(elapsed * 0.8) * 5;
 
       // អក្សររត់លើទូរទស្សន៍
-      if (digitalTV.userData.ctx && digitalTV.userData.texture) {
+      if (frameCount % 3 === 0 && digitalTV.userData.ctx && digitalTV.userData.texture) {
         const ctx = digitalTV.userData.ctx;
         ctx.fillStyle = '#001122'; ctx.fillRect(0, 0, 512, 256);
         ctx.fillStyle = '#00ffcc'; ctx.font = 'bold 40px sans-serif'; ctx.textAlign = 'center';
@@ -390,7 +408,7 @@ export default function Hospital3D() {
       }
 
       // Day/Night
-      const targetBg = isNightMode ? new THREE.Color(0x0a1128) : new THREE.Color(0x87ceeb);
+      const targetBg = isNightMode ? nightBg : dayBg;
       if (scene.background instanceof THREE.Color) {
         scene.background.lerp(targetBg, 0.05);
         if (scene.fog instanceof THREE.Fog) scene.fog.color.copy(scene.background);
@@ -399,7 +417,7 @@ export default function Hospital3D() {
       ambientLight.intensity += ((isNightMode ? 0.2 : 0.6) - ambientLight.intensity) * 0.05;
 
       // ភ្លើងសូឡាជុំវិញបរិវេណ (បើកពេលយប់)
-      if (perimeterRef.current) {
+      if (perimeterRef.current && frameCount % 30 === 0) {
         perimeterRef.current.traverse((child) => {
           if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial && child.material.emissive) {
             if (child.material.emissive.getHex() === 0xffdd55 || child.material.emissive.getHex() === 0xffffff) {
@@ -462,6 +480,8 @@ export default function Hospital3D() {
     return () => {
       stopStats();
       cancelAnimationFrame(animationId);
+      window.removeEventListener("resize", handleResize);
+      controls.dispose();
       renderer.dispose();
       if (mountRef.current) mountRef.current.removeChild(renderer.domElement);
       if (sirenOscRef.current) sirenOscRef.current.stop();

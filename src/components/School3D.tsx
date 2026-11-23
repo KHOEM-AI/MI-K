@@ -91,6 +91,8 @@ export default function School3D() {
     const stopStats = attachStats(renderer, mountRef.current!, "School");
     capLights(scene, profile.maxLights);
 
+    const dayBg = new THREE.Color(0x87ceeb);
+    const nightBg = new THREE.Color(0x0a1128);
     const animate = () => {
       animId = requestAnimationFrame(animate);
       const t = clock.getElapsedTime();
@@ -104,7 +106,7 @@ export default function School3D() {
       teacher.rotation.y = Math.sin(t * 0.5) * 0.5;
 
       // Day/Night
-      const targetBg = night ? new THREE.Color(0x0a1128) : new THREE.Color(0x87ceeb);
+      const targetBg = night ? nightBg : dayBg;
       if (scene.background instanceof THREE.Color) scene.background.lerp(targetBg, 0.05);
       sun.intensity += ((night ? 0.1 : 2.5) - sun.intensity) * 0.05;
       if (windowMat) windowMat.emissiveIntensity += ((night ? 2.5 : 0.6) - windowMat.emissiveIntensity) * 0.05;

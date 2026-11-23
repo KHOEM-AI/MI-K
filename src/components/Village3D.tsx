@@ -655,11 +655,26 @@ export default function Village3D() {
     const nightBg = new THREE.Color("#0a1128");
     let currentBg = dayBg.clone();
 
+    // Street lamps are found once (and re-scanned every ~10 s), not by walking the whole scene on every frame.
+    let lampList: THREE.MeshStandardMaterial[] = [];
+    let lampTick = 0;
+    const lampMats = () => {
+      if (lampTick++ % 600 === 0) {
+        const found = new Set<THREE.MeshStandardMaterial>();
+        scene.traverse((o) => {
+          if (o.name === "streetLamp") found.add((o as THREE.Mesh).material as THREE.MeshStandardMaterial);
+        });
+        lampList = Array.from(found);
+      }
+      return lampList;
+    };
+
     let rafId = 0;
     const stopStats = attachStats(renderer, mount, "Village");
     const unlit = capLights(scene, profile.maxLights);
     if (unlit > 0) console.log(`[perf] ${unlit} extra point/spot lights switched off (${profile.quality})`);
 
+    const trafficPhases: number[] = [];
     const animate = () => {
       const night = nightRef.current;
       const targetBg = night ? nightBg : dayBg;
@@ -675,13 +690,7 @@ export default function Village3D() {
 
       // ចង្កៀងផ្លូវ (emissive)
       const targetLampEmissive = night ? 1.5 : 0;
-      scene.traverse((obj) => {
-        if (obj.name === "streetLamp") {
-          const mesh = obj as THREE.Mesh;
-          const mat = mesh.material as THREE.MeshStandardMaterial;
-          mat.emissiveIntensity += (targetLampEmissive - mat.emissiveIntensity) * 0.05;
-        }
-      });
+      for (const mat of lampMats()) mat.emissiveIntensity += (targetLampEmissive - mat.emissiveIntensity) * 0.05;
 
       // Update traffic
       if (trafficVehiclesRef.current.length > 0) {
@@ -738,14 +747,7 @@ export default function Village3D() {
         }
         // ធ្វើឱ្យចង្កៀងផ្លូវភ្លឺពេលល្ងាច/យប់ (ជំនួស isNight manual)
         const nightNow = tod.isNight;
-        scene.traverse((obj) => {
-          if (obj.name === "streetLamp") {
-            const mesh = obj as THREE.Mesh;
-            const m = mesh.material as THREE.MeshStandardMaterial;
-            const target = nightNow ? 1.5 : 0;
-            m.emissiveIntensity += (target - m.emissiveIntensity) * 0.05;
-          }
-        });
+        for (const m of lampMats()) m.emissiveIntensity += ((nightNow ? 1.5 : 0) - m.emissiveIntensity) * 0.05;
       }
 
       // Update forest zone (ឃ្មុំ + ទឹក)
@@ -848,14 +850,22 @@ export default function Village3D() {
 
       // Update smart traffic
       if (smartTrafficRef.current.length > 0 && trafficLightsRef.current.length > 0) {
-        const phases = trafficLightsRef.current.map((tl) => tl.phase);
-        updateSmartTraffic(smartTrafficRef.current, phases, delta);
+        trafficPhases.length = trafficLightsRef.current.length;
+        for (let i = 0; i < trafficLightsRef.current.length; i++) {
+          trafficPhases[i] = trafficLightsRef.current[i].phase;
+        }
+        updateSmartTraffic(smartTrafficRef.current, trafficPhases, delta);
       }
 
       // Update A: ជីវិតប្រជាជន
       if (villagersRef.current.length > 0 && timeControllerRef.current) {
         const h = timeControllerRef.current.getHour();
-        updateVillagers(villagersRef.current, h, elapsedSec, { clockSpeed: timeControllerRef.current.getSpeed(), raining: rainingRef.current, viewer: camera.position, far: profile.farCull });
+        updateVillagers(villagersRef.current, h, elapsedSec, {
+          clockSpeed: timeControllerRef.current.getSpeed(),
+          raining: rainingRef.current,
+          viewer: camera.position,
+          far: profile.farCull,
+        });
       }
 
       // Update B: ភ្លើងផ្ទះ
