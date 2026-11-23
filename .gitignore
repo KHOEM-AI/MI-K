@@ -44,3 +44,7 @@ patch_*.py
 *.before-*
 *.pre-*
 backup-perf-*/
+
+# Python cache
+__pycache__/
+*.py[cod]
