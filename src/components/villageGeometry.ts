@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { houseSlots, mulberry32, pickWealth, type Wealth } from "./villageLayout";
+import { HOUSEHOLD_COUNT, houseSlots, mulberry32, pickWealth, type Wealth } from "./villageLayout.ts";
 
 const mat = (color: string, opts: Partial<THREE.MeshStandardMaterialParameters> = {}) =>
   new THREE.MeshStandardMaterial({ color, roughness: 0.85, metalness: 0.05, ...opts });
@@ -7,7 +7,7 @@ const mat = (color: string, opts: Partial<THREE.MeshStandardMaterialParameters> 
 /* ============================================================
    ឋានៈសង្គម: 0=ក្រ, 1=កណ្តាល, 2=មាន
    ============================================================ */
-export { pickWealth, type Wealth } from "./villageLayout";
+export { pickWealth, type Wealth } from "./villageLayout.ts";
 
 /* ============================================================
    ផ្ទះតាមឋានៈ — ធំ, មានលម្អិត
@@ -702,7 +702,7 @@ export interface InstancedVillageResult {
   roofMesh: THREE.InstancedMesh;
 }
 
-export function createVillageHousesInstanced(count = 300, seed = 42): InstancedVillageResult {
+export function createVillageHousesInstanced(count = 300, seed = 42, realVehicleHouses = HOUSEHOLD_COUNT): InstancedVillageResult {
   const group = new THREE.Group();
   // Same slots as villagers, doors and lights use (villageLayout.ts).
   const positions = houseSlots(count, seed);
@@ -799,9 +799,11 @@ export function createVillageHousesInstanced(count = 300, seed = 42): InstancedV
   group.add(roofMesh);
 
   // --- យានជំនិះតាមឋានៈ (ចំនួនតិច — មិនចាំបាច់ instanced) ---
-  const carPositions = positions.filter((p) => p.wealth === 2);
-  const bikePositions = positions.filter((p) => p.wealth === 1);
-  const bicyclePositions = positions.filter((p) => p.wealth === 0);
+  // houses of simulated families keep REAL parked vehicles (villageLife.ts); the rest get simple stand-ins
+  const standIn = positions.filter((p) => p.index >= realVehicleHouses);
+  const carPositions = standIn.filter((p) => p.wealth === 2);
+  const bikePositions = standIn.filter((p) => p.wealth === 1);
+  const bicyclePositions = standIn.filter((p) => p.wealth === 0);
 
   // ឡាន (InstancedMesh ដែរ)
   if (carPositions.length > 0) {

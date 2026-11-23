@@ -21,6 +21,9 @@ export function pickWealth(rng: () => number): Wealth {
 }
 
 export const HOUSE_COUNT = 300;
+/** The first houses are homes of the simulated families (3 people each). Only those get real parked vehicles. */
+export const HOUSEHOLD_SIZE = 3;
+export const HOUSEHOLD_COUNT = 34;
 export const HOUSE_COLS = 20;
 export const HOUSE_SPACING_X = 9;
 export const HOUSE_SPACING_Z = 10;
@@ -76,7 +79,11 @@ export function houseSlots(count = HOUSE_COUNT, seed = 42): HouseSlot[] {
 }
 
 /* ---------- public places (same coordinates Village3D uses) ---------- */
-export type PlaceKind = "field" | "factory" | "market" | "shop" | "plaza";
+export type PlaceKind = "field" | "factory" | "market" | "shop" | "plaza" | "school" | "clinic";
+
+/** Building centres. Each building faces the village; its yard is the matching place below. */
+export const SCHOOL_BUILDING = { x: -128, z: -30 };
+export const CLINIC_BUILDING = { x: 128, z: -30 };
 export interface Place {
   id: string;
   kind: PlaceKind;
@@ -103,6 +110,8 @@ export const PLACES: Place[] = [
   { id: "shop-3", kind: "shop", x: 15, z: 66, radius: 1.5, indoor: true },
   { id: "shop-4", kind: "shop", x: 45, z: 66, radius: 1.5, indoor: true },
   { id: "plaza", kind: "plaza", x: 0, z: 0, radius: 12, indoor: false },
+  { id: "school", kind: "school", x: -111, z: -30, radius: 7, indoor: true },
+  { id: "clinic", kind: "clinic", x: 111, z: -30, radius: 6, indoor: true },
 ];
 
 export const placesOf = (kind: PlaceKind) => PLACES.filter((p) => p.kind === kind);
@@ -137,3 +146,6 @@ export function planRoute(from: Pt, to: Pt): Pt[] {
   }
   return out;
 }
+
+/** How many families are simulated for a given number of villagers (3 people per family). */
+export const householdsFor = (villagers: number) => Math.min(HOUSEHOLD_COUNT, Math.ceil(villagers / HOUSEHOLD_SIZE));

@@ -1,3 +1,5 @@
+import { applyRendererQuality, attachStats, capLights, getProfile } from "./perf.ts";
+import { setFigureDetail } from "./humanFigure.ts";
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
@@ -18,6 +20,8 @@ export default function School3D() {
 
   useEffect(() => {
     if (!mountRef.current) return;
+    const profile = getProfile();
+    setFigureDetail(profile.figureDetail);
     const scene = new THREE.Scene();
     sceneRef.current = scene;
     scene.background = new THREE.Color(0x87ceeb);
@@ -25,11 +29,10 @@ export default function School3D() {
     const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.position.set(25, 18, 30); camera.lookAt(0, 6, 0);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    const renderer = new THREE.WebGLRenderer({ antialias: profile.antialias });
     rendererRef.current = renderer;
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
-    renderer.shadowMap.enabled = true;
+    applyRendererQuality(renderer, profile);
     mountRef.current.appendChild(renderer.domElement);
 
     const sun = new THREE.DirectionalLight(0xffffff, 2.5);
@@ -85,6 +88,9 @@ export default function School3D() {
     let animId: number;
     const clock = new THREE.Clock();
 
+    const stopStats = attachStats(renderer, mountRef.current!, "School");
+    capLights(scene, profile.maxLights);
+
     const animate = () => {
       animId = requestAnimationFrame(animate);
       const t = clock.getElapsedTime();
@@ -113,6 +119,7 @@ export default function School3D() {
     animate();
 
     return () => {
+      stopStats();
       cancelAnimationFrame(animId);
       renderer.dispose();
       if (mountRef.current) mountRef.current.removeChild(renderer.domElement);

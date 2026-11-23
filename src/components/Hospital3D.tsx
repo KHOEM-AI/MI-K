@@ -1,3 +1,5 @@
+import { applyRendererQuality, attachStats, capLights, getProfile } from "./perf.ts";
+import { setFigureDetail } from "./humanFigure.ts";
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
@@ -143,33 +145,22 @@ export default function Hospital3D() {
 
   useEffect(() => {
     if (!mountRef.current) return;
+    const profile = getProfile();
+    setFigureDetail(profile.figureDetail);
     const scene = new THREE.Scene();
     sceneRef.current = scene;
     scene.background = new THREE.Color(0x87ceeb);
     scene.fog = new THREE.Fog(0x87ceeb, 100, 300); // បង្កើនចម្ងាយ Fog ដើម្បីមើលឃើញបរិវេណធំ
 
-    const renderWidth = mountRef.current.clientWidth || window.innerWidth;
-    const renderHeight = mountRef.current.clientHeight || window.innerHeight;
-    const camera = new THREE.PerspectiveCamera(45, renderWidth / renderHeight, 0.1, 1000);
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.position.set(40, 30, 70); camera.lookAt(0, 10, 0);
     cameraRef.current = camera;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: false });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25));
-    renderer.setSize(renderWidth, renderHeight);
-    renderer.shadowMap.enabled = false;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    const renderer = new THREE.WebGLRenderer({ antialias: profile.antialias, preserveDrawingBuffer: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    applyRendererQuality(renderer, profile); // phones render at 2.5-3.5x by default: capped now
     mountRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
-
-    const handleResize = () => {
-      const width = mountRef.current?.clientWidth || window.innerWidth;
-      const height = mountRef.current?.clientHeight || window.innerHeight;
-      camera.aspect = width / height;
-      camera.updateProjectionMatrix();
-      renderer.setSize(width, height);
-    };
-    window.addEventListener("resize", handleResize);
 
     const sunLight = new THREE.DirectionalLight(0xffffff, 2.5);
     sunLight.position.set(50, 80, 50); sunLight.castShadow = true; 
@@ -316,13 +307,16 @@ export default function Hospital3D() {
     const neonLight = sign.userData.neonLight;
     const rainPositions = (rain.geometry as THREE.BufferGeometry).attributes.position.array as Float32Array;
     
-    let frameCount = 0;
     let animationId: number;
     const clock = new THREE.Clock();
     
+    const stopStats = attachStats(renderer, mountRef.current, "Hospital");
+    const unlit = capLights(scene, profile.maxLights);
+    if (unlit > 0) console.log(`[perf] hospital: ${unlit} extra lights switched off (${profile.quality})`);
+
     const animate = () => {
       animationId = requestAnimationFrame(animate);
-      const elapsed = clock.getElapsedTime(); frameCount++;
+      const elapsed = clock.getElapsedTime();
       const isNightMode = nightRef.current;
       const isFlyingMode = flyingRef.current;
       const isFollowMode = followRef.current;
@@ -384,7 +378,7 @@ export default function Hospital3D() {
       wc.position.x = -4 + Math.sin(elapsed * 0.8) * 5;
 
       // អក្សររត់លើទូរទស្សន៍
-      if (frameCount % 3 === 0 && digitalTV.userData.ctx && digitalTV.userData.texture) {
+      if (digitalTV.userData.ctx && digitalTV.userData.texture) {
         const ctx = digitalTV.userData.ctx;
         ctx.fillStyle = '#001122'; ctx.fillRect(0, 0, 512, 256);
         ctx.fillStyle = '#00ffcc'; ctx.font = 'bold 40px sans-serif'; ctx.textAlign = 'center';
@@ -405,7 +399,7 @@ export default function Hospital3D() {
       ambientLight.intensity += ((isNightMode ? 0.2 : 0.6) - ambientLight.intensity) * 0.05;
 
       // ភ្លើងសូឡាជុំវិញបរិវេណ (បើកពេលយប់)
-      if (perimeterRef.current && frameCount % 30 === 0) {
+      if (perimeterRef.current) {
         perimeterRef.current.traverse((child) => {
           if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial && child.material.emissive) {
             if (child.material.emissive.getHex() === 0xffdd55 || child.material.emissive.getHex() === 0xffffff) {
@@ -466,9 +460,8 @@ export default function Hospital3D() {
     animate();
 
     return () => {
+      stopStats();
       cancelAnimationFrame(animationId);
-      window.removeEventListener("resize", handleResize);
-      controls.dispose();
       renderer.dispose();
       if (mountRef.current) mountRef.current.removeChild(renderer.domElement);
       if (sirenOscRef.current) sirenOscRef.current.stop();

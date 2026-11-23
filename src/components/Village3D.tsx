@@ -43,6 +43,10 @@ import {
   type DriftCloud,
 } from "./villageAnimations";
 import { createRain, updateRain, type RainSystem, createLightning, updateLightning, type LightningSystem } from "./rainSystem";
+import { applyRendererQuality, attachStats, capLights, getProfile } from "./perf.ts";
+import { setFigureDetail } from "./humanFigure.ts";
+import { householdsFor } from "./villageLayout.ts";
+import { createVillageSchool, createVillageClinic } from "./villageCivic.ts";
 import { createMarketLife, updateShoppers, type Shopper } from "./marketLife";
 import { createStars, updateStars, createMoon } from "./nightSky";
 import { TimeController, getTimeOfDay, applyTimeOfDay } from "./timeSystem";
@@ -123,6 +127,7 @@ export default function Village3D() {
   const [isNight, setIsNight] = useState(false);
   const nightRef = useRef(isNight);
   nightRef.current = isNight;
+  const rainingRef = useRef(false);
 
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -138,6 +143,7 @@ export default function Village3D() {
   const lightningRef = useRef<LightningSystem | null>(null);
   const shoppersRef = useRef<Shopper[]>([]);
   const [isRaining, setIsRaining] = useState(false);
+  rainingRef.current = isRaining;
   const [timeHour, setTimeHour] = useState(10);
   const timeControllerRef = useRef<TimeController | null>(null);
   const ambientRef = useRef<THREE.AmbientLight | null>(null);
@@ -239,15 +245,15 @@ export default function Village3D() {
     camera.position.set(150, 100, 200);
     cameraRef.current = camera;
 
+    const profile = getProfile();          // low / medium / high, chosen for this device (see perf.ts)
+    setFigureDetail(profile.figureDetail);
     const renderer = new THREE.WebGLRenderer({
-      antialias: true,
+      antialias: profile.antialias,
       powerPreference: "high-performance",
     });
     rendererRef.current = renderer;
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    applyRendererQuality(renderer, profile);
     renderer.shadowMap.autoUpdate = false;
     renderer.shadowMap.needsUpdate = true;
     mount.appendChild(renderer.domElement);
@@ -257,13 +263,13 @@ export default function Village3D() {
     scene.add(ambient);
 
     // Time controller
-    const timeController = new TimeController(10, 0.3); // ចាប់ផ្តើម ១០ ម៉ោង, ០.៣ ម៉ោង/វិនាទី
+    const timeController = new TimeController(10, 0.1); // start at 10:00, 0.1 game hours per second (a day = 4 minutes) so people can really walk to work
     timeControllerRef.current = timeController;
 
     const sun = new THREE.DirectionalLight(0xffffff, 1.3);
     sun.position.set(100, 150, 80);
     sun.castShadow = true;
-    sun.shadow.mapSize.set(1024, 1024);
+    sun.shadow.mapSize.set(profile.shadowMap, profile.shadowMap);
     sun.shadow.camera.left = -250;
     sun.shadow.camera.right = 250;
     sun.shadow.camera.top = 250;
@@ -275,12 +281,14 @@ export default function Village3D() {
 
     scene.add(createVillageGround());
     scene.add(createVillageRoads());
+    scene.add(createVillageSchool());
+    scene.add(createVillageClinic());
 
     const factory = createMeatVegFactory();
     factory.position.set(0, 0, -110);
     scene.add(factory);
 
-    const { group: villageGroup } = createVillageHousesInstanced(300);
+    const { group: villageGroup } = createVillageHousesInstanced(300, 42, householdsFor(profile.villagers));
     scene.add(villageGroup);
 
     // ចង្កៀងផ្លូវ
@@ -427,7 +435,7 @@ export default function Village3D() {
     cloudsRef.current = cloudSystem.clouds;
 
     // ========== A: ភ្លៀង (Rain) ==========
-    const rain = createRain(2000, 500, 150);
+    const rain = createRain(profile.rainDrops, 500, 150);
     scene.add(rain.points);
     rainRef.current = rain;
 
@@ -441,13 +449,13 @@ export default function Village3D() {
     shoppersRef.current = marketLife.shoppers;
 
     // ========== A: ជីវិតប្រជាជន (៣០ នាក់) ==========
-    const villagers = createVillagers(100);
+    const villagers = createVillagers(profile.villagers);
     scene.add(villagers.group);
     villagersRef.current = villagers.villagers;
 
     // ========== B: ភ្លើងផ្ទះ (៣០) ==========
     const registry = new VillageRegistry();
-    const houseLights = createHouseLights(100, registry);
+    const houseLights = createHouseLights(profile.quality === "low" ? 40 : 100, registry);
     scene.add(houseLights.group);
     houseLightsRef.current = houseLights.lights;
     registryRef.current = registry;
@@ -647,21 +655,11 @@ export default function Village3D() {
     const nightBg = new THREE.Color("#0a1128");
     let currentBg = dayBg.clone();
 
-    // Street lamps are found once (and re-scanned every ~10 s), not by walking the whole scene on every frame.
-    let lampList: THREE.MeshStandardMaterial[] = [];
-    let lampTick = 0;
-    const lampMats = () => {
-      if (lampTick++ % 600 === 0) {
-        const found = new Set<THREE.MeshStandardMaterial>();
-        scene.traverse((o) => {
-          if (o.name === "streetLamp") found.add((o as THREE.Mesh).material as THREE.MeshStandardMaterial);
-        });
-        lampList = Array.from(found);
-      }
-      return lampList;
-    };
-
     let rafId = 0;
+    const stopStats = attachStats(renderer, mount, "Village");
+    const unlit = capLights(scene, profile.maxLights);
+    if (unlit > 0) console.log(`[perf] ${unlit} extra point/spot lights switched off (${profile.quality})`);
+
     const animate = () => {
       const night = nightRef.current;
       const targetBg = night ? nightBg : dayBg;
@@ -677,7 +675,13 @@ export default function Village3D() {
 
       // ចង្កៀងផ្លូវ (emissive)
       const targetLampEmissive = night ? 1.5 : 0;
-      for (const mat of lampMats()) mat.emissiveIntensity += (targetLampEmissive - mat.emissiveIntensity) * 0.05;
+      scene.traverse((obj) => {
+        if (obj.name === "streetLamp") {
+          const mesh = obj as THREE.Mesh;
+          const mat = mesh.material as THREE.MeshStandardMaterial;
+          mat.emissiveIntensity += (targetLampEmissive - mat.emissiveIntensity) * 0.05;
+        }
+      });
 
       // Update traffic
       if (trafficVehiclesRef.current.length > 0) {
@@ -734,7 +738,14 @@ export default function Village3D() {
         }
         // ធ្វើឱ្យចង្កៀងផ្លូវភ្លឺពេលល្ងាច/យប់ (ជំនួស isNight manual)
         const nightNow = tod.isNight;
-        for (const m of lampMats()) m.emissiveIntensity += ((nightNow ? 1.5 : 0) - m.emissiveIntensity) * 0.05;
+        scene.traverse((obj) => {
+          if (obj.name === "streetLamp") {
+            const mesh = obj as THREE.Mesh;
+            const m = mesh.material as THREE.MeshStandardMaterial;
+            const target = nightNow ? 1.5 : 0;
+            m.emissiveIntensity += (target - m.emissiveIntensity) * 0.05;
+          }
+        });
       }
 
       // Update forest zone (ឃ្មុំ + ទឹក)
@@ -844,7 +855,7 @@ export default function Village3D() {
       // Update A: ជីវិតប្រជាជន
       if (villagersRef.current.length > 0 && timeControllerRef.current) {
         const h = timeControllerRef.current.getHour();
-        updateVillagers(villagersRef.current, h, elapsedSec, { clockSpeed: timeControllerRef.current.getSpeed() });
+        updateVillagers(villagersRef.current, h, elapsedSec, { clockSpeed: timeControllerRef.current.getSpeed(), raining: rainingRef.current, viewer: camera.position, far: profile.farCull });
       }
 
       // Update B: ភ្លើងផ្ទះ
@@ -871,6 +882,7 @@ export default function Village3D() {
     setLoading(false);
 
     return () => {
+      stopStats();
       cancelAnimationFrame(rafId);
       window.removeEventListener("resize", onResize);
       controls.dispose();
