@@ -59,11 +59,19 @@ export function capLights(root: THREE.Object3D, max: number): number {
   return Math.max(0, lights.length - max);
 }
 
-/** Render-based meter: FPS, CPU time inside render(), draw calls, triangles. Enabled by ?fps or localStorage mik.fps=1. */
+/**
+ * Render-based meter. Enabled by ?fps (or localStorage mik.fps=1).
+ * ?fps=sync (or mik.fps=sync) also waits for the GPU after each render, so "render"
+ * then includes GPU time: render ~ frame means GPU-bound, a big "logic" means JS-bound.
+ */
 export function attachStats(renderer: THREE.WebGLRenderer, host: HTMLElement, label = ""): () => void {
   let on = false;
+  let sync = false;
   try {
-    on = new URLSearchParams(location.search).has("fps") || localStorage.getItem("mik.fps") === "1";
+    const q = new URLSearchParams(location.search);
+    const saved = localStorage.getItem("mik.fps");
+    on = q.has("fps") || saved === "1" || saved === "sync";
+    sync = q.get("fps") === "sync" || saved === "sync";
   } catch { /* storage blocked */ }
   if (!on) return () => {};
 
@@ -72,6 +80,8 @@ export function attachStats(renderer: THREE.WebGLRenderer, host: HTMLElement, la
   el.textContent = `${label} measuring...`;
   host.appendChild(el);
 
+  const gl = renderer.getContext();
+  const px = new Uint8Array(4);
   let frames = 0;
   let renderMs = 0;
   let last = performance.now();
@@ -80,21 +90,27 @@ export function attachStats(renderer: THREE.WebGLRenderer, host: HTMLElement, la
   renderer.render = (scene, camera) => {
     const t0 = performance.now();
     originalRender(scene, camera);
+    if (sync) {
+      gl.finish();
+      gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px); // forces the GPU to really finish
+    }
     const now = performance.now();
     renderMs += now - t0;
     frames++;
     const elapsed = now - last;
     if (elapsed >= 500) {
       const fps = Math.round((frames * 1000) / elapsed);
+      const frameMs = elapsed / frames;
+      const rMs = renderMs / frames;
       const info = renderer.info;
       el.style.color = fps >= 50 ? "#7CFC9A" : fps >= 30 ? "#ffd166" : "#ff6b6b";
       el.textContent =
-        `${label} ${fps} FPS [${detectQuality()}]\n` +
-        `frame ${(elapsed / frames).toFixed(1)} ms  render ${(renderMs / frames).toFixed(1)} ms\n` +
+        `${label} ${fps} FPS [${detectQuality()}${sync ? " sync" : ""}]\n` +
+        `frame ${frameMs.toFixed(1)}  render ${rMs.toFixed(1)}  logic ${Math.max(0, frameMs - rMs).toFixed(1)} ms\n` +
         `calls ${info.render.calls}  tris ${(info.render.triangles / 1000).toFixed(1)}k\n` +
         `geo ${info.memory.geometries}  tex ${info.memory.textures}`;
       (window as unknown as { __perf?: unknown }).__perf = {
-        fps, calls: info.render.calls, triangles: info.render.triangles,
+        fps, frameMs, renderMs: rMs, calls: info.render.calls, triangles: info.render.triangles,
         geometries: info.memory.geometries, textures: info.memory.textures,
       };
       frames = 0; renderMs = 0; last = now;
