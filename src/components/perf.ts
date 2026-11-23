@@ -59,28 +59,50 @@ export function capLights(root: THREE.Object3D, max: number): number {
   return Math.max(0, lights.length - max);
 }
 
-/** Small meter in the corner: FPS, draw calls, triangles. Only when the address has ?fps (or localStorage mik.fps=1). */
+/** Render-based meter: FPS, CPU time inside render(), draw calls, triangles. Enabled by ?fps or localStorage mik.fps=1. */
 export function attachStats(renderer: THREE.WebGLRenderer, host: HTMLElement, label = ""): () => void {
   let on = false;
-  try { on = new URLSearchParams(location.search).has("fps") || localStorage.getItem("mik.fps") === "1"; } catch { /* ignore */ }
+  try {
+    on = new URLSearchParams(location.search).has("fps") || localStorage.getItem("mik.fps") === "1";
+  } catch { /* storage blocked */ }
   if (!on) return () => {};
+
   const el = document.createElement("div");
-  el.style.cssText = "position:absolute;left:6px;top:6px;z-index:50;padding:3px 7px;border-radius:6px;background:rgba(0,0,0,.65);color:#7CFC9A;font:11px/1.35 monospace;pointer-events:none;white-space:pre";
+  el.style.cssText = "position:absolute;left:6px;top:6px;z-index:50;padding:4px 8px;border-radius:6px;background:rgba(0,0,0,.72);color:#7CFC9A;font:11px/1.45 monospace;pointer-events:none;white-space:pre";
+  el.textContent = `${label} measuring...`;
   host.appendChild(el);
-  let frames = 0, last = performance.now(), raf = 0;
-  const tick = () => {
-    frames++;
+
+  let frames = 0;
+  let renderMs = 0;
+  let last = performance.now();
+  const originalRender = renderer.render.bind(renderer);
+
+  renderer.render = (scene, camera) => {
+    const t0 = performance.now();
+    originalRender(scene, camera);
     const now = performance.now();
-    if (now - last >= 500) {
-      const fps = Math.round((frames * 1000) / (now - last));
-      const i = renderer.info;
+    renderMs += now - t0;
+    frames++;
+    const elapsed = now - last;
+    if (elapsed >= 500) {
+      const fps = Math.round((frames * 1000) / elapsed);
+      const info = renderer.info;
       el.style.color = fps >= 50 ? "#7CFC9A" : fps >= 30 ? "#ffd166" : "#ff6b6b";
-      el.textContent = `${label} ${fps} FPS  [${detectQuality()}]\ncalls ${i.render.calls}  tris ${(i.render.triangles / 1000).toFixed(0)}k\nmeshes/geo ${i.memory.geometries}  tex ${i.memory.textures}`;
-      (window as unknown as { __perf?: unknown }).__perf = { fps, calls: i.render.calls, triangles: i.render.triangles, geometries: i.memory.geometries, textures: i.memory.textures };
-      frames = 0; last = now;
+      el.textContent =
+        `${label} ${fps} FPS [${detectQuality()}]\n` +
+        `frame ${(elapsed / frames).toFixed(1)} ms  render ${(renderMs / frames).toFixed(1)} ms\n` +
+        `calls ${info.render.calls}  tris ${(info.render.triangles / 1000).toFixed(1)}k\n` +
+        `geo ${info.memory.geometries}  tex ${info.memory.textures}`;
+      (window as unknown as { __perf?: unknown }).__perf = {
+        fps, calls: info.render.calls, triangles: info.render.triangles,
+        geometries: info.memory.geometries, textures: info.memory.textures,
+      };
+      frames = 0; renderMs = 0; last = now;
     }
-    raf = requestAnimationFrame(tick);
   };
-  raf = requestAnimationFrame(tick);
-  return () => { cancelAnimationFrame(raf); el.remove(); };
+
+  return () => {
+    renderer.render = originalRender;
+    el.remove();
+  };
 }
