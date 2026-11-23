@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 
 // Shared human figure for every person in the scenes (workers, guards, cooks, villagers, students...).
 // Tapered limbs, a real face, hands with fingers, shoes, clothes and optional hats.
@@ -56,6 +57,31 @@ function sharedMat(c: THREE.ColorRepresentation, rough: number, side: THREE.Side
   let m = matCache.get(key);
   if (!m) { m = new THREE.MeshStandardMaterial({ color: c, roughness: rough, side }); matCache.set(key, m); }
   return m;
+}
+
+/** Crowd figures: inside each joint, meshes that share a material become one mesh (about 35 draw calls -> 12).
+ *  Joint groups (arm, leg, sitLeg ...) are kept, so the walk code still swings them. */
+function mergeLite(root: THREE.Object3D): void {
+  const joints: THREE.Object3D[] = [];
+  root.traverse((o) => { if (!(o as THREE.Mesh).isMesh) joints.push(o); });
+  for (const g of joints) {
+    const byMat = new Map<THREE.Material, THREE.Mesh[]>();
+    for (const c of g.children) {
+      const m = c as THREE.Mesh;
+      if (!m.isMesh || Array.isArray(m.material)) continue;
+      const list = byMat.get(m.material);
+      if (list) list.push(m); else byMat.set(m.material, [m]);
+    }
+    for (const [material, meshes] of byMat) {
+      if (meshes.length < 2) continue;
+      const geos = meshes.map((m) => { m.updateMatrix(); return m.geometry.clone().applyMatrix4(m.matrix); });
+      const merged = mergeGeometries(geos, false);
+      geos.forEach((x) => x.dispose());
+      if (!merged) continue;
+      meshes.forEach((m) => g.remove(m));
+      g.add(new THREE.Mesh(merged, material));
+    }
+  }
 }
 
 export function createHumanFigure(o: HumanOpts = {}): THREE.Group {
@@ -207,5 +233,6 @@ export function createHumanFigure(o: HumanOpts = {}): THREE.Group {
   }
 
   if (!lite) outer.traverse((c) => { if ((c as THREE.Mesh).isMesh) c.castShadow = true; });
+  if (lite) mergeLite(outer);
   return outer;
 }
