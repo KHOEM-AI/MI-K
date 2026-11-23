@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
-import FpsCounter from "./FpsCounter";
 import { useAutoQuality } from "./useAutoQuality";
 import {
   createVillageGround,
@@ -1026,7 +1025,6 @@ export default function Village3D() {
     >
       {!loading && (
         <>
-          <FpsCounter />
           <div
             style={{
               position: "absolute",
