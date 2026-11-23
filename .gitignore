@@ -48,3 +48,4 @@ backup-perf-*/
 # Python cache
 __pycache__/
 *.py[cod]
+backup-fps/

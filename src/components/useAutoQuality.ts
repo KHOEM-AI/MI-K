@@ -1,67 +1,54 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import * as THREE from "three";
 
 /**
- * AutoQuality — ស្តាប់ FPS ហើយលៃតម្រូវ quality ស្វ័យប្រវត្តិ
- * - FPS < 100 → បន្ថយ pixel ratio
- * - FPS > 130 → បង្កើន pixel ratio
- * - FPS < 60 → បិទ shadow
+ * AutoQuality: lowers pixel ratio when FPS stays low, raises it back when FPS is high.
+ * Thresholds are relative to the screen refresh rate, measured once at start.
  */
 export function useAutoQuality(
   rendererRef: React.MutableRefObject<THREE.WebGLRenderer | null>
 ) {
-  const lastAdjust = useRef(0);
-  const lowCount = useRef(0);
-  const highCount = useRef(0);
-
   useEffect(() => {
     let rafId = 0;
-    let frameCount = 0;
-    let lastTime = performance.now();
+    let frames = 0;
+    let last = performance.now();
+    let lastAdjust = 0;
+    let low = 0;
+    let high = 0;
+    let refresh = 0; // best FPS seen = refresh-rate estimate
+    let maxPR = 0; // cap = pixel ratio set by the quality profile
 
     const tick = () => {
-      frameCount++;
+      frames++;
       const now = performance.now();
-      const elapsed = now - lastTime;
-
-      if (elapsed >= 1000) {
-        const fps = Math.round((frameCount * 1000) / elapsed);
-        const renderer = rendererRef.current;
-
-        if (renderer && now - lastAdjust.current > 2000) {
-          const currentPR = renderer.getPixelRatio();
-
-          if (fps < 100) {
-            lowCount.current++;
-            highCount.current = 0;
-            if (lowCount.current >= 2) {
-              // បន្ថយ quality
-              if (fps < 60 && renderer.shadowMap.enabled) {
-                renderer.shadowMap.enabled = false;
-                console.log("[AutoQuality] Shadow disabled (FPS < 60)");
-              } else if (currentPR > 1.0) {
-                const newPR = Math.max(1.0, currentPR - 0.25);
-                renderer.setPixelRatio(newPR);
-                console.log(`[AutoQuality] Pixel ratio → ${newPR} (FPS ${fps})`);
-              }
-              lowCount.current = 0;
-              lastAdjust.current = now;
+      if (now - last >= 1000) {
+        const fps = Math.round((frames * 1000) / (now - last));
+        frames = 0;
+        last = now;
+        refresh = Math.max(refresh, fps);
+        const r = rendererRef.current;
+        if (r && !maxPR) maxPR = r.getPixelRatio();
+        if (r && refresh >= 30 && now - lastAdjust > 2000) {
+          const pr = r.getPixelRatio();
+          if (fps < refresh * 0.75) {
+            high = 0;
+            if (++low >= 2 && pr > 1) {
+              r.setPixelRatio(Math.max(1, pr - 0.25));
+              low = 0;
+              lastAdjust = now;
             }
-          } else if (fps > 130) {
-            highCount.current++;
-            lowCount.current = 0;
-            if (highCount.current >= 3 && currentPR < 1.5) {
-              const newPR = Math.min(1.5, currentPR + 0.25);
-              renderer.setPixelRatio(newPR);
-              console.log(`[AutoQuality] Pixel ratio → ${newPR} (FPS ${fps})`);
-              highCount.current = 0;
-              lastAdjust.current = now;
+          } else if (fps >= refresh * 0.95) {
+            low = 0;
+            if (++high >= 5 && pr < maxPR) {
+              r.setPixelRatio(Math.min(maxPR, pr + 0.25));
+              high = 0;
+              lastAdjust = now;
             }
+          } else {
+            low = 0;
+            high = 0;
           }
         }
-
-        frameCount = 0;
-        lastTime = now;
       }
       rafId = requestAnimationFrame(tick);
     };

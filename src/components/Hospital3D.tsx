@@ -326,6 +326,10 @@ export default function Hospital3D() {
     const clock = new THREE.Clock();
     
     const stopStats = attachStats(renderer, mountRef.current, "Hospital");
+    // Animated lights start at intensity 0 by day, so rank them by their peak intensity instead.
+    ((colorfulLights.userData.lights ?? []) as THREE.Light[]).forEach((l) => { l.userData.perfWeight = 3; });
+    if (neonLight) neonLight.userData.perfWeight = 3;
+    if (surgeryRoom.userData.surgeryLight) surgeryRoom.userData.surgeryLight.userData.perfWeight = 5.5;
     const unlit = capLights(scene, profile.maxLights);
     if (unlit > 0) console.log(`[perf] hospital: ${unlit} extra lights switched off (${profile.quality})`);
 

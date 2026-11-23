@@ -53,7 +53,8 @@ export function capLights(root: THREE.Object3D, max: number): number {
     const l = o as THREE.PointLight;
     if ((l as unknown as { isPointLight?: boolean }).isPointLight || (l as unknown as { isSpotLight?: boolean }).isSpotLight) lights.push(l);
   });
-  lights.sort((a, b) => b.intensity - a.intensity);
+  const weight = (l: THREE.Light) => (l.userData.perfWeight as number | undefined) ?? l.intensity;
+  lights.sort((a, b) => weight(b) - weight(a));
   lights.slice(max).forEach((l) => { l.visible = false; });
   return Math.max(0, lights.length - max);
 }
