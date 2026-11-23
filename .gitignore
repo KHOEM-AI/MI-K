@@ -41,3 +41,6 @@ add_v2_dispatch.py
 *.before-*
 patch_*.py
 .backup-*/
+*.before-*
+*.pre-*
+backup-perf-*/
