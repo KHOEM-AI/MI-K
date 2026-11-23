@@ -4079,7 +4079,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       const t = windTimeRef.current;
 
       meshesRef.current.forEach((mesh, id) => {
-        const sceneObj = objects.find(o => o.id === id);
+        const sceneObj = objectsById.get(id);
         if (!sceneObj) return;
         if (sceneObj.locked) return;
 
@@ -4125,7 +4125,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
       const t = windTimeRef.current;
       
       meshesRef.current.forEach((mesh, id) => {
-        const sceneObj = objects.find(o => o.id === id);
+        const sceneObj = objectsById.get(id);
         if (!sceneObj || !plantShapes.has(sceneObj.shape)) return;
         if (sceneObj.locked) return;
         
