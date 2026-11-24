@@ -15,6 +15,7 @@ const KaraokeViewer = lazy(() => import("./components/KaraokeViewer"));
 const Hospital3D = lazy(() => import("./components/Hospital3D"));
 const School3D = lazy(() => import("./components/School3D"));
 const Village3D = lazy(() => import("./components/Village3D"));
+const IqaiPanel = lazy(() => import("./components/IqaiPanel"));
 const OceanWorldViewer = lazy(() => import("./components/OceanWorldViewer").then(m => ({ default: m.OceanWorldViewer })));
 
 // Prefetch Studio3D on hover to make opening instant
@@ -477,6 +478,12 @@ export default function App() {
       {isOpen("hospital") && (
         <Suspense fallback={<div className="studio-panel">Loading Hospital...</div>}>
           <Hospital3D />
+        </Suspense>
+      )}
+
+      {openModule && (
+        <Suspense fallback={null}>
+          <IqaiPanel />
         </Suspense>
       )}
 

@@ -4,10 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --host 0.0.0.0",
+    "dev": "vite",
     "build": "tsc --noEmit && vite build",
-    "preview": "vite preview --host 0.0.0.0",
-    "fast": "vite build && vite preview --host 0.0.0.0 --port 5177",
+    "preview": "vite preview",
+    "fast": "vite build && vite preview --port 5177",
     "size": "vite build && du -sh dist && ls -lS dist/assets | head -12",
     "test": "node --test tests/*.test.mjs",
     "typecheck": "tsc --noEmit",

@@ -124,6 +124,21 @@ src/
 └── style.css
 ```
 
+## IQ-AI video panel (3D to video)
+
+While any 3D page is open, a **🎬 IQ-AI** button appears at the bottom right. It uses the IQ-AI media service (`~/IQ-AI`, port 8799) to turn the 3D scene into media:
+
+| Step | What it does | IQ-AI route |
+|---|---|---|
+| Capture | Saves the current 3D view as a PNG (up to 12 frames) | stored in `/media`, deleted after rendering |
+| Make video | Frames to an mp4 story with fade, aspect (9:16, 16:9, 1:1) and one sound (an effect, or a track from the IQ-AI sound library) | `POST /videos/story` |
+| Record | Records the 3D canvas (1-30 s) and converts it to H.264 mp4 | `POST /videos/edit` |
+| Save | Keeps the finished mp4 in the IQ-AI media library | `POST /media` |
+
+Setup: start IQ-AI (`cd ~/IQ-AI && ./ai.sh start`). The dev server adds the IQ-AI token itself (env `IQAI_TOKEN`, else `~/IQ-AI/.env`, else `~/.iqai-token`); the browser never sees it. Only the routes listed in `src/lib/iqaiRoutes.mjs` are forwarded by the `/iqai` proxy. Needs `ffmpeg` on the IQ-AI side (`pkg install ffmpeg`).
+
+Notes: capture reads the canvas in the next animation frame, so it works for pages that render every frame (all current 3D pages do). Recording needs a browser with `MediaRecorder` (Chrome on Android works).
+
 ## Verification
 
 ```bash
