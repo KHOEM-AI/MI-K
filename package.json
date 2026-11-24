@@ -12,7 +12,9 @@
     "test": "node --test tests/*.test.mjs",
     "typecheck": "tsc --noEmit",
     "verify": "npm run typecheck && npm test && npm run build",
-    "characters": "node scripts/check-characters.mjs"
+    "characters": "node scripts/check-characters.mjs",
+    "glb:list": "tsx scripts/export-world-glb.mjs --list",
+    "glb:all": "tsx scripts/export-world-glb.mjs"
   },
   "dependencies": {
     "@vitejs/plugin-react": "latest",
@@ -26,6 +28,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@types/three": "^0.187.0",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "tsx": "^4.19.0"
   }
 }

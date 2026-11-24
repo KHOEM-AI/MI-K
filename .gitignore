@@ -49,3 +49,6 @@ backup-perf-*/
 __pycache__/
 *.py[cod]
 backup-fps/
+
+# Generated GLB files
+exports/
