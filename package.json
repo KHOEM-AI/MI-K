@@ -11,7 +11,8 @@
     "size": "vite build && du -sh dist && ls -lS dist/assets | head -12",
     "test": "node --test tests/*.test.mjs",
     "typecheck": "tsc --noEmit",
-    "verify": "npm run typecheck && npm test && npm run build"
+    "verify": "npm run typecheck && npm test && npm run build",
+    "characters": "node scripts/check-characters.mjs"
   },
   "dependencies": {
     "@vitejs/plugin-react": "latest",
