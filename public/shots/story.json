@@ -1,0 +1,792 @@
+{
+  "version": 1,
+  "exportedAt": 1795598660838,
+  "app": "KHOEM-AI 3D Studio",
+  "type": "all-scenes",
+  "scenes": [
+    {
+      "id": "ep1-s1",
+      "name": "Ep1 S1 នៅភូមិមួយ មានក្មេងប្រុសម",
+      "objects": [
+        {
+          "id": "ep1-s1-1",
+          "name": "ground",
+          "shape": "groundpatch",
+          "color": "#3a7d44",
+          "metalness": 0.1,
+          "roughness": 0.8,
+          "position": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "scale": {
+            "x": 4,
+            "y": 4,
+            "z": 4
+          },
+          "visible": true,
+          "locked": false,
+          "textureData": null
+        },
+        {
+          "id": "ep1-s1-2",
+          "name": "house 2",
+          "shape": "house",
+          "color": "#c9a26b",
+          "metalness": 0.1,
+          "roughness": 0.8,
+          "position": {
+            "x": -3,
+            "y": 0,
+            "z": -2
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "scale": {
+            "x": 1.2,
+            "y": 1.2,
+            "z": 1.2
+          },
+          "visible": true,
+          "locked": false,
+          "textureData": null
+        },
+        {
+          "id": "ep1-s1-3",
+          "name": "tree 3",
+          "shape": "tree",
+          "color": "#2f7d3b",
+          "metalness": 0.1,
+          "roughness": 0.8,
+          "position": {
+            "x": 3,
+            "y": 0,
+            "z": -3
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "scale": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "visible": true,
+          "locked": false,
+          "textureData": null
+        },
+        {
+          "id": "ep1-s1-4",
+          "name": "grass 4",
+          "shape": "grass",
+          "color": "#5fae4b",
+          "metalness": 0.1,
+          "roughness": 0.8,
+          "position": {
+            "x": -1,
+            "y": 0,
+            "z": 1
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "scale": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "visible": true,
+          "locked": false,
+          "textureData": null
+        },
+        {
+          "id": "ep1-s1-5",
+          "name": "grass 5",
+          "shape": "grass",
+          "color": "#5fae4b",
+          "metalness": 0.1,
+          "roughness": 0.8,
+          "position": {
+            "x": 1.5,
+            "y": 0,
+            "z": 0.5
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "scale": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "visible": true,
+          "locked": false,
+          "textureData": null
+        },
+        {
+          "id": "ep1-s1-6",
+          "name": "hill 6",
+          "shape": "hill",
+          "color": "#4f8f3f",
+          "metalness": 0.1,
+          "roughness": 0.8,
+          "position": {
+            "x": 0,
+            "y": 0,
+            "z": -6
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "scale": {
+            "x": 2,
+            "y": 2,
+            "z": 2
+          },
+          "visible": true,
+          "locked": false,
+          "textureData": null
+        },
+        {
+          "id": "ep1-s1-7",
+          "name": "star 7",
+          "shape": "star",
+          "color": "#fff3a0",
+          "metalness": 0.1,
+          "roughness": 0.8,
+          "position": {
+            "x": -2,
+            "y": 4,
+            "z": -4
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "scale": {
+            "x": 0.6,
+            "y": 0.6,
+            "z": 0.6
+          },
+          "visible": true,
+          "locked": false,
+          "textureData": null
+        },
+        {
+          "id": "ep1-s1-8",
+          "name": "moon 8",
+          "shape": "moon",
+          "color": "#e8e8ff",
+          "metalness": 0.1,
+          "roughness": 0.8,
+          "position": {
+            "x": 3,
+            "y": 4.5,
+            "z": -5
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "scale": {
+            "x": 0.8,
+            "y": 0.8,
+            "z": 0.8
+          },
+          "visible": true,
+          "locked": false,
+          "textureData": null
+        },
+        {
+          "id": "ep1-s1-9",
+          "name": "meteor 9",
+          "shape": "meteor",
+          "color": "#ff9a3c",
+          "metalness": 0.1,
+          "roughness": 0.8,
+          "position": {
+            "x": 2,
+            "y": 2.5,
+            "z": -2
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "scale": {
+            "x": 0.8,
+            "y": 0.8,
+            "z": 0.8
+          },
+          "visible": true,
+          "locked": false,
+          "textureData": null
+        }
+      ],
+      "ambientIntensity": 0.3,
+      "directionalIntensity": 1,
+      "backgroundColor": "#050a14",
+      "thumbnail": null,
+      "createdAt": 1795598660838,
+      "updatedAt": 1795598660838,
+      "shot": {
+        "episode": 1,
+        "scene": 1,
+        "seconds": 5,
+        "lighting": "night",
+        "voice": null,
+        "say": "នៅភូមិមួយ មានក្មេងប្រុសម្នាក់ឈ្មោះសុខ។ ថ្ងៃមួយ គាត់ឃើញផ្កាយមួយធ្លាក់មកជិតវាលស្រែ។",
+        "camera": {
+          "position": [
+            4,
+            3,
+            7
+          ],
+          "target": [
+            0,
+            0,
+            0
+          ]
+        }
+      }
+    },
+    {
+      "id": "ep1-s2",
+      "name": "Ep1 S2 អ្នកជានរណា? ហេតុអ្វីអ្នក",
+      "objects": [
+        {
+          "id": "ep1-s2-1",
+          "name": "ground",
+          "shape": "groundpatch",
+          "color": "#3a7d44",
+          "metalness": 0.1,
+          "roughness": 0.8,
+          "position": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "scale": {
+            "x": 4,
+            "y": 4,
+            "z": 4
+          },
+          "visible": true,
+          "locked": false,
+          "textureData": null
+        },
+        {
+          "id": "ep1-s2-2",
+          "name": "tree 2",
+          "shape": "tree",
+          "color": "#2f7d3b",
+          "metalness": 0.1,
+          "roughness": 0.8,
+          "position": {
+            "x": 3,
+            "y": 0,
+            "z": -2
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "scale": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "visible": true,
+          "locked": false,
+          "textureData": null
+        }
+      ],
+      "ambientIntensity": 2,
+      "directionalIntensity": 3,
+      "backgroundColor": "#87ceeb",
+      "thumbnail": null,
+      "createdAt": 1795598660838,
+      "updatedAt": 1795598660838,
+      "shot": {
+        "episode": 1,
+        "scene": 2,
+        "seconds": 3,
+        "lighting": "day",
+        "voice": "child",
+        "say": "អ្នកជានរណា? ហេតុអ្វីអ្នកភ្លឺម្ល៉េះ?",
+        "camera": {
+          "position": [
+            0,
+            0,
+            10
+          ],
+          "target": [
+            0,
+            0,
+            0
+          ]
+        }
+      }
+    },
+    {
+      "id": "ep1-s3",
+      "name": "Ep1 S3 ខ្ញុំជាភ្ញៀវមកពីផ្កាយ។ ស",
+      "objects": [
+        {
+          "id": "ep1-s3-1",
+          "name": "ground",
+          "shape": "groundpatch",
+          "color": "#3a7d44",
+          "metalness": 0.1,
+          "roughness": 0.8,
+          "position": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "scale": {
+            "x": 4,
+            "y": 4,
+            "z": 4
+          },
+          "visible": true,
+          "locked": false,
+          "textureData": null
+        },
+        {
+          "id": "ep1-s3-2",
+          "name": "house 2",
+          "shape": "house",
+          "color": "#c9a26b",
+          "metalness": 0.1,
+          "roughness": 0.8,
+          "position": {
+            "x": -3,
+            "y": 0,
+            "z": -2
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "scale": {
+            "x": 1.2,
+            "y": 1.2,
+            "z": 1.2
+          },
+          "visible": true,
+          "locked": false,
+          "textureData": null
+        },
+        {
+          "id": "ep1-s3-3",
+          "name": "tree 3",
+          "shape": "tree",
+          "color": "#2f7d3b",
+          "metalness": 0.1,
+          "roughness": 0.8,
+          "position": {
+            "x": 3,
+            "y": 0,
+            "z": -3
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "scale": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "visible": true,
+          "locked": false,
+          "textureData": null
+        },
+        {
+          "id": "ep1-s3-4",
+          "name": "star 4",
+          "shape": "star",
+          "color": "#fff3a0",
+          "metalness": 0.1,
+          "roughness": 0.8,
+          "position": {
+            "x": -2,
+            "y": 4,
+            "z": -4
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "scale": {
+            "x": 0.6,
+            "y": 0.6,
+            "z": 0.6
+          },
+          "visible": true,
+          "locked": false,
+          "textureData": null
+        },
+        {
+          "id": "ep1-s3-5",
+          "name": "moon 5",
+          "shape": "moon",
+          "color": "#e8e8ff",
+          "metalness": 0.1,
+          "roughness": 0.8,
+          "position": {
+            "x": 3,
+            "y": 4.5,
+            "z": -5
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "scale": {
+            "x": 0.8,
+            "y": 0.8,
+            "z": 0.8
+          },
+          "visible": true,
+          "locked": false,
+          "textureData": null
+        },
+        {
+          "id": "ep1-s3-6",
+          "name": "ufo 6",
+          "shape": "ufo",
+          "color": "#9fe6ff",
+          "metalness": 0.1,
+          "roughness": 0.8,
+          "position": {
+            "x": 0,
+            "y": 1.2,
+            "z": 0
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "scale": {
+            "x": 0.8,
+            "y": 0.8,
+            "z": 0.8
+          },
+          "visible": true,
+          "locked": false,
+          "textureData": null
+        }
+      ],
+      "ambientIntensity": 0.3,
+      "directionalIntensity": 1,
+      "backgroundColor": "#050a14",
+      "thumbnail": null,
+      "createdAt": 1795598660838,
+      "updatedAt": 1795598660838,
+      "shot": {
+        "episode": 1,
+        "scene": 3,
+        "seconds": 3,
+        "lighting": "night",
+        "voice": "alien",
+        "say": "ខ្ញុំជាភ្ញៀវមកពីផ្កាយ។ សូមជួយខ្ញុំត្រឡប់ទៅផ្ទះវិញ។",
+        "camera": {
+          "position": [
+            0,
+            0,
+            10
+          ],
+          "target": [
+            0,
+            0,
+            0
+          ]
+        }
+      }
+    },
+    {
+      "id": "ep2-s1",
+      "name": "Ep2 S1 បាន ខ្ញុំនឹងជួយអ្នក។",
+      "objects": [
+        {
+          "id": "ep2-s1-1",
+          "name": "ground",
+          "shape": "groundpatch",
+          "color": "#3a7d44",
+          "metalness": 0.1,
+          "roughness": 0.8,
+          "position": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "scale": {
+            "x": 4,
+            "y": 4,
+            "z": 4
+          },
+          "visible": true,
+          "locked": false,
+          "textureData": null
+        },
+        {
+          "id": "ep2-s1-2",
+          "name": "tree 2",
+          "shape": "tree",
+          "color": "#2f7d3b",
+          "metalness": 0.1,
+          "roughness": 0.8,
+          "position": {
+            "x": 3,
+            "y": 0,
+            "z": -2
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "scale": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "visible": true,
+          "locked": false,
+          "textureData": null
+        }
+      ],
+      "ambientIntensity": 2,
+      "directionalIntensity": 3,
+      "backgroundColor": "#87ceeb",
+      "thumbnail": null,
+      "createdAt": 1795598660838,
+      "updatedAt": 1795598660838,
+      "shot": {
+        "episode": 2,
+        "scene": 1,
+        "seconds": 3,
+        "lighting": "day",
+        "voice": "child",
+        "say": "បាន ខ្ញុំនឹងជួយអ្នក។",
+        "camera": {
+          "position": [
+            0,
+            0,
+            10
+          ],
+          "target": [
+            0,
+            0,
+            0
+          ]
+        }
+      }
+    },
+    {
+      "id": "ep2-s2",
+      "name": "Ep2 S2 ពួកគេចាប់ផ្ដើមដំណើរជាមួយ",
+      "objects": [
+        {
+          "id": "ep2-s2-1",
+          "name": "ground",
+          "shape": "groundpatch",
+          "color": "#3a7d44",
+          "metalness": 0.1,
+          "roughness": 0.8,
+          "position": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "scale": {
+            "x": 4,
+            "y": 4,
+            "z": 4
+          },
+          "visible": true,
+          "locked": false,
+          "textureData": null
+        },
+        {
+          "id": "ep2-s2-2",
+          "name": "star 2",
+          "shape": "star",
+          "color": "#fff3a0",
+          "metalness": 0.1,
+          "roughness": 0.8,
+          "position": {
+            "x": -2,
+            "y": 4,
+            "z": -4
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "scale": {
+            "x": 0.6,
+            "y": 0.6,
+            "z": 0.6
+          },
+          "visible": true,
+          "locked": false,
+          "textureData": null
+        },
+        {
+          "id": "ep2-s2-3",
+          "name": "moon 3",
+          "shape": "moon",
+          "color": "#e8e8ff",
+          "metalness": 0.1,
+          "roughness": 0.8,
+          "position": {
+            "x": 3,
+            "y": 4.5,
+            "z": -5
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "scale": {
+            "x": 0.8,
+            "y": 0.8,
+            "z": 0.8
+          },
+          "visible": true,
+          "locked": false,
+          "textureData": null
+        },
+        {
+          "id": "ep2-s2-4",
+          "name": "palmtree 4",
+          "shape": "palmtree",
+          "color": "#3a8f45",
+          "metalness": 0.1,
+          "roughness": 0.8,
+          "position": {
+            "x": -3,
+            "y": 0,
+            "z": -3
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "scale": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "visible": true,
+          "locked": false,
+          "textureData": null
+        },
+        {
+          "id": "ep2-s2-5",
+          "name": "bench 5",
+          "shape": "bench",
+          "color": "#8b5a2b",
+          "metalness": 0.1,
+          "roughness": 0.8,
+          "position": {
+            "x": 2,
+            "y": 0,
+            "z": 0
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "scale": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+          },
+          "visible": true,
+          "locked": false,
+          "textureData": null
+        }
+      ],
+      "ambientIntensity": 0.3,
+      "directionalIntensity": 1,
+      "backgroundColor": "#050a14",
+      "thumbnail": null,
+      "createdAt": 1795598660838,
+      "updatedAt": 1795598660838,
+      "shot": {
+        "episode": 2,
+        "scene": 2,
+        "seconds": 3,
+        "lighting": "night",
+        "voice": null,
+        "say": "ពួកគេចាប់ផ្ដើមដំណើរជាមួយគ្នា នៅក្រោមពន្លឺផ្កាយ។",
+        "camera": {
+          "position": [
+            4,
+            3,
+            7
+          ],
+          "target": [
+            0,
+            0,
+            0
+          ]
+        }
+      }
+    }
+  ]
+}

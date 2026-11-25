@@ -1621,6 +1621,54 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
     return () => clearInterval(timer);
   }, [isRecording]);
 
+  // KHOEM-AI shot player: open /?play=NAME, it loads public/shots/NAME.json and records every scene as a .webm download.
+  const startRecRef = useRef<(() => Promise<void>) | null>(null);
+  startRecRef.current = handleStartRecording;
+  const playStartedRef = useRef(false);
+  useEffect(() => {
+    if (!sceneReady || playStartedRef.current) return;
+    const name = new URLSearchParams(window.location.search).get("play");
+    if (!name || !/^[\w-]+$/.test(name)) return;
+    playStartedRef.current = true;
+    const wait = (ms: number) => new Promise<void>((r) => window.setTimeout(r, ms));
+    void (async () => {
+      try {
+        const res = await fetch("/shots/" + name + ".json");
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const data = await res.json();
+        const list: any[] = Array.isArray(data?.scenes) ? data.scenes : [];
+        for (let i = 0; i < list.length; i++) {
+          const sc = list[i];
+          if (!sc || !Array.isArray(sc.objects) || sc.objects.length === 0) continue;
+          setMessage("Shot Player " + (i + 1) + "/" + list.length);
+          setObjects(sc.objects as SceneObject[]);
+          setAmbientIntensity(Number(sc.ambientIntensity) || 2);
+          setDirectionalIntensity(Number(sc.directionalIntensity) || 3);
+          setBgColor(typeof sc.backgroundColor === "string" ? sc.backgroundColor : "#080f1b");
+          setActiveLighting(sc.shot?.lighting === "night" ? "night" : "day");
+          setSceneName(String(sc.id || "scene" + (i + 1)).replace(/[^\w-]/g, "_"));
+          const cam = cameraRef.current;
+          const ctl = controlsRef.current;
+          const c = sc.shot?.camera;
+          if (cam && ctl && c && Array.isArray(c.position) && Array.isArray(c.target)) {
+            cam.position.set(c.position[0], c.position[1], c.position[2]);
+            ctl.target.set(c.target[0], c.target[1], c.target[2]);
+            ctl.update();
+          }
+          await wait(2500); // let meshes, HDRI and the new scene name settle
+          await startRecRef.current?.();
+          await wait(Math.max(2, Math.min(25, Number(sc.shot?.seconds) || 4)) * 1000);
+          handleStopRecording();
+          await wait(1800); // let the download start
+        }
+        setMessage("Shot Player: ចប់ហើយ (" + list.length + " ឈុត)។");
+      } catch (error) {
+        console.error("Shot Player failed:", error);
+        setMessage("Shot Player មិនអាចដំណើរការបានទេ។");
+      }
+    })();
+  }, [sceneReady]);
+
   async function handleExportHTML() {
     if (exporting || objects.length === 0) return;
 

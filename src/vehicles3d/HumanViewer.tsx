@@ -227,7 +227,7 @@ const cls = (on: boolean): string => (on ? "filter active" : "filter");
 const MODE_LABELS: Record<Mode, string> = { idle: "ឈរ · Idle", walk: "ដើរ · Walk", wave: "ដាក់ដៃ · Wave" };
 const msg = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
-type Api = { show: (p: Person) => Promise<{ real: boolean; clips: string[] } | null>; togglePlay: (clip: string) => boolean; resetView: () => void; getExportContext: () => ExportContext };
+type Api = { show: (p: Person) => Promise<{ real: boolean; clips: string[]; started: string[] } | null>; togglePlay: (clip: string) => boolean; resetView: () => void; getExportContext: () => ExportContext };
 
 export default function HumanViewer() {
   const hostRef = useRef<HTMLDivElement>(null);
@@ -352,13 +352,16 @@ export default function HumanViewer() {
               current = m;
               if (gltf.animations.length) mixer = new T.AnimationMixer(m);
               gltf.animations.forEach((clip, i) => { if (mixer) actions.set(clip.name || `clip_${i + 1}`, mixer.clipAction(clip)); });
-              return { real: true, clips: [...actions.keys()] };
+              const names = [...actions.keys()];
+              const first = names.find((n) => /idle|breath|stand/i.test(n)) ?? names.find((n) => !/t-?pose|bind|rest/i.test(n));
+              if (first) actions.get(first)?.reset().play();
+              return { real: true, clips: names, started: first ? [first] : [] };
             }
             free();
             rig = buildPerson(T, p);
             current = rig.root;
             pivot.add(rig.root);
-            return { real: false, clips: [] };
+            return { real: false, clips: [], started: [] };
           },
           togglePlay(name) {
             const a = actions.get(name);
@@ -414,7 +417,7 @@ export default function HumanViewer() {
     setErr("");
     apiRef.current.show(person).then((r) => {
       if (cancelled || !r) return;
-      setReal(r.real); setClips(r.clips); setPlaying({});
+      setReal(r.real); setClips(r.clips); setPlaying(Object.fromEntries(r.started.map((n) => [n, true])));
     }).catch((e) => { if (!cancelled) setErr(msg(e)); });
     return () => { cancelled = true; };
   }, [ready, id]);

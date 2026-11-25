@@ -32,7 +32,7 @@ const MODULES: { id: ModuleId; label: string; title: string; icons: KIconName[] 
   { id: "karaoke", label: "Karaoke 3D", title: "Karaoke / Pub 3D", icons: ["karaoke"] },
   { id: "hospital", label: "Hospital 3D", title: "Hospital 3D", icons: ["cube"] },
   { id: "school", label: "School 3D", title: "School 3D", icons: ["cube"] },
-  { id: "village", label: "Village 3D", title: "Village 3D", icons: ["cube"] },
+  { id: "village", label: "World 3D", title: "Village, Hospital and Sea World 3D", icons: ["cube"] },
   { id: "ocean", label: "Ocean World 3D", title: "Ocean World and Prison Island 3D", icons: ["cube"] },
 ];
 

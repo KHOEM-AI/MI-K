@@ -52,3 +52,4 @@ backup-fps/
 
 # Generated GLB files
 exports/
+state.json

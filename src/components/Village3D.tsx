@@ -43,6 +43,7 @@ import {
 } from "./villageAnimations";
 import { createRain, updateRain, type RainSystem, createLightning, updateLightning, type LightningSystem } from "./rainSystem";
 import { applyRendererQuality, attachStats, capLights, getProfile } from "./perf.ts";
+import { createMegaWorld, MEGA_ZONES } from "./megaWorld";
 import { setFigureDetail } from "./humanFigure.ts";
 import { householdsFor } from "./villageLayout.ts";
 import { createVillageSchool, createVillageClinic } from "./villageCivic.ts";
@@ -175,6 +176,7 @@ export default function Village3D() {
   const starsRef = useRef<THREE.Points | null>(null);
   const moonRef = useRef<THREE.Group | null>(null);
   const sunRef = useRef<THREE.DirectionalLight | null>(null);
+  const flyToRef = useRef<((id: string) => void) | null>(null);
   useAutoQuality(rendererRef);
 
   // Auto-save រៀងរាល់ ៣០ វិ
@@ -239,7 +241,7 @@ export default function Village3D() {
       55,
       window.innerWidth / window.innerHeight,
       0.1,
-      2000
+      4000
     );
     camera.position.set(150, 100, 200);
     cameraRef.current = camera;
@@ -642,6 +644,10 @@ export default function Village3D() {
     controls.target.set(0, 10, 0);
     controls.update();
 
+    // One big world: hospital campus + sea with islands, built only when the camera comes near
+    const mega = createMegaWorld(scene);
+    flyToRef.current = (id: string) => mega.flyTo(id, camera, controls);
+
     const onResize = () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
@@ -882,6 +888,8 @@ export default function Village3D() {
         moonRef.current.visible = night;
       }
 
+      mega.tick(camera.position, performance.now() / 1000, nightRef.current);
+
       controls.update();
       renderer.render(scene, camera);
       rafId = requestAnimationFrame(animate);
@@ -894,6 +902,8 @@ export default function Village3D() {
       stopStats();
       cancelAnimationFrame(rafId);
       window.removeEventListener("resize", onResize);
+      flyToRef.current = null;
+      mega.dispose();
       controls.dispose();
       renderer.dispose();
       if (mount.contains(renderer.domElement)) {
@@ -1068,6 +1078,19 @@ export default function Village3D() {
             >
               {busy ? "⏳ កំពុង Export..." : "🎬 Export GLB"}
             </button>
+          </div>
+          {/* Zones: fly to a part of the big world */}
+          <div style={{ position: "absolute", top: 64, left: 16, right: 16, display: "flex", flexWrap: "wrap", gap: 6, zIndex: 10 }}>
+            {MEGA_ZONES.map((z) => (
+              <button
+                key={z.id}
+                type="button"
+                onClick={() => flyToRef.current?.(z.id)}
+                style={{ padding: "6px 12px", borderRadius: 16, border: "none", background: "rgba(20,30,50,0.72)", color: "#fff", fontSize: 13, cursor: "pointer" }}
+              >
+                {z.label}
+              </button>
+            ))}
           </div>
           {/* Stats Display */}
           {registryRef.current && (
