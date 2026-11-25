@@ -1627,17 +1627,21 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
   const playStartedRef = useRef(false);
   useEffect(() => {
     if (!sceneReady || playStartedRef.current) return;
-    const name = new URLSearchParams(window.location.search).get("play");
+    const qs = new URLSearchParams(window.location.search);
+    const name = qs.get("play");
+    const from = Math.max(1, Number(qs.get("from")) || 1);
     if (!name || !/^[\w-]+$/.test(name)) return;
     playStartedRef.current = true;
     const wait = (ms: number) => new Promise<void>((r) => window.setTimeout(r, ms));
+    let lock: any = null;
     void (async () => {
       try {
+        try { lock = await (navigator as any).wakeLock?.request("screen"); } catch { /* optional */ }
         const res = await fetch("/shots/" + name + ".json");
         if (!res.ok) throw new Error("HTTP " + res.status);
         const data = await res.json();
         const list: any[] = Array.isArray(data?.scenes) ? data.scenes : [];
-        for (let i = 0; i < list.length; i++) {
+        for (let i = from - 1; i < list.length; i++) {
           const sc = list[i];
           if (!sc || !Array.isArray(sc.objects) || sc.objects.length === 0) continue;
           setMessage("Shot Player " + (i + 1) + "/" + list.length);
@@ -1655,6 +1659,7 @@ export default function Studio3D({ onAssetSaved }: Studio3DProps) {
             ctl.target.set(c.target[0], c.target[1], c.target[2]);
             ctl.update();
           }
+          while (document.visibilityState !== "visible") { setMessage("Shot Player: សូមត្រឡប់មក Chrome ដើម្បីបន្ត..."); await wait(500); }
           await wait(2500); // let meshes, HDRI and the new scene name settle
           await startRecRef.current?.();
           await wait(Math.max(2, Math.min(25, Number(sc.shot?.seconds) || 4)) * 1000);
