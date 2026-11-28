@@ -176,3 +176,14 @@ The launcher listens on 127.0.0.1 only. To open it from another device on the sa
 
 ## Owner
 This project and the 'Ocean World & Prison Island' module are the exclusive property of **@KHOEM-AI**.
+
+## Performance tools
+
+- `?fps` in the address shows a small meter (FPS, draw calls, triangles) in Village, Hospital and School.
+- `?q=low`, `?q=medium` or `?q=high` forces a quality level (remembered on the device).
+- `npm test` runs the tests with the Node test runner. Do not use `vitest`; it finds no suites.
+
+## Animal models
+
+`node scripts/make-animals.mjs` builds tiger, dog, snake, bird and cow into `public/models/animals/`.
+The elephant and the fish are separate hand-tuned files and are never overwritten by it.

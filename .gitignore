@@ -4,17 +4,16 @@ node_modules/
 # Build output
 dist/
 dist-ssr/
+build-report.txt
 
 # Local env
 .env
 .env.local
 .env.*.local
 
-# OS
+# OS / editor
 .DS_Store
 Thumbs.db
-
-# Editor
 .vscode/
 .idea/
 *.swp
@@ -24,32 +23,24 @@ Thumbs.db
 *.log
 npm-debug.log*
 
-# Backups & local artifacts
+# Backups and one-off patch scripts (never commit)
 *.backup
 *.bak
+*.bak-*
 *.pre-*
+*.before-*
+*.orig-mik
 *.v[0-9]*-backup
-*.v[0-9][0-9]*-backup
-backup_v*/
 backup_*/
-typecheck-errors.txt
+backup-*/
+.backup-*/
 patch-*.py
+patch_*.py
 repair-*.py
 test_write.py
-*.orig-mik
 add_v2_dispatch.py
-*.before-*
-patch_*.py
-.backup-*/
-*.before-*
-*.pre-*
-backup-perf-*/
+typecheck-errors.txt
 
 # Python cache
 __pycache__/
 *.py[cod]
-backup-fps/
-
-# Generated GLB files
-exports/
-state.json

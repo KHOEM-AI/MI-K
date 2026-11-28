@@ -31,12 +31,12 @@
   },
   "dependencies": {
     "@gradio/client": "^2.8.0",
-    "@vitejs/plugin-react": "latest",
+    "@vitejs/plugin-react": "^6.3.0",
     "lucide-react": "^1.73.0",
-    "react": "latest",
-    "react-dom": "latest",
-    "three": "latest",
-    "vite": "latest"
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "three": "0.187.0",
+    "vite": "^8.3.8"
   },
   "devDependencies": {
     "@types/react": "^19.3.0",
