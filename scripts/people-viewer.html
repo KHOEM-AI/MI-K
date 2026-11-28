@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="km">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MI-K people viewer</title>
+<style>
+  :root { color-scheme: light dark; --bg: #eef1f4; --fg: #1c2530; --card: #ffffffcc; --accent: #2b5aa8; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #151a21; --fg: #e8edf2; --card: #232b35cc; --accent: #6ea0ee; } }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font: 15px system-ui, sans-serif; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+  .bar { position: fixed; left: 0; right: 0; display: flex; flex-wrap: wrap; gap: 6px; padding: 8px; background: var(--card); backdrop-filter: blur(6px); }
+  #top { top: 0; padding-top: calc(8px + env(safe-area-inset-top, 0px)); }
+  #bottom { bottom: 0; padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px)); justify-content: center; }
+  select, button, label.file { font: inherit; color: inherit; background: transparent; border: 1px solid currentColor; border-radius: 8px; padding: 6px 12px; }
+  button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  #info { flex: 1 1 100%; opacity: .8; font-size: 13px; }
+  input[type=file] { display: none; }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<div class="bar" id="top">
+  <select id="pick" aria-label="person"></select>
+  <label class="file">GLB… <input id="file" type="file" accept=".glb,model/gltf-binary"></label>
+  <div id="info">…</div>
+</div>
+<div class="bar" id="bottom"></div>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+
+const $ = (id) => document.getElementById(id);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+document.body.prepend(renderer.domElement);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 200);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+scene.add(new THREE.HemisphereLight(0xffffff, 0x778899, 1.6));
+const sun = new THREE.DirectionalLight(0xffffff, 2.2);
+sun.position.set(3, 6, 4);
+scene.add(sun, new THREE.GridHelper(40, 40, 0x889099, 0xb5bcc4));
+
+let model = null, mixer = null, actions = [], current = null;
+const loader = new GLTFLoader();
+const clock = new THREE.Clock();
+
+function resize() {
+  renderer.setSize(innerWidth, innerHeight);
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+}
+addEventListener("resize", resize);
+resize();
+
+function play(name) {
+  const next = actions.find((a) => a.getClip().name === name);
+  if (!next) return;
+  next.reset().fadeIn(0.25).play();
+  if (current && current !== next) current.fadeOut(0.25);
+  current = next;
+  for (const b of $("bottom").children) b.classList.toggle("on", b.textContent === name);
+}
+
+function show(gltf, label) {
+  if (model) scene.remove(model);
+  model = gltf.scene;
+  scene.add(model);
+  mixer = new THREE.AnimationMixer(model);
+  actions = gltf.animations.map((c) => mixer.clipAction(c));
+  current = null;
+  const box = new THREE.Box3().setFromObject(model), size = box.getSize(new THREE.Vector3()), mid = box.getCenter(new THREE.Vector3());
+  const fit = Math.max(size.y, size.x / camera.aspect) * 1.25;
+  const dist = fit / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))) + size.z / 2;
+  camera.position.set(mid.x, mid.y + size.y * 0.1, mid.z + dist);
+  controls.target.copy(mid);
+  controls.update();
+  const bar = $("bottom");
+  bar.replaceChildren();
+  if (actions.length > 6) { actions.forEach((a) => a.play()); }   // line-up: everybody idles together
+  else for (const a of actions) {
+    const b = document.createElement("button");
+    b.textContent = a.getClip().name;
+    b.onclick = () => play(b.textContent);
+    bar.append(b);
+  }
+  if (actions.length && actions.length <= 6) play(actions[0].getClip().name);
+  $("info").textContent = `${label}: ${(size.y).toFixed(2)} units tall, ${gltf.animations.length} clip(s)`;
+}
+
+function load(url, label) {
+  $("info").textContent = "loading " + label + " …";
+  loader.load(url, (g) => show(g, label), undefined, (e) => { $("info").textContent = "cannot load " + label + ": " + (e.message || e); });
+}
+
+$("file").onchange = (e) => {
+  const f = e.target.files[0];
+  if (f) load(URL.createObjectURL(f), f.name);
+};
+$("pick").onchange = () => load($("pick").value, $("pick").selectedOptions[0].textContent);
+
+const add = (file, label = file) => $("pick").append(new Option(label.replace(".glb", ""), file));
+try {
+  const index = await (await fetch("index.json")).json();
+  if (index.lineup) add(index.lineup.file);
+  for (const i of index.items) add(i.file);
+  for (const i of index.skins ?? []) add(i.file);
+} catch { /* no people index: fine */ }
+try {   // real rigged models resized by scripts/glb-rig-tool.mjs variants ... exports/people/real
+  const real = await (await fetch("real/list.json")).json();
+  for (const f of real.files) add("real/" + f, "real/" + f);
+} catch { /* none */ }
+const wanted = new URLSearchParams(location.search).get("file");   // viewer.html?file=real/x.glb
+if (wanted) { add(wanted); $("pick").value = wanted; load(wanted, wanted); }
+else if ($("pick").options.length) load($("pick").value, $("pick").selectedOptions[0].textContent);
+else $("info").textContent = "Open with a local server to list the models, or pick a GLB file.";
+
+renderer.setAnimationLoop(() => { mixer?.update(clock.getDelta()); controls.update(); renderer.render(scene, camera); });
+</script>
+</body>
+</html>

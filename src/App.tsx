@@ -10,6 +10,7 @@ type Asset = {
 
 const ModelViewer = lazy(() => import("./components/ModelViewer"));
 const Studio3D = lazy(() => import("./components/Studio3D"));
+const CreativeStudio = lazy(() => import("./creative/CreativeStudio"));
 const Vehicles3D = lazy(() => import("./vehicles3d/Vehicles3D"));
 const KaraokeViewer = lazy(() => import("./components/KaraokeViewer"));
 const Hospital3D = lazy(() => import("./components/Hospital3D"));
@@ -24,9 +25,10 @@ const prefetchStudio3D = () => {
 };
 
 // One list = one button style. Add or remove a 3D page here only.
-type ModuleId = "studio" | "vehicles" | "karaoke" | "hospital" | "school" | "village" | "ocean";
+type ModuleId = "creative" | "studio" | "vehicles" | "karaoke" | "hospital" | "school" | "village" | "ocean";
 
 const MODULES: { id: ModuleId; label: string; title: string; icons: KIconName[] }[] = [
+  { id: "creative", label: "Creative AI", title: "KHOEM-AI Creative Studio (2D / GLB / 3D)", icons: ["flashlight"] },
   { id: "studio", label: "3D Studio", title: "3D Creation Studio", icons: ["cube"] },
   { id: "vehicles", label: "KHOEM-AI 3D", title: "Vehicles and People 3D", icons: ["car", "people"] },
   { id: "karaoke", label: "Karaoke 3D", title: "Karaoke / Pub 3D", icons: ["karaoke"] },
@@ -431,6 +433,15 @@ export default function App() {
           ))}
         </div>
       </section>
+
+      {isOpen("creative") && (
+        <Suspense fallback={<div className="studio-panel">Loading Creative Studio...</div>}>
+          <CreativeStudio
+            onOpenModule={(id) => setOpenModule(id as ModuleId)}
+            onClose={() => setOpenModule(null)}
+          />
+        </Suspense>
+      )}
 
       {isOpen("studio") && (
         <Suspense fallback={<div className="studio-panel">Loading 3D Studio...</div>}>

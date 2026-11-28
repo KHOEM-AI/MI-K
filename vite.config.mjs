@@ -72,7 +72,12 @@ const iq = {
   },
 };
 
-const proxy = { ...ki, ...iq };
+const proxy = {
+  ...ki,
+  ...iq,
+  "/api/image-to-3d": { target: "http://127.0.0.1:8787", changeOrigin: true },
+  "/api/creative":    { target: "http://127.0.0.1:8788", changeOrigin: true },
+};
 
 export default defineConfig({
   plugins: [react()],

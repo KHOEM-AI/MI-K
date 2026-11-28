@@ -3,6 +3,7 @@ import type { AnimationAction, AnimationMixer, BufferGeometry, Group, Material, 
 import type { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { isGlb } from "./modelTools.mjs";
+import { isRealPerson } from "./realPerson.mjs";
 import { TabIcon, PersonPortrait } from "./icons";
 import ExportPanel from "./ExportPanel";
 import type { ExportContext } from "./modelExporter";
@@ -245,9 +246,11 @@ export default function HumanViewer() {
   const [clips, setClips] = useState<string[]>([]);
   const [playing, setPlaying] = useState<Record<string, boolean>>({});
   const [err, setErr] = useState("");
+  const [available, setAvailable] = useState<string[] | null>(null);
 
   const person = PEOPLE.find((x) => x.id === id) || PEOPLE[0];
-  const list = PEOPLE.filter((x) => filter === "all" || (filter === "f") === x.female);
+  const shown = PEOPLE.filter((x) => available !== null && available.includes(x.id));
+  const list = shown.filter((x) => filter === "all" || (filter === "f") === x.female);
 
   useEffect(() => {
     let disposed = false;
@@ -412,7 +415,7 @@ export default function HumanViewer() {
   }, []);
 
   useEffect(() => {
-    if (!ready || !apiRef.current) return;
+    if (!ready || !apiRef.current || !available || !available.includes(person.id)) return;
     let cancelled = false;
     setErr("");
     apiRef.current.show(person).then((r) => {
@@ -420,7 +423,24 @@ export default function HumanViewer() {
       setReal(r.real); setClips(r.clips); setPlaying(Object.fromEntries(r.started.map((n) => [n, true])));
     }).catch((e) => { if (!cancelled) setErr(msg(e)); });
     return () => { cancelled = true; };
-  }, [ready, id]);
+  }, [ready, id, available]);
+
+  // Only people with a real .glb are offered; the built-in test mannequins are not shown.
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all(PEOPLE.map(async (x) => {
+      try {
+        const r = await fetch(`/characters/${x.id}.glb`);
+        return r.ok && isRealPerson(await r.arrayBuffer()) ? x.id : null;
+      } catch { return null; }
+    })).then((ids) => {
+      if (cancelled) return;
+      const ok = ids.filter((x): x is string => x !== null);
+      setAvailable(ok);
+      setId((cur) => (ok.includes(cur) || !ok.length ? cur : ok[0]));
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   const pick = (m: Mode) => { setMode(m); modeRef.current = m; };
 
@@ -428,7 +448,7 @@ export default function HumanViewer() {
     <div style={{ padding: 8 }}>
       <b><TabIcon name="people" /> KHOEM-AI 3D · តួអង្គ · Characters</b>
       <div className="filters wrap">
-        <button type="button" className={cls(filter === "all")} onClick={() => setFilter("all")}>ទាំងអស់ ({PEOPLE.length})</button>
+        <button type="button" className={cls(filter === "all")} onClick={() => setFilter("all")}>ទាំងអស់ ({shown.length})</button>
         <button type="button" className={cls(filter === "m")} onClick={() => setFilter("m")}><TabIcon name="male" size={16} /> ប្រុស</button>
         <button type="button" className={cls(filter === "f")} onClick={() => setFilter("f")}><TabIcon name="female" size={16} /> ស្រី</button>
       </div>
@@ -446,6 +466,9 @@ export default function HumanViewer() {
           </button>
         ))}
       </div>
+      {available !== null && shown.length === 0 && (
+        <div style={{ color: "#ff8a8a", marginTop: 6 }}><TabIcon name="warn" size={16} /> NOT FOUND: no .glb in public/characters</div>
+      )}
       <div style={{ marginTop: 6, marginBottom: 6 }}><b>{person.name}</b> · {person.role} · {person.height} cm</div>
 
       <div style={{ position: "relative", width: "100%", height: "52vh", minHeight: 300, borderRadius: 10, overflow: "hidden", background: "#0b1220" }}>

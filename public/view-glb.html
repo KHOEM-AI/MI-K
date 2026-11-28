@@ -1,0 +1,78 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>GLB Viewer</title>
+<style>body{margin:0;background:#111;color:#fff;font:13px system-ui}
+#info{position:fixed;top:8px;left:8px;z-index:9;background:#000a;padding:8px 12px;border-radius:8px;font-family:monospace}
+</style></head><body>
+<div id="info">Loading…</div>
+<script type="importmap">
+{"imports":{"three":"https://unpkg.com/three@0.170.0/build/three.module.js",
+"three/addons/":"https://unpkg.com/three@0.170.0/examples/jsm/"}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x1a2030);
+const camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.01, 1000);
+camera.position.set(6, 4, 6); // default until fit
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(devicePixelRatio);
+renderer.shadowMap.enabled = true;
+document.body.appendChild(renderer.domElement);
+
+scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 1.5));
+const dl = new THREE.DirectionalLight(0xffffff, 2);
+dl.position.set(5, 10, 7); dl.castShadow = true;
+scene.add(dl);
+const grid = new THREE.GridHelper(20, 40, 0x3a4fd8, 0x1a2030);
+scene.add(grid);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+
+const url = new URLSearchParams(location.search).get('url');
+const info = document.getElementById('info');
+
+new GLTFLoader().load(url, (gltf) => {
+  scene.add(gltf.scene);
+
+  // ============ AUTO-FIT CAMERA ============
+  const box = new THREE.Box3().setFromObject(gltf.scene);
+  const center = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3());
+  const maxDim = Math.max(size.x, size.y, size.z);
+
+  // Place camera at 45° angle, distance = 2x the largest dimension
+  const dist = maxDim * 2;
+  camera.position.set(
+    center.x + dist * 0.8,
+    center.y + dist * 0.6,
+    center.z + dist * 0.8
+  );
+  camera.near = maxDim * 0.01;
+  camera.far = maxDim * 100;
+  camera.updateProjectionMatrix();
+
+  // Aim at model center
+  controls.target.copy(center);
+  controls.update();
+
+  info.textContent = `✓ ${size.x.toFixed(2)}×${size.y.toFixed(2)}×${size.z.toFixed(2)} m · ${gltf.scene.children.length} obj`;
+}, undefined, (e) => {
+  info.textContent = '✗ ' + (e?.message || 'load failed');
+  info.style.color = '#ff7a7a';
+});
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+(function loop(){ requestAnimationFrame(loop); controls.update(); renderer.render(scene, camera); })();
+</script></body></html>

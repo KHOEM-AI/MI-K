@@ -20,9 +20,9 @@ const MODELS = [
 ];
 
 export const VEHICLES = [
-  { id: 'v99', name: 'KHOEM-AI V99', kind: 'Hero', image: '/vehicles/hero_khoem-ai-v99.png', glb: '/models/v99.glb' },
+  { id: 'v99', name: 'KHOEM-AI V99', kind: 'Hero', image: '/vehicles/hero_khoem-ai-v99.png', glb: '/models/vehicles/sedan.glb' },
   ...MODELS.map(([id, short, kind, slug]) => ({
-    id, name: `KHOEM-AI ${short}`, kind, image: `/vehicles/${id}_${slug}.png`, glb: `/models/${id}.glb`,
+    id, name: `KHOEM-AI ${short}`, kind, image: `/vehicles/${id}_${slug}.png`, glb: id === 's05' ? '/models/vehicles/sedan.glb' : `/models/${id}.glb`,
   })),
 ];
 

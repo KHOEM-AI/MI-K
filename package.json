@@ -14,9 +14,23 @@
     "verify": "npm run typecheck && npm test && npm run build",
     "characters": "node scripts/check-characters.mjs",
     "glb:list": "tsx scripts/export-world-glb.mjs --list",
-    "glb:all": "tsx scripts/export-world-glb.mjs"
+    "glb:all": "tsx scripts/export-world-glb.mjs",
+    "people:list": "tsx scripts/export-people-glb.mjs --list",
+    "people:all": "tsx scripts/export-people-glb.mjs",
+    "people:skins": "tsx scripts/export-people-glb.mjs --skins",
+    "people:test": "node --test tests/people-motion.test.mjs tests/people-glb.test.mjs",
+    "rig": "node scripts/glb-rig-tool.mjs",
+    "rig:test": "node --test tests/glb-rig-tool.test.mjs",
+    "i23d:server": "node server/image-to-3d.mjs",
+    "i23d:server:trellis": "I23D_PROVIDER=trellis node server/image-to-3d.mjs",
+    "i23d:test": "node --test tests/image-to-3d.test.mjs",
+    "real:all": "node scripts/real-people.mjs",
+    "real:test": "node --test tests/mixamo-motion.test.mjs",
+    "creative:server": "node server/creative.mjs",
+    "creative:typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@gradio/client": "^2.8.0",
     "@vitejs/plugin-react": "latest",
     "lucide-react": "^1.73.0",
     "react": "latest",
@@ -28,7 +42,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@types/three": "^0.187.0",
-    "typescript": "^5.8.3",
-    "tsx": "^4.19.0"
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.3"
   }
 }
